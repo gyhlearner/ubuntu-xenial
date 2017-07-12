@@ -1,10 +1,10 @@
-linux-kvm (4.4.0-1001.1) UNRELEASED; urgency=low
+linux-kvm (4.4.0-1001.1) xenial; urgency=low
 
   [ Kamal Mostafa ]
 
-  * Initial linux-kvm packaging based on xenial (4.4.0-84.107)
+  * Initial linux-kvm packaging based on xenial (4.4.0-87.110)
 
- -- Kamal Mostafa <kamal@canonical.com>  Wed, 12 Jul 2017 11:02:00 -0700
+ -- Kamal Mostafa <kamal@canonical.com>  Tue, 18 Jul 2017 11:16:33 -0700
 
 linux-kvm (4.4.0-1000.0) xenial; urgency=low
 
