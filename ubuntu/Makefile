@@ -30,9 +30,9 @@ obj-$(CONFIG_HIO)             += hio/
 ##
 ##
 ##
-ifeq ($(filter $(ARCH), s390),)
-obj-y				+= xr-usb-serial/
-endif
+#ifeq ($(filter $(ARCH), s390),)
+#obj-y				+= xr-usb-serial/
+#endif
 ##
 ##
 ##
