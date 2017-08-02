@@ -1,8 +1,12 @@
-linux-kvm (4.4.0-1002.2) xenial; urgency=low
+linux-kvm (4.4.0-1002.3) xenial; urgency=low
+
+  [ Packaging ]
 
   * Please only recommend or suggest initramfs-tools | linux-initramfs-tool for
     kernels able to boot without initramfs (LP: #1700972)
     - [Debian] Don't depend on initramfs-tools
+
+  * Disable module-check
 
  -- Kamal Mostafa <kamal@canonical.com>  Wed, 02 Aug 2017 11:50:20 -0700
 
