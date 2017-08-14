@@ -46,3 +46,6 @@ source "ubuntu/ixxat/Kconfig"
 ##
 
 endmenu
+
+config ZLIB_DEFLATE	# required by ZFS
+	default y
