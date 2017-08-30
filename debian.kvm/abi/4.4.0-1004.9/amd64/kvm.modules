@@ -1,8 +1,8 @@
 9p
 9pnet
 adfs
-affs
 af-rxrpc
+affs
 arc4
 async_pq
 async_tx
@@ -70,8 +70,8 @@ mac-inuit
 mac-roman
 mac-romanian
 mac-turkish
-md4
 md-mod
+md4
 minix
 msdos
 mtd
@@ -125,8 +125,8 @@ ocfs2
 ocfs2_dlm
 ocfs2_dlmfs
 ocfs2_nodemanager
-ocfs2_stackglue
 ocfs2_stack_o2cb
+ocfs2_stackglue
 omfs
 osd
 overlay
