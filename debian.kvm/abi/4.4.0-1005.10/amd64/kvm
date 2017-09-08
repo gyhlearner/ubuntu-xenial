@@ -487,6 +487,7 @@ EXPORT_SYMBOL vmlinux 0x00000000	__dev_getfirstbyhwtype
 EXPORT_SYMBOL vmlinux 0x00000000	__dev_kfree_skb_any
 EXPORT_SYMBOL vmlinux 0x00000000	__dev_kfree_skb_irq
 EXPORT_SYMBOL vmlinux 0x00000000	__dev_remove_pack
+EXPORT_SYMBOL vmlinux 0x00000000	__dev_set_mtu
 EXPORT_SYMBOL vmlinux 0x00000000	__devm_release_region
 EXPORT_SYMBOL vmlinux 0x00000000	__devm_request_region
 EXPORT_SYMBOL vmlinux 0x00000000	__do_once_done
