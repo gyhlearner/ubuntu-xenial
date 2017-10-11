@@ -3387,7 +3387,6 @@ EXPORT_SYMBOL vmlinux 0x00000000	system_state
 EXPORT_SYMBOL vmlinux 0x00000000	system_wq
 EXPORT_SYMBOL vmlinux 0x00000000	tag_pages_for_writeback
 EXPORT_SYMBOL vmlinux 0x00000000	take_dentry_name_snapshot
-EXPORT_SYMBOL vmlinux 0x00000000	task_tgid_nr_ns
 EXPORT_SYMBOL vmlinux 0x00000000	tasklet_init
 EXPORT_SYMBOL vmlinux 0x00000000	tasklet_kill
 EXPORT_SYMBOL vmlinux 0x00000000	tcp_check_req
