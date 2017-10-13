@@ -689,6 +689,7 @@ EXPORT_SYMBOL vmlinux 0x00000000	__tasklet_hi_schedule_first
 EXPORT_SYMBOL vmlinux 0x00000000	__tasklet_schedule
 EXPORT_SYMBOL vmlinux 0x00000000	__test_set_page_writeback
 EXPORT_SYMBOL vmlinux 0x00000000	__tty_alloc_driver
+EXPORT_SYMBOL vmlinux 0x00000000	__tty_insert_flip_char
 EXPORT_SYMBOL vmlinux 0x00000000	__udelay
 EXPORT_SYMBOL vmlinux 0x00000000	__unregister_chrdev
 EXPORT_SYMBOL vmlinux 0x00000000	__unregister_cpu_notifier
@@ -4042,7 +4043,6 @@ EXPORT_SYMBOL_GPL fs/nfs/nfs 0x00000000	nfs_path
 EXPORT_SYMBOL_GPL fs/nfs/nfs 0x00000000	nfs_permission
 EXPORT_SYMBOL_GPL fs/nfs/nfs 0x00000000	nfs_pgheader_init
 EXPORT_SYMBOL_GPL fs/nfs/nfs 0x00000000	nfs_pgio_current_mirror
-EXPORT_SYMBOL_GPL fs/nfs/nfs 0x00000000	nfs_pgio_data_destroy
 EXPORT_SYMBOL_GPL fs/nfs/nfs 0x00000000	nfs_pgio_header_alloc
 EXPORT_SYMBOL_GPL fs/nfs/nfs 0x00000000	nfs_pgio_header_free
 EXPORT_SYMBOL_GPL fs/nfs/nfs 0x00000000	nfs_post_op_update_inode
