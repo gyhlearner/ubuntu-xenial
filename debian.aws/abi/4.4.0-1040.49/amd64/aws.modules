@@ -691,10 +691,8 @@ x25
 x_tables
 xcbc
 xen-evtchn
-xen-fbfront
 xen-gntalloc
 xen-gntdev
-xen-kbdfront
 xen-netback
 xen-pciback
 xen-privcmd
