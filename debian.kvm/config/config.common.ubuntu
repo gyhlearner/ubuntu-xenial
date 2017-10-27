@@ -503,7 +503,9 @@ CONFIG_DEVTMPFS_MOUNT=y
 # CONFIG_DMADEVICES is not set
 # CONFIG_DMA_API_DEBUG is not set
 # CONFIG_DMA_SHARED_BUFFER is not set
-# CONFIG_DMI is not set
+CONFIG_DMI=y
+CONFIG_DMIID=y
+# CONFIG_DMI_SYSFS is not set
 # CONFIG_DM_CACHE is not set
 # CONFIG_DM_CRYPT is not set
 # CONFIG_DM_DEBUG is not set
