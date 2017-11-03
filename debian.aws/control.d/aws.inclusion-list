@@ -67,6 +67,7 @@ drivers/net/ethernet/intel/e1000e/e1000e.ko
 drivers/net/eql.ko
 drivers/net/ethernet/ibm/*
 drivers/net/ifb.ko
+drivers/net/ipvlan/ipvlan.ko
 drivers/net/ethernet/intel/igbvf/igbvf.ko
 drivers/net/ethernet/intel/ixgbevf/ixgbevf.ko
 drivers/net/ethernet/amazon/ena/ena.ko
