@@ -1829,6 +1829,7 @@ static int xen_hvm_cpu_notify(struct notifier_block *self, unsigned long action,
 	int cpu = (long)hcpu;
 	switch (action) {
 	case CPU_UP_PREPARE:
+	case CPU_UP_PREPARE_FROZEN:
 		if (cpu_acpi_id(cpu) != U32_MAX)
 			per_cpu(xen_vcpu_id, cpu) = cpu_acpi_id(cpu);
 		else
