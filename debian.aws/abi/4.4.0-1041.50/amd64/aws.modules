@@ -315,6 +315,7 @@ iptable_mangle
 iptable_nat
 iptable_raw
 iptable_security
+ipvlan
 ipx
 ircomm
 ircomm-tty
