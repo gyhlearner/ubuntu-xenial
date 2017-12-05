@@ -11,6 +11,7 @@ async_pq
 async_tx
 async_xor
 aufs
+auth_rpcgss
 befs
 bfs
 br_netfilter
@@ -158,6 +159,7 @@ mac-turkish
 md-mod
 md4
 minix
+mpls_gso
 msdos
 mtd
 ncpfs
@@ -304,6 +306,7 @@ ocfs2_nodemanager
 ocfs2_stack_o2cb
 ocfs2_stackglue
 omfs
+openvswitch
 osd
 overlay
 pkcs7_test_key
@@ -313,6 +316,7 @@ quota_tree
 raid6_pq
 reiserfs
 romfs
+rpcsec_gss_krb5
 seqiv
 sha256_generic
 spl
