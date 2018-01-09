@@ -2185,6 +2185,8 @@ EXPORT_SYMBOL vmlinux 0x00000000	jiffies_to_msecs
 EXPORT_SYMBOL vmlinux 0x00000000	jiffies_to_timespec64
 EXPORT_SYMBOL vmlinux 0x00000000	jiffies_to_timeval
 EXPORT_SYMBOL vmlinux 0x00000000	jiffies_to_usecs
+EXPORT_SYMBOL vmlinux 0x00000000	kaiser_enabled
+EXPORT_SYMBOL vmlinux 0x00000000	kaiser_flush_tlb_on_return_to_user
 EXPORT_SYMBOL vmlinux 0x00000000	kasprintf
 EXPORT_SYMBOL vmlinux 0x00000000	kblockd_schedule_delayed_work
 EXPORT_SYMBOL vmlinux 0x00000000	kblockd_schedule_delayed_work_on
