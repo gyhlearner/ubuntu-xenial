@@ -1302,6 +1302,7 @@ EXPORT_SYMBOL vmlinux 0x00000000	cpu_rmap_add
 EXPORT_SYMBOL vmlinux 0x00000000	cpu_rmap_put
 EXPORT_SYMBOL vmlinux 0x00000000	cpu_rmap_update
 EXPORT_SYMBOL vmlinux 0x00000000	cpu_sibling_map
+EXPORT_SYMBOL vmlinux 0x00000000	cpu_tlbstate
 EXPORT_SYMBOL vmlinux 0x00000000	cpu_tss
 EXPORT_SYMBOL vmlinux 0x00000000	cpumask_local_spread
 EXPORT_SYMBOL vmlinux 0x00000000	cpumask_next_and
@@ -3503,6 +3504,7 @@ EXPORT_SYMBOL vmlinux 0x00000000	sock_wmalloc
 EXPORT_SYMBOL vmlinux 0x00000000	sockfd_lookup
 EXPORT_SYMBOL vmlinux 0x00000000	softnet_data
 EXPORT_SYMBOL vmlinux 0x00000000	sort
+EXPORT_SYMBOL vmlinux 0x00000000	spec_ctrl_mutex
 EXPORT_SYMBOL vmlinux 0x00000000	splice_direct_to_actor
 EXPORT_SYMBOL vmlinux 0x00000000	sprintf
 EXPORT_SYMBOL vmlinux 0x00000000	sscanf
@@ -3568,6 +3570,8 @@ EXPORT_SYMBOL vmlinux 0x00000000	synchronize_irq
 EXPORT_SYMBOL vmlinux 0x00000000	synchronize_net
 EXPORT_SYMBOL vmlinux 0x00000000	sys_close
 EXPORT_SYMBOL vmlinux 0x00000000	sys_tz
+EXPORT_SYMBOL vmlinux 0x00000000	sysctl_ibpb_enabled
+EXPORT_SYMBOL vmlinux 0x00000000	sysctl_ibrs_enabled
 EXPORT_SYMBOL vmlinux 0x00000000	sysctl_ip_default_ttl
 EXPORT_SYMBOL vmlinux 0x00000000	sysctl_ip_early_demux
 EXPORT_SYMBOL vmlinux 0x00000000	sysctl_max_skb_frags
@@ -3813,6 +3817,8 @@ EXPORT_SYMBOL vmlinux 0x00000000	unregister_sysctl_table
 EXPORT_SYMBOL vmlinux 0x00000000	up
 EXPORT_SYMBOL vmlinux 0x00000000	up_read
 EXPORT_SYMBOL vmlinux 0x00000000	up_write
+EXPORT_SYMBOL vmlinux 0x00000000	use_ibpb
+EXPORT_SYMBOL vmlinux 0x00000000	use_ibrs
 EXPORT_SYMBOL vmlinux 0x00000000	user_path_at_empty
 EXPORT_SYMBOL vmlinux 0x00000000	user_path_create
 EXPORT_SYMBOL vmlinux 0x00000000	user_revoke
@@ -4917,6 +4923,7 @@ EXPORT_SYMBOL_GPL net/sunrpc/sunrpc 0x00000000	xprt_wake_pending_tasks
 EXPORT_SYMBOL_GPL net/sunrpc/sunrpc 0x00000000	xprt_write_space
 EXPORT_SYMBOL_GPL security/keys/encrypted-keys/encrypted-keys 0x00000000	key_type_encrypted
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	PageHuge
+EXPORT_SYMBOL_GPL vmlinux 0x00000000	___ptrace_may_access
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	__ablkcipher_walk_complete
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	__alloc_percpu
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	__alloc_percpu_gfp
@@ -5292,7 +5299,6 @@ EXPORT_SYMBOL_GPL vmlinux 0x00000000	cpu_device_create
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	cpu_has_xfeatures
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	cpu_is_hotpluggable
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	cpu_subsys
-EXPORT_SYMBOL_GPL vmlinux 0x00000000	cpu_tlbstate
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	cpu_up
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	crypto_ablkcipher_type
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	crypto_aead_setauthsize
