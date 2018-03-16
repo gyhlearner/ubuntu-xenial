@@ -1,4 +1,3 @@
-hpwdt.ko asminline_call call   *0xc(%ebp)
 kvm-intel.ko vmx_handle_external_intr call   *%eax
 kvm.ko em_loop call   *%edx
 kvm.ko fastop call   *%esi
@@ -145,8 +144,8 @@ vmlinux init_dmars call   *%ecx
 vmlinux init_dmars call   *%edi
 vmlinux init_hw_perf_events call   *%eax
 vmlinux init_hw_perf_events call   *%ecx
+vmlinux init_hw_perf_events call   *%ecx
 vmlinux init_hw_perf_events call   *%edx
-vmlinux init_hw_perf_events call   *%esi
 vmlinux init_hypervisor_platform call   *%eax
 vmlinux init_hypervisor_platform call   *%eax
 vmlinux init_mem_mapping call   *%eax
@@ -209,6 +208,7 @@ vmlinux pcpu_embed_first_chunk call   *%esi
 vmlinux pcpu_page_first_chunk call   *%ebx
 vmlinux pcpu_page_first_chunk call   *%ecx
 vmlinux pcpu_page_first_chunk call   *%ecx
+vmlinux pcpu_setup_first_chunk call   *%ecx
 vmlinux pnpacpi_option_resource jmp    *%eax
 vmlinux prefill_possible_map call   *%edx
 vmlinux prefill_possible_map call   *%edx
