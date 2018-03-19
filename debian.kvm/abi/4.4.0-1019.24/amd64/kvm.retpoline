@@ -1,3 +1,4 @@
+kvm-intel.ko vmx_handle_external_intr callq  *%rdx
 vmlinux .altinstr_replacement callq  *%rbx
 vmlinux .altinstr_replacement jmpq   *%r10
 vmlinux .altinstr_replacement jmpq   *%r11
@@ -32,5 +33,10 @@ vmlinux __x86_indirect_thunk_rdx jmpq   *%rdx
 vmlinux __x86_indirect_thunk_rsi jmpq   *%rsi
 vmlinux __x86_indirect_thunk_rsp jmpq   *%rsp
 vmlinux efi_call callq  *%rdi
+vmlinux em_loop callq  *%rdx
+vmlinux fastop callq  *%rsi
 vmlinux ret_from_fork callq  *%rbx
 vmlinux secondary_startup_64 jmpq   *%rax
+vmlinux x86_emulate_insn callq  *%rax
+vmlinux x86_emulate_insn callq  *%rax
+vmlinux x86_emulate_insn callq  *%rax
