@@ -1980,10 +1980,6 @@ static int lan78xx_open(struct net_device *net)
 	if (ret < 0)
 		goto out;
 
-	ret = lan78xx_reset(dev);
-	if (ret < 0)
-		goto done;
-
 	/* Workaround to enable PHY interrupt.
 	 * phy_start_interrupts() is API for requesting and enabling
 	 * PHY interrupt. However, USB-to-Ethernet device can't use
