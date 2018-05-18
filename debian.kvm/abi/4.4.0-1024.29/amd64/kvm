@@ -393,6 +393,7 @@ EXPORT_SYMBOL net/netfilter/nf_nat 0x00000000	nf_xfrm_me_harder
 EXPORT_SYMBOL net/netfilter/x_tables 0x00000000	xt_alloc_entry_offsets
 EXPORT_SYMBOL net/netfilter/x_tables 0x00000000	xt_alloc_table_info
 EXPORT_SYMBOL net/netfilter/x_tables 0x00000000	xt_check_entry_offsets
+EXPORT_SYMBOL net/netfilter/x_tables 0x00000000	xt_check_proc_name
 EXPORT_SYMBOL net/netfilter/x_tables 0x00000000	xt_compat_check_entry_offsets
 EXPORT_SYMBOL net/netfilter/x_tables 0x00000000	xt_compat_init_offsets
 EXPORT_SYMBOL net/netfilter/x_tables 0x00000000	xt_find_jump_offset
@@ -734,7 +735,6 @@ EXPORT_SYMBOL vmlinux 0x00000000	__x86_indirect_thunk_rcx
 EXPORT_SYMBOL vmlinux 0x00000000	__x86_indirect_thunk_rdi
 EXPORT_SYMBOL vmlinux 0x00000000	__x86_indirect_thunk_rdx
 EXPORT_SYMBOL vmlinux 0x00000000	__x86_indirect_thunk_rsi
-EXPORT_SYMBOL vmlinux 0x00000000	__x86_indirect_thunk_rsp
 EXPORT_SYMBOL vmlinux 0x00000000	__xfrm_decode_session
 EXPORT_SYMBOL vmlinux 0x00000000	__xfrm_init_state
 EXPORT_SYMBOL vmlinux 0x00000000	__xfrm_policy_check
@@ -1319,6 +1319,7 @@ EXPORT_SYMBOL vmlinux 0x00000000	current_in_userns
 EXPORT_SYMBOL vmlinux 0x00000000	current_kernel_time64
 EXPORT_SYMBOL vmlinux 0x00000000	current_task
 EXPORT_SYMBOL vmlinux 0x00000000	current_umask
+EXPORT_SYMBOL vmlinux 0x00000000	current_work
 EXPORT_SYMBOL vmlinux 0x00000000	d_add_ci
 EXPORT_SYMBOL vmlinux 0x00000000	d_alloc
 EXPORT_SYMBOL vmlinux 0x00000000	d_alloc_name
@@ -2091,7 +2092,6 @@ EXPORT_SYMBOL vmlinux 0x00000000	ip_route_me_harder
 EXPORT_SYMBOL vmlinux 0x00000000	ip_send_check
 EXPORT_SYMBOL vmlinux 0x00000000	ip_setsockopt
 EXPORT_SYMBOL vmlinux 0x00000000	ip_tos2prio
-EXPORT_SYMBOL vmlinux 0x00000000	ip_tunnel_dst_reset_all
 EXPORT_SYMBOL vmlinux 0x00000000	ip_tunnel_encap
 EXPORT_SYMBOL vmlinux 0x00000000	ip_tunnel_encap_add_ops
 EXPORT_SYMBOL vmlinux 0x00000000	ip_tunnel_encap_del_ops
@@ -2269,6 +2269,7 @@ EXPORT_SYMBOL vmlinux 0x00000000	kmem_cache_free_bulk
 EXPORT_SYMBOL vmlinux 0x00000000	kmem_cache_shrink
 EXPORT_SYMBOL vmlinux 0x00000000	kmem_cache_size
 EXPORT_SYMBOL vmlinux 0x00000000	kmemdup
+EXPORT_SYMBOL vmlinux 0x00000000	kmemdup_nul
 EXPORT_SYMBOL vmlinux 0x00000000	kobject_add
 EXPORT_SYMBOL vmlinux 0x00000000	kobject_del
 EXPORT_SYMBOL vmlinux 0x00000000	kobject_get
@@ -2316,6 +2317,7 @@ EXPORT_SYMBOL vmlinux 0x00000000	kzfree
 EXPORT_SYMBOL vmlinux 0x00000000	laptop_mode
 EXPORT_SYMBOL vmlinux 0x00000000	lease_get_mtime
 EXPORT_SYMBOL vmlinux 0x00000000	lease_modify
+EXPORT_SYMBOL vmlinux 0x00000000	legacy_pic
 EXPORT_SYMBOL vmlinux 0x00000000	lg_global_lock
 EXPORT_SYMBOL vmlinux 0x00000000	lg_global_unlock
 EXPORT_SYMBOL vmlinux 0x00000000	lg_local_lock
@@ -5910,6 +5912,13 @@ EXPORT_SYMBOL_GPL vmlinux 0x00000000	driver_for_each_device
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	driver_register
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	driver_remove_file
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	driver_unregister
+EXPORT_SYMBOL_GPL vmlinux 0x00000000	dst_cache_destroy
+EXPORT_SYMBOL_GPL vmlinux 0x00000000	dst_cache_get
+EXPORT_SYMBOL_GPL vmlinux 0x00000000	dst_cache_get_ip4
+EXPORT_SYMBOL_GPL vmlinux 0x00000000	dst_cache_get_ip6
+EXPORT_SYMBOL_GPL vmlinux 0x00000000	dst_cache_init
+EXPORT_SYMBOL_GPL vmlinux 0x00000000	dst_cache_set_ip4
+EXPORT_SYMBOL_GPL vmlinux 0x00000000	dst_cache_set_ip6
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	dummy_irq_chip
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	e820_any_mapped
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	each_symbol_section
