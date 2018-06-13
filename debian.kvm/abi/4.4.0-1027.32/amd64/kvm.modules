@@ -2,7 +2,10 @@ acard-ahci
 acpi_pad
 adfs
 af-rxrpc
+af_key
 affs
+ah4
+ah6
 ahci
 ahci_platform
 arc4
@@ -14,6 +17,8 @@ async_tx
 async_xor
 aufs
 auth_rpcgss
+authenc
+authencesn
 befs
 bfs
 bonding
@@ -63,6 +68,8 @@ ecryptfs
 efivarfs
 efs
 encrypted-keys
+esp4
+esp6
 exofs
 f2fs
 fat
@@ -124,6 +131,9 @@ ip_vs_sed
 ip_vs_sh
 ip_vs_wlc
 ip_vs_wrr
+ip_vti
+ipcomp
+ipcomp6
 ipt_CLUSTERIP
 ipt_ECN
 ipt_MASQUERADE
@@ -381,6 +391,7 @@ target_core_mod
 ts_bm
 ts_fsm
 ts_kmp
+tunnel6
 ubi
 ubifs
 udf
@@ -388,6 +399,14 @@ ufs
 veth
 vfat
 x_tables
+xfrm4_mode_beet
+xfrm4_mode_transport
+xfrm4_mode_tunnel
+xfrm4_tunnel
+xfrm6_tunnel
+xfrm_algo
+xfrm_ipcomp
+xfrm_user
 xfs
 xor
 xt_CHECKSUM
