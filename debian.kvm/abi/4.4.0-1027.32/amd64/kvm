@@ -366,6 +366,10 @@ EXPORT_SYMBOL net/ipv4/netfilter/ip_tables 0x00000000	ipt_unregister_table
 EXPORT_SYMBOL net/ipv6/netfilter/ip6_tables 0x00000000	ip6t_do_table
 EXPORT_SYMBOL net/ipv6/netfilter/ip6_tables 0x00000000	ip6t_register_table
 EXPORT_SYMBOL net/ipv6/netfilter/ip6_tables 0x00000000	ip6t_unregister_table
+EXPORT_SYMBOL net/ipv6/tunnel6 0x00000000	xfrm6_tunnel_deregister
+EXPORT_SYMBOL net/ipv6/tunnel6 0x00000000	xfrm6_tunnel_register
+EXPORT_SYMBOL net/ipv6/xfrm6_tunnel 0x00000000	xfrm6_tunnel_alloc_spi
+EXPORT_SYMBOL net/ipv6/xfrm6_tunnel 0x00000000	xfrm6_tunnel_spi_lookup
 EXPORT_SYMBOL net/netfilter/ipvs/ip_vs 0x00000000	ip_vs_conn_in_get
 EXPORT_SYMBOL net/netfilter/ipvs/ip_vs 0x00000000	ip_vs_conn_new
 EXPORT_SYMBOL net/netfilter/ipvs/ip_vs 0x00000000	ip_vs_conn_out_get
@@ -592,6 +596,7 @@ EXPORT_SYMBOL vmlinux 0x00000000	__memcpy
 EXPORT_SYMBOL vmlinux 0x00000000	__memmove
 EXPORT_SYMBOL vmlinux 0x00000000	__memset
 EXPORT_SYMBOL vmlinux 0x00000000	__mod_zone_page_state
+EXPORT_SYMBOL vmlinux 0x00000000	__module_get
 EXPORT_SYMBOL vmlinux 0x00000000	__module_put_and_exit
 EXPORT_SYMBOL vmlinux 0x00000000	__msecs_to_jiffies
 EXPORT_SYMBOL vmlinux 0x00000000	__mutex_init
@@ -697,6 +702,7 @@ EXPORT_SYMBOL vmlinux 0x00000000	__sw_hweight16
 EXPORT_SYMBOL vmlinux 0x00000000	__sw_hweight32
 EXPORT_SYMBOL vmlinux 0x00000000	__sw_hweight64
 EXPORT_SYMBOL vmlinux 0x00000000	__sw_hweight8
+EXPORT_SYMBOL vmlinux 0x00000000	__symbol_put
 EXPORT_SYMBOL vmlinux 0x00000000	__sync_dirty_buffer
 EXPORT_SYMBOL vmlinux 0x00000000	__task_pid_nr_ns
 EXPORT_SYMBOL vmlinux 0x00000000	__tasklet_hi_schedule
@@ -2441,6 +2447,8 @@ EXPORT_SYMBOL vmlinux 0x00000000	mod_timer
 EXPORT_SYMBOL vmlinux 0x00000000	mod_timer_pending
 EXPORT_SYMBOL vmlinux 0x00000000	mod_timer_pinned
 EXPORT_SYMBOL vmlinux 0x00000000	mod_zone_page_state
+EXPORT_SYMBOL vmlinux 0x00000000	module_put
+EXPORT_SYMBOL vmlinux 0x00000000	module_refcount
 EXPORT_SYMBOL vmlinux 0x00000000	mount_bdev
 EXPORT_SYMBOL vmlinux 0x00000000	mount_nodev
 EXPORT_SYMBOL vmlinux 0x00000000	mount_ns
@@ -3649,6 +3657,7 @@ EXPORT_SYMBOL vmlinux 0x00000000	sysctl_ip_default_ttl
 EXPORT_SYMBOL vmlinux 0x00000000	sysctl_ip_early_demux
 EXPORT_SYMBOL vmlinux 0x00000000	sysctl_max_skb_frags
 EXPORT_SYMBOL vmlinux 0x00000000	sysctl_max_syn_backlog
+EXPORT_SYMBOL vmlinux 0x00000000	sysctl_nf_log_all_netns
 EXPORT_SYMBOL vmlinux 0x00000000	sysctl_optmem_max
 EXPORT_SYMBOL vmlinux 0x00000000	sysctl_rmem_max
 EXPORT_SYMBOL vmlinux 0x00000000	sysctl_tcp_adv_win_scale
@@ -3754,6 +3763,7 @@ EXPORT_SYMBOL vmlinux 0x00000000	truncate_inode_pages_range
 EXPORT_SYMBOL vmlinux 0x00000000	truncate_pagecache
 EXPORT_SYMBOL vmlinux 0x00000000	truncate_pagecache_range
 EXPORT_SYMBOL vmlinux 0x00000000	truncate_setsize
+EXPORT_SYMBOL vmlinux 0x00000000	try_module_get
 EXPORT_SYMBOL vmlinux 0x00000000	try_to_del_timer_sync
 EXPORT_SYMBOL vmlinux 0x00000000	try_to_free_buffers
 EXPORT_SYMBOL vmlinux 0x00000000	try_to_release_page
@@ -4112,6 +4122,7 @@ EXPORT_SYMBOL_GPL crypto/async_tx/async_tx 0x00000000	async_tx_quiesce
 EXPORT_SYMBOL_GPL crypto/async_tx/async_tx 0x00000000	async_tx_submit
 EXPORT_SYMBOL_GPL crypto/async_tx/async_xor 0x00000000	async_xor
 EXPORT_SYMBOL_GPL crypto/async_tx/async_xor 0x00000000	async_xor_val
+EXPORT_SYMBOL_GPL crypto/authenc 0x00000000	crypto_authenc_extractkeys
 EXPORT_SYMBOL_GPL crypto/des_generic 0x00000000	__des3_ede_setkey
 EXPORT_SYMBOL_GPL crypto/des_generic 0x00000000	des_ekey
 EXPORT_SYMBOL_GPL crypto/xts 0x00000000	xts_crypt
@@ -5046,6 +5057,22 @@ EXPORT_SYMBOL_GPL net/sunrpc/sunrpc 0x00000000	xprt_unregister_transport
 EXPORT_SYMBOL_GPL net/sunrpc/sunrpc 0x00000000	xprt_wait_for_buffer_space
 EXPORT_SYMBOL_GPL net/sunrpc/sunrpc 0x00000000	xprt_wake_pending_tasks
 EXPORT_SYMBOL_GPL net/sunrpc/sunrpc 0x00000000	xprt_write_space
+EXPORT_SYMBOL_GPL net/xfrm/xfrm_algo 0x00000000	xfrm_aalg_get_byid
+EXPORT_SYMBOL_GPL net/xfrm/xfrm_algo 0x00000000	xfrm_aalg_get_byidx
+EXPORT_SYMBOL_GPL net/xfrm/xfrm_algo 0x00000000	xfrm_aalg_get_byname
+EXPORT_SYMBOL_GPL net/xfrm/xfrm_algo 0x00000000	xfrm_aead_get_byname
+EXPORT_SYMBOL_GPL net/xfrm/xfrm_algo 0x00000000	xfrm_calg_get_byid
+EXPORT_SYMBOL_GPL net/xfrm/xfrm_algo 0x00000000	xfrm_calg_get_byname
+EXPORT_SYMBOL_GPL net/xfrm/xfrm_algo 0x00000000	xfrm_count_pfkey_auth_supported
+EXPORT_SYMBOL_GPL net/xfrm/xfrm_algo 0x00000000	xfrm_count_pfkey_enc_supported
+EXPORT_SYMBOL_GPL net/xfrm/xfrm_algo 0x00000000	xfrm_ealg_get_byid
+EXPORT_SYMBOL_GPL net/xfrm/xfrm_algo 0x00000000	xfrm_ealg_get_byidx
+EXPORT_SYMBOL_GPL net/xfrm/xfrm_algo 0x00000000	xfrm_ealg_get_byname
+EXPORT_SYMBOL_GPL net/xfrm/xfrm_algo 0x00000000	xfrm_probe_algs
+EXPORT_SYMBOL_GPL net/xfrm/xfrm_ipcomp 0x00000000	ipcomp_destroy
+EXPORT_SYMBOL_GPL net/xfrm/xfrm_ipcomp 0x00000000	ipcomp_init_state
+EXPORT_SYMBOL_GPL net/xfrm/xfrm_ipcomp 0x00000000	ipcomp_input
+EXPORT_SYMBOL_GPL net/xfrm/xfrm_ipcomp 0x00000000	ipcomp_output
 EXPORT_SYMBOL_GPL security/keys/encrypted-keys/encrypted-keys 0x00000000	key_type_encrypted
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	PageHuge
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	__ablkcipher_walk_complete
@@ -5529,6 +5556,8 @@ EXPORT_SYMBOL_GPL vmlinux 0x00000000	bpf_prog_create
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	bpf_prog_create_from_user
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	bpf_prog_destroy
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	bpf_prog_free
+EXPORT_SYMBOL_GPL vmlinux 0x00000000	bpf_prog_get
+EXPORT_SYMBOL_GPL vmlinux 0x00000000	bpf_prog_put
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	bpf_prog_realloc
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	bpf_prog_select_runtime
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	bpf_skb_vlan_pop_proto
@@ -5966,6 +5995,7 @@ EXPORT_SYMBOL_GPL vmlinux 0x00000000	exportfs_encode_fh
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	exportfs_encode_inode_fh
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	fanout_mutex
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	fb_notifier_call_chain
+EXPORT_SYMBOL_GPL vmlinux 0x00000000	fib6_get_table
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	fib_rules_lookup
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	fib_rules_register
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	fib_rules_unregister
@@ -7031,6 +7061,7 @@ EXPORT_SYMBOL_GPL vmlinux 0x00000000	rhashtable_walk_init
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	rhashtable_walk_next
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	rhashtable_walk_start
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	rhashtable_walk_stop
+EXPORT_SYMBOL_GPL vmlinux 0x00000000	rodata_test_data
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	root_device_unregister
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	round_jiffies
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	round_jiffies_relative
@@ -7241,6 +7272,7 @@ EXPORT_SYMBOL_GPL vmlinux 0x00000000	swiotlb_tbl_map_single
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	swiotlb_tbl_sync_single
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	swiotlb_tbl_unmap_single
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	swiotlb_unmap_page
+EXPORT_SYMBOL_GPL vmlinux 0x00000000	symbol_put_addr
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	synchronize_rcu_bh
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	synchronize_rcu_expedited
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	synchronize_sched
@@ -7490,11 +7522,9 @@ EXPORT_SYMBOL_GPL vmlinux 0x00000000	x86_emulate_instruction
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	x86_hyper_kvm
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	x86_platform
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	x86_set_memory_region
-EXPORT_SYMBOL_GPL vmlinux 0x00000000	x86_spec_ctrl_get_default
-EXPORT_SYMBOL_GPL vmlinux 0x00000000	x86_spec_ctrl_restore_host
-EXPORT_SYMBOL_GPL vmlinux 0x00000000	x86_spec_ctrl_set
-EXPORT_SYMBOL_GPL vmlinux 0x00000000	x86_spec_ctrl_set_guest
+EXPORT_SYMBOL_GPL vmlinux 0x00000000	x86_spec_ctrl_base
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	x86_vector_domain
+EXPORT_SYMBOL_GPL vmlinux 0x00000000	x86_virt_spec_ctrl
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	xattr_getsecurity
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	xfrm_audit_policy_add
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	xfrm_audit_policy_delete
