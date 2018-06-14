@@ -1337,6 +1337,7 @@ EXPORT_SYMBOL vmlinux 0x00000000	d_find_any_alias
 EXPORT_SYMBOL vmlinux 0x00000000	d_genocide
 EXPORT_SYMBOL vmlinux 0x00000000	d_hash_and_lookup
 EXPORT_SYMBOL vmlinux 0x00000000	d_instantiate
+EXPORT_SYMBOL vmlinux 0x00000000	d_instantiate_new
 EXPORT_SYMBOL vmlinux 0x00000000	d_instantiate_no_diralias
 EXPORT_SYMBOL vmlinux 0x00000000	d_instantiate_unique
 EXPORT_SYMBOL vmlinux 0x00000000	d_invalidate
