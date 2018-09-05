@@ -236,6 +236,7 @@ EXPORT_SYMBOL lib/crc-itu-t 0x00000000	crc_itu_t_table
 EXPORT_SYMBOL lib/crc-t10dif 0x00000000	crc_t10dif
 EXPORT_SYMBOL lib/crc-t10dif 0x00000000	crc_t10dif_update
 EXPORT_SYMBOL lib/libcrc32c 0x00000000	crc32c
+EXPORT_SYMBOL lib/lz4/lz4_compress 0x00000000	lz4_compress
 EXPORT_SYMBOL lib/raid6/raid6_pq 0x00000000	raid6_empty_zero_page
 EXPORT_SYMBOL lib/raid6/raid6_pq 0x00000000	raid6_gfexi
 EXPORT_SYMBOL lib/raid6/raid6_pq 0x00000000	raid6_gfexp
@@ -7548,3 +7549,12 @@ EXPORT_SYMBOL_GPL vmlinux 0x00000000	xfrm_output_resume
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	xstate_size
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	yield_to
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	zap_vma_ptes
+EXPORT_SYMBOL_GPL vmlinux 0x00000000	zs_compact
+EXPORT_SYMBOL_GPL vmlinux 0x00000000	zs_create_pool
+EXPORT_SYMBOL_GPL vmlinux 0x00000000	zs_destroy_pool
+EXPORT_SYMBOL_GPL vmlinux 0x00000000	zs_free
+EXPORT_SYMBOL_GPL vmlinux 0x00000000	zs_get_total_pages
+EXPORT_SYMBOL_GPL vmlinux 0x00000000	zs_malloc
+EXPORT_SYMBOL_GPL vmlinux 0x00000000	zs_map_object
+EXPORT_SYMBOL_GPL vmlinux 0x00000000	zs_pool_stats
+EXPORT_SYMBOL_GPL vmlinux 0x00000000	zs_unmap_object
