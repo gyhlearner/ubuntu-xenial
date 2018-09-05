@@ -159,6 +159,7 @@ libore
 libosd
 lockd
 loop
+lz4_compress
 lzo
 lzo_compress
 mac-celtic
@@ -482,4 +483,5 @@ zcommon
 zfs
 znvpair
 zpios
+zram
 zunicode
