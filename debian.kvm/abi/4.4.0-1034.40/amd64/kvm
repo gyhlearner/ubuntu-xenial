@@ -2486,6 +2486,8 @@ EXPORT_SYMBOL vmlinux 0x00000000	napi_gro_frags
 EXPORT_SYMBOL vmlinux 0x00000000	napi_gro_receive
 EXPORT_SYMBOL vmlinux 0x00000000	native_io_delay
 EXPORT_SYMBOL vmlinux 0x00000000	native_queued_spin_lock_slowpath
+EXPORT_SYMBOL vmlinux 0x00000000	native_restore_fl
+EXPORT_SYMBOL vmlinux 0x00000000	native_save_fl
 EXPORT_SYMBOL vmlinux 0x00000000	ndisc_mc_map
 EXPORT_SYMBOL vmlinux 0x00000000	ndo_dflt_fdb_add
 EXPORT_SYMBOL vmlinux 0x00000000	ndo_dflt_fdb_del
@@ -5189,7 +5191,6 @@ EXPORT_SYMBOL_GPL vmlinux 0x00000000	__sock_recv_wifi_status
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	__srcu_notifier_call_chain
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	__srcu_read_lock
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	__srcu_read_unlock
-EXPORT_SYMBOL_GPL vmlinux 0x00000000	__static_cpu_has_safe
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	__supported_pte_mask
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	__symbol_get
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	__udp4_lib_lookup
