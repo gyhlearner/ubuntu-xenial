@@ -64,6 +64,7 @@ ebtable_filter
 ebtable_nat
 ebtables
 ecb
+echainiv
 ecryptfs
 efivarfs
 efs
@@ -181,6 +182,7 @@ minix
 mpls_gso
 msdos
 mtd
+nbd
 ncpfs
 nf_conntrack
 nf_conntrack_amanda
