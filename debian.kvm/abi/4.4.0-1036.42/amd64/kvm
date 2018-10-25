@@ -968,6 +968,8 @@ EXPORT_SYMBOL vmlinux 0x00000000	amd_nb_misc_ids
 EXPORT_SYMBOL vmlinux 0x00000000	amd_northbridges
 EXPORT_SYMBOL vmlinux 0x00000000	arch_debugfs_dir
 EXPORT_SYMBOL vmlinux 0x00000000	arch_dma_alloc_attrs
+EXPORT_SYMBOL vmlinux 0x00000000	arch_io_free_memtype_wc
+EXPORT_SYMBOL vmlinux 0x00000000	arch_io_reserve_memtype_wc
 EXPORT_SYMBOL vmlinux 0x00000000	arch_register_cpu
 EXPORT_SYMBOL vmlinux 0x00000000	arch_unregister_cpu
 EXPORT_SYMBOL vmlinux 0x00000000	argv_free
@@ -3696,6 +3698,7 @@ EXPORT_SYMBOL vmlinux 0x00000000	tcp_destroy_cgroup
 EXPORT_SYMBOL vmlinux 0x00000000	tcp_disconnect
 EXPORT_SYMBOL vmlinux 0x00000000	tcp_enter_cwr
 EXPORT_SYMBOL vmlinux 0x00000000	tcp_enter_memory_pressure
+EXPORT_SYMBOL vmlinux 0x00000000	tcp_enter_quickack_mode
 EXPORT_SYMBOL vmlinux 0x00000000	tcp_filter
 EXPORT_SYMBOL vmlinux 0x00000000	tcp_get_cookie_sock
 EXPORT_SYMBOL vmlinux 0x00000000	tcp_getsockopt
@@ -3962,6 +3965,7 @@ EXPORT_SYMBOL vmlinux 0x00000000	vm_get_page_prot
 EXPORT_SYMBOL vmlinux 0x00000000	vm_insert_mixed
 EXPORT_SYMBOL vmlinux 0x00000000	vm_insert_page
 EXPORT_SYMBOL vmlinux 0x00000000	vm_insert_pfn
+EXPORT_SYMBOL vmlinux 0x00000000	vm_insert_pfn_prot
 EXPORT_SYMBOL vmlinux 0x00000000	vm_iomap_memory
 EXPORT_SYMBOL vmlinux 0x00000000	vm_map_ram
 EXPORT_SYMBOL vmlinux 0x00000000	vm_mmap
@@ -5193,6 +5197,7 @@ EXPORT_SYMBOL_GPL vmlinux 0x00000000	__srcu_read_lock
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	__srcu_read_unlock
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	__supported_pte_mask
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	__symbol_get
+EXPORT_SYMBOL_GPL vmlinux 0x00000000	__tcp_send_ack
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	__udp4_lib_lookup
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	__udp6_lib_lookup
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	__uio_register_device
@@ -7262,6 +7267,7 @@ EXPORT_SYMBOL_GPL vmlinux 0x00000000	srcu_init_notifier_head
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	srcu_notifier_call_chain
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	srcu_notifier_chain_register
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	srcu_notifier_chain_unregister
+EXPORT_SYMBOL_GPL vmlinux 0x00000000	start_thread
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	static_key_initialized
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	stop_machine
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	stp_proto_register
@@ -7290,6 +7296,7 @@ EXPORT_SYMBOL_GPL vmlinux 0x00000000	synchronize_srcu_expedited
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	sysctl_vfs_cache_pressure
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	sysfs_add_file_to_group
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	sysfs_add_link_to_group
+EXPORT_SYMBOL_GPL vmlinux 0x00000000	sysfs_break_active_protection
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	sysfs_chmod_file
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	sysfs_create_bin_file
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	sysfs_create_file_ns
@@ -7310,6 +7317,7 @@ EXPORT_SYMBOL_GPL vmlinux 0x00000000	sysfs_remove_link
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	sysfs_remove_link_from_group
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	sysfs_remove_mount_point
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	sysfs_rename_link_ns
+EXPORT_SYMBOL_GPL vmlinux 0x00000000	sysfs_unbreak_active_protection
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	sysfs_unmerge_group
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	sysfs_update_group
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	system_freezable_power_efficient_wq
@@ -7339,7 +7347,6 @@ EXPORT_SYMBOL_GPL vmlinux 0x00000000	tcp_peer_is_proven
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	tcp_register_congestion_control
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	tcp_reno_cong_avoid
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	tcp_reno_ssthresh
-EXPORT_SYMBOL_GPL vmlinux 0x00000000	tcp_send_ack
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	tcp_set_state
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	tcp_slow_start
 EXPORT_SYMBOL_GPL vmlinux 0x00000000	tcp_twsk_destructor
