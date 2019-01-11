@@ -129,7 +129,7 @@ config GPIO_AMDPT
 
 config GPIO_BCM_EXP
 	bool "Broadcom Exp GPIO"
-	depends on OF_GPIO && RASPBERRYPI_FIRMWARE && (ARCH_BCM2835 || COMPILE_TEST)
+	depends on OF_GPIO && RASPBERRYPI_FIRMWARE && (ARCH_BCM2709 || COMPILE_TEST)
 	help
 	  Turn on GPIO support for Broadcom chips using the firmware mailbox
 	  to communicate with VideoCore on BCM283x chips.
