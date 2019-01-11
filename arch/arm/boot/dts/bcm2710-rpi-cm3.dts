@@ -66,14 +66,6 @@
 		firmware = <&firmware>;
 		status = "okay";
 	};
-
-	expgpio: expgpio {
-		compatible = "brcm,bcm2835-expgpio";
-		gpio-controller;
-		#gpio-cells = <2>;
-		firmware = <&firmware>;
-		status = "okay";
-	};
 };
 
 &fb {
@@ -137,7 +129,7 @@
 };
 
 &hdmi {
-	hpd-gpios = <&expgpio 0 GPIO_ACTIVE_LOW>;
+	hpd-gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
 };
 
 &audio {
