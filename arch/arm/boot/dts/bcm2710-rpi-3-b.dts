@@ -180,10 +180,6 @@
 	};
 };
 
-&hdmi {
-	hpd-gpios = <&expgpio 4 GPIO_ACTIVE_LOW>;
-};
-
 &audio {
 	pinctrl-names = "default";
 	pinctrl-0 = <&audio_pins>;
