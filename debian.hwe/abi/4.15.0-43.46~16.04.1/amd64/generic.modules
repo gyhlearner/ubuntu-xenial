@@ -1806,6 +1806,7 @@ ib_mthca
 ib_qib
 ib_srp
 ib_srpt
+ib_ucm
 ib_umad
 ib_uverbs
 ibm-cffps
@@ -3719,6 +3720,7 @@ saa717x
 saa7185
 saa7706h
 safe_serial
+salsa20-x86_64
 salsa20_generic
 samsung-keypad
 samsung-laptop
