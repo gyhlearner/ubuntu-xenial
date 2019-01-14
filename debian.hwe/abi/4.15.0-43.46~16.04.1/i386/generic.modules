@@ -656,7 +656,6 @@ cdc_mbim
 cdc_ncm
 cdc_subset
 cec
-cec-gpio
 ceph
 cfag12864b
 cfag12864bfb
@@ -1835,6 +1834,7 @@ ib_isert
 ib_mthca
 ib_srp
 ib_srpt
+ib_ucm
 ib_umad
 ib_uverbs
 ibm-cffps
@@ -3776,6 +3776,7 @@ saa717x
 saa7185
 saa7706h
 safe_serial
+salsa20-i586
 salsa20_generic
 samsung-keypad
 samsung-laptop
