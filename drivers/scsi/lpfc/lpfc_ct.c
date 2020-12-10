@@ -1,9 +1,11 @@
 /*******************************************************************
  * This file is part of the Emulex Linux Device Driver for         *
  * Fibre Channel Host Bus Adapters.                                *
- * Copyright (C) 2004-2015 Emulex.  All rights reserved.           *
+ * Copyright (C) 2017-2018 Broadcom. All Rights Reserved. The term *
+ * “Broadcom” refers to Broadcom Limited and/or its subsidiaries.  *
+ * Copyright (C) 2004-2016 Emulex.  All rights reserved.           *
  * EMULEX and SLI are trademarks of Emulex.                        *
- * www.emulex.com                                                  *
+ * www.broadcom.com                                                *
  *                                                                 *
  * This program is free software; you can redistribute it and/or   *
  * modify it under the terms of version 2 of the GNU General       *
@@ -40,8 +42,9 @@
 #include "lpfc_sli4.h"
 #include "lpfc_nl.h"
 #include "lpfc_disc.h"
-#include "lpfc_scsi.h"
 #include "lpfc.h"
+#include "lpfc_scsi.h"
+#include "lpfc_nvme.h"
 #include "lpfc_logmsg.h"
 #include "lpfc_crtn.h"
 #include "lpfc_version.h"
@@ -453,18 +456,132 @@ lpfc_find_vport_by_did(struct lpfc_hba *phba, uint32_t did) {
 	return NULL;
 }
 
-static int
-lpfc_ns_rsp(struct lpfc_vport *vport, struct lpfc_dmabuf *mp, uint32_t Size)
+static void
+lpfc_prep_node_fc4type(struct lpfc_vport *vport, uint32_t Did, uint8_t fc4_type)
 {
-	struct lpfc_hba  *phba = vport->phba;
+	struct lpfc_nodelist *ndlp;
+
+	if ((vport->port_type != LPFC_NPIV_PORT) ||
+	    !(vport->ct_flags & FC_CT_RFF_ID) || !vport->cfg_restrict_login) {
+
+		ndlp = lpfc_setup_disc_node(vport, Did);
+
+		if (ndlp && NLP_CHK_NODE_ACT(ndlp)) {
+			lpfc_debugfs_disc_trc(vport, LPFC_DISC_TRC_CT,
+				"Parse GID_FTrsp: did:x%x flg:x%x x%x",
+				Did, ndlp->nlp_flag, vport->fc_flag);
+
+			ndlp->nlp_fc4_type &= ~(NLP_FC4_FCP | NLP_FC4_NVME);
+			/* By default, the driver expects to support FCP FC4 */
+			if (fc4_type == FC_TYPE_FCP)
+				ndlp->nlp_fc4_type |= NLP_FC4_FCP;
+
+			if (fc4_type == FC_TYPE_NVME)
+				ndlp->nlp_fc4_type |= NLP_FC4_NVME;
+
+			lpfc_printf_vlog(vport, KERN_INFO, LOG_DISCOVERY,
+					 "0238 Process x%06x NameServer Rsp "
+					 "Data: x%x x%x x%x x%x\n", Did,
+					 ndlp->nlp_flag, ndlp->nlp_fc4_type,
+					 vport->fc_flag,
+					 vport->fc_rscn_id_cnt);
+		} else {
+			lpfc_debugfs_disc_trc(vport, LPFC_DISC_TRC_CT,
+				"Skip1 GID_FTrsp: did:x%x flg:x%x cnt:%d",
+				Did, vport->fc_flag, vport->fc_rscn_id_cnt);
+
+			lpfc_printf_vlog(vport, KERN_INFO, LOG_DISCOVERY,
+					 "0239 Skip x%06x NameServer Rsp "
+					 "Data: x%x x%x\n", Did,
+					 vport->fc_flag,
+					 vport->fc_rscn_id_cnt);
+		}
+	} else {
+		if (!(vport->fc_flag & FC_RSCN_MODE) ||
+		    lpfc_rscn_payload_check(vport, Did)) {
+			lpfc_debugfs_disc_trc(vport, LPFC_DISC_TRC_CT,
+				"Query GID_FTrsp: did:x%x flg:x%x cnt:%d",
+				Did, vport->fc_flag, vport->fc_rscn_id_cnt);
+
+			/*
+			 * This NPortID was previously a FCP/NVMe target,
+			 * Don't even bother to send GFF_ID.
+			 */
+			ndlp = lpfc_findnode_did(vport, Did);
+			if (ndlp && NLP_CHK_NODE_ACT(ndlp) &&
+			    (ndlp->nlp_type &
+			    (NLP_FCP_TARGET | NLP_NVME_TARGET))) {
+				if (fc4_type == FC_TYPE_FCP)
+					ndlp->nlp_fc4_type |= NLP_FC4_FCP;
+				if (fc4_type == FC_TYPE_NVME)
+					ndlp->nlp_fc4_type |= NLP_FC4_NVME;
+				lpfc_setup_disc_node(vport, Did);
+			} else if (lpfc_ns_cmd(vport, SLI_CTNS_GFF_ID,
+				   0, Did) == 0)
+				vport->num_disc_nodes++;
+			else
+				lpfc_setup_disc_node(vport, Did);
+		} else {
+			lpfc_debugfs_disc_trc(vport, LPFC_DISC_TRC_CT,
+				"Skip2 GID_FTrsp: did:x%x flg:x%x cnt:%d",
+				Did, vport->fc_flag, vport->fc_rscn_id_cnt);
+
+			lpfc_printf_vlog(vport, KERN_INFO, LOG_DISCOVERY,
+					 "0245 Skip x%06x NameServer Rsp "
+					 "Data: x%x x%x\n", Did,
+					 vport->fc_flag,
+					 vport->fc_rscn_id_cnt);
+		}
+	}
+}
+
+static void
+lpfc_ns_rsp_audit_did(struct lpfc_vport *vport, uint32_t Did, uint8_t fc4_type)
+{
+	struct lpfc_hba *phba = vport->phba;
+	struct lpfc_nodelist *ndlp = NULL;
+	struct Scsi_Host *shost = lpfc_shost_from_vport(vport);
+
+	/*
+	 * To conserve rpi's, filter out addresses for other
+	 * vports on the same physical HBAs.
+	 */
+	if (Did != vport->fc_myDID &&
+	    (!lpfc_find_vport_by_did(phba, Did) ||
+	     vport->cfg_peer_port_login)) {
+		if (!phba->nvmet_support) {
+			/* FCPI/NVMEI path. Process Did */
+			lpfc_prep_node_fc4type(vport, Did, fc4_type);
+			return;
+		}
+		/* NVMET path.  NVMET only cares about NVMEI nodes. */
+		list_for_each_entry(ndlp, &vport->fc_nodes, nlp_listp) {
+			if (ndlp->nlp_type != NLP_NVME_INITIATOR ||
+			    ndlp->nlp_state != NLP_STE_UNMAPPED_NODE)
+				continue;
+			spin_lock_irq(shost->host_lock);
+			if (ndlp->nlp_DID == Did)
+				ndlp->nlp_flag &= ~NLP_NVMET_RECOV;
+			else
+				ndlp->nlp_flag |= NLP_NVMET_RECOV;
+			spin_unlock_irq(shost->host_lock);
+		}
+	}
+}
+
+static int
+lpfc_ns_rsp(struct lpfc_vport *vport, struct lpfc_dmabuf *mp, uint8_t fc4_type,
+	    uint32_t Size)
+{
 	struct lpfc_sli_ct_request *Response =
 		(struct lpfc_sli_ct_request *) mp->virt;
-	struct lpfc_nodelist *ndlp = NULL;
 	struct lpfc_dmabuf *mlast, *next_mp;
 	uint32_t *ctptr = (uint32_t *) & Response->un.gid.PortType;
 	uint32_t Did, CTentry;
 	int Cnt;
 	struct list_head head;
+	struct Scsi_Host *shost = lpfc_shost_from_vport(vport);
+	struct lpfc_nodelist *ndlp = NULL;
 
 	lpfc_set_disctmo(vport);
 	vport->num_disc_nodes = 0;
@@ -489,111 +606,33 @@ lpfc_ns_rsp(struct lpfc_vport *vport, struct lpfc_dmabuf *mp, uint32_t Size)
 			/* Get next DID from NameServer List */
 			CTentry = *ctptr++;
 			Did = ((be32_to_cpu(CTentry)) & Mask_DID);
-
-			ndlp = NULL;
-
-			/*
-			 * Check for rscn processing or not
-			 * To conserve rpi's, filter out addresses for other
-			 * vports on the same physical HBAs.
-			 */
-			if ((Did != vport->fc_myDID) &&
-			    ((lpfc_find_vport_by_did(phba, Did) == NULL) ||
-			     vport->cfg_peer_port_login)) {
-				if ((vport->port_type != LPFC_NPIV_PORT) ||
-				    (!(vport->ct_flags & FC_CT_RFF_ID)) ||
-				    (!vport->cfg_restrict_login)) {
-					ndlp = lpfc_setup_disc_node(vport, Did);
-					if (ndlp && NLP_CHK_NODE_ACT(ndlp)) {
-						lpfc_debugfs_disc_trc(vport,
-						LPFC_DISC_TRC_CT,
-						"Parse GID_FTrsp: "
-						"did:x%x flg:x%x x%x",
-						Did, ndlp->nlp_flag,
-						vport->fc_flag);
-
-						lpfc_printf_vlog(vport,
-							KERN_INFO,
-							LOG_DISCOVERY,
-							"0238 Process "
-							"x%x NameServer Rsp"
-							"Data: x%x x%x x%x\n",
-							Did, ndlp->nlp_flag,
-							vport->fc_flag,
-							vport->fc_rscn_id_cnt);
-					} else {
-						lpfc_debugfs_disc_trc(vport,
-						LPFC_DISC_TRC_CT,
-						"Skip1 GID_FTrsp: "
-						"did:x%x flg:x%x cnt:%d",
-						Did, vport->fc_flag,
-						vport->fc_rscn_id_cnt);
-
-						lpfc_printf_vlog(vport,
-							KERN_INFO,
-							LOG_DISCOVERY,
-							"0239 Skip x%x "
-							"NameServer Rsp Data: "
-							"x%x x%x\n",
-							Did, vport->fc_flag,
-							vport->fc_rscn_id_cnt);
-					}
-
-				} else {
-					if (!(vport->fc_flag & FC_RSCN_MODE) ||
-					(lpfc_rscn_payload_check(vport, Did))) {
-						lpfc_debugfs_disc_trc(vport,
-						LPFC_DISC_TRC_CT,
-						"Query GID_FTrsp: "
-						"did:x%x flg:x%x cnt:%d",
-						Did, vport->fc_flag,
-						vport->fc_rscn_id_cnt);
-
-						/* This NPortID was previously
-						 * a FCP target, * Don't even
-						 * bother to send GFF_ID.
-						 */
-						ndlp = lpfc_findnode_did(vport,
-							Did);
-						if (ndlp &&
-						    NLP_CHK_NODE_ACT(ndlp)
-						    && (ndlp->nlp_type &
-						     NLP_FCP_TARGET))
-							lpfc_setup_disc_node
-								(vport, Did);
-						else if (lpfc_ns_cmd(vport,
-							SLI_CTNS_GFF_ID,
-							0, Did) == 0)
-							vport->num_disc_nodes++;
-						else
-							lpfc_setup_disc_node
-								(vport, Did);
-					}
-					else {
-						lpfc_debugfs_disc_trc(vport,
-						LPFC_DISC_TRC_CT,
-						"Skip2 GID_FTrsp: "
-						"did:x%x flg:x%x cnt:%d",
-						Did, vport->fc_flag,
-						vport->fc_rscn_id_cnt);
-
-						lpfc_printf_vlog(vport,
-							KERN_INFO,
-							LOG_DISCOVERY,
-							"0245 Skip x%x "
-							"NameServer Rsp Data: "
-							"x%x x%x\n",
-							Did, vport->fc_flag,
-							vport->fc_rscn_id_cnt);
-					}
-				}
-			}
+			lpfc_ns_rsp_audit_did(vport, Did, fc4_type);
 			if (CTentry & (cpu_to_be32(SLI_CT_LAST_ENTRY)))
 				goto nsout1;
+<<<<<<< HEAD
+=======
+
+>>>>>>> temp
 			Cnt -= sizeof(uint32_t);
 		}
 		ctptr = NULL;
 
+	}
+
+	/* All GID_FT entries processed.  If the driver is running in
+	 * in target mode, put impacted nodes into recovery and drop
+	 * the RPI to flush outstanding IO.
+	 */
+	if (vport->phba->nvmet_support) {
+		list_for_each_entry(ndlp, &vport->fc_nodes, nlp_listp) {
+			if (!(ndlp->nlp_flag & NLP_NVMET_RECOV))
+				continue;
+			lpfc_disc_state_machine(vport, ndlp, NULL,
+						NLP_EVT_DEVICE_RECOVERY);
+			spin_lock_irq(shost->host_lock);
+			ndlp->nlp_flag &= ~NLP_NVMET_RECOV;
+			spin_unlock_irq(shost->host_lock);
+		}
 	}
 
 nsout1:
@@ -609,16 +648,18 @@ lpfc_cmpl_ct_cmd_gid_ft(struct lpfc_hba *phba, struct lpfc_iocbq *cmdiocb,
 	struct Scsi_Host *shost = lpfc_shost_from_vport(vport);
 	IOCB_t *irsp;
 	struct lpfc_dmabuf *outp;
+	struct lpfc_dmabuf *inp;
 	struct lpfc_sli_ct_request *CTrsp;
+	struct lpfc_sli_ct_request *CTreq;
 	struct lpfc_nodelist *ndlp;
-	int rc;
+	int rc, type;
 
 	/* First save ndlp, before we overwrite it */
 	ndlp = cmdiocb->context_un.ndlp;
 
 	/* we pass cmdiocb to state machine which needs rspiocb as well */
 	cmdiocb->context_un.rsp_iocb = rspiocb;
-
+	inp = (struct lpfc_dmabuf *) cmdiocb->context1;
 	outp = (struct lpfc_dmabuf *) cmdiocb->context2;
 	irsp = &rspiocb->iocb;
 
@@ -648,6 +689,25 @@ lpfc_cmpl_ct_cmd_gid_ft(struct lpfc_hba *phba, struct lpfc_iocbq *cmdiocb,
 			lpfc_els_flush_rscn(vport);
 		goto out;
 	}
+
+	spin_lock_irq(shost->host_lock);
+	if (vport->fc_flag & FC_RSCN_DEFERRED) {
+		vport->fc_flag &= ~FC_RSCN_DEFERRED;
+		spin_unlock_irq(shost->host_lock);
+
+		/*
+		 * Skip processing the NS response
+		 * Re-issue the NS cmd
+		 */
+		lpfc_printf_vlog(vport, KERN_INFO, LOG_ELS,
+				 "0151 Process Deferred RSCN Data: x%x x%x\n",
+				 vport->fc_flag, vport->fc_rscn_id_cnt);
+		lpfc_els_handle_rscn(vport);
+
+		goto out;
+	}
+	spin_unlock_irq(shost->host_lock);
+
 	if (irsp->ulpStatus) {
 		/* Check for retry */
 		if (vport->fc_ns_retry < LPFC_MAX_NS_RETRY) {
@@ -656,9 +716,14 @@ lpfc_cmpl_ct_cmd_gid_ft(struct lpfc_hba *phba, struct lpfc_iocbq *cmdiocb,
 			    IOERR_NO_RESOURCES)
 				vport->fc_ns_retry++;
 
+			type = lpfc_get_gidft_type(vport, cmdiocb);
+			if (type == 0)
+				goto out;
+
 			/* CT command is being retried */
+			vport->gidft_inp--;
 			rc = lpfc_ns_cmd(vport, SLI_CTNS_GID_FT,
-					 vport->fc_ns_retry, 0);
+					 vport->fc_ns_retry, type);
 			if (rc == 0)
 				goto out;
 		}
@@ -670,13 +735,18 @@ lpfc_cmpl_ct_cmd_gid_ft(struct lpfc_hba *phba, struct lpfc_iocbq *cmdiocb,
 				 irsp->ulpStatus, vport->fc_ns_retry);
 	} else {
 		/* Good status, continue checking */
+		CTreq = (struct lpfc_sli_ct_request *) inp->virt;
 		CTrsp = (struct lpfc_sli_ct_request *) outp->virt;
 		if (CTrsp->CommandResponse.bits.CmdRsp ==
 		    cpu_to_be16(SLI_CT_RESPONSE_FS_ACC)) {
 			lpfc_printf_vlog(vport, KERN_INFO, LOG_DISCOVERY,
-					 "0208 NameServer Rsp Data: x%x\n",
-					 vport->fc_flag);
-			lpfc_ns_rsp(vport, outp,
+					 "0208 NameServer Rsp Data: x%x x%x\n",
+					 vport->fc_flag,
+					 CTreq->un.gid.Fc4Type);
+
+			lpfc_ns_rsp(vport,
+				    outp,
+				    CTreq->un.gid.Fc4Type,
 				    (uint32_t) (irsp->un.genreq64.bdl.bdeSize));
 		} else if (CTrsp->CommandResponse.bits.CmdRsp ==
 			   be16_to_cpu(SLI_CT_RESPONSE_FS_RJT)) {
@@ -731,9 +801,11 @@ lpfc_cmpl_ct_cmd_gid_ft(struct lpfc_hba *phba, struct lpfc_iocbq *cmdiocb,
 				(uint32_t) CTrsp->ReasonCode,
 				(uint32_t) CTrsp->Explanation);
 		}
+		vport->gidft_inp--;
 	}
 	/* Link up / RSCN discovery */
-	if (vport->num_disc_nodes == 0) {
+	if ((vport->num_disc_nodes == 0) &&
+	    (vport->gidft_inp == 0)) {
 		/*
 		 * The driver has cycled through all Nports in the RSCN payload.
 		 * Complete the handling by cleaning up and marking the
@@ -881,6 +953,61 @@ out:
 	return;
 }
 
+static void
+lpfc_cmpl_ct_cmd_gft_id(struct lpfc_hba *phba, struct lpfc_iocbq *cmdiocb,
+				struct lpfc_iocbq *rspiocb)
+{
+	struct lpfc_vport *vport = cmdiocb->vport;
+	IOCB_t *irsp = &rspiocb->iocb;
+	struct lpfc_dmabuf *inp = (struct lpfc_dmabuf *)cmdiocb->context1;
+	struct lpfc_dmabuf *outp = (struct lpfc_dmabuf *)cmdiocb->context2;
+	struct lpfc_sli_ct_request *CTrsp;
+	int did;
+	struct lpfc_nodelist *ndlp;
+	uint32_t fc4_data_0, fc4_data_1;
+
+	did = ((struct lpfc_sli_ct_request *)inp->virt)->un.gft.PortId;
+	did = be32_to_cpu(did);
+
+	lpfc_debugfs_disc_trc(vport, LPFC_DISC_TRC_CT,
+			      "GFT_ID cmpl: status:x%x/x%x did:x%x",
+			      irsp->ulpStatus, irsp->un.ulpWord[4], did);
+
+	if (irsp->ulpStatus == IOSTAT_SUCCESS) {
+		/* Good status, continue checking */
+		CTrsp = (struct lpfc_sli_ct_request *)outp->virt;
+		fc4_data_0 = be32_to_cpu(CTrsp->un.gft_acc.fc4_types[0]);
+		fc4_data_1 = be32_to_cpu(CTrsp->un.gft_acc.fc4_types[1]);
+		lpfc_printf_vlog(vport, KERN_INFO, LOG_DISCOVERY,
+				 "3062 DID x%06x GFT Wd0 x%08x Wd1 x%08x\n",
+				 did, fc4_data_0, fc4_data_1);
+
+		ndlp = lpfc_findnode_did(vport, did);
+		if (ndlp) {
+			/* The bitmask value for FCP and NVME FCP types is
+			 * the same because they are 32 bits distant from
+			 * each other in word0 and word0.
+			 */
+			if (fc4_data_0 & LPFC_FC4_TYPE_BITMASK)
+				ndlp->nlp_fc4_type |= NLP_FC4_FCP;
+			if (fc4_data_1 &  LPFC_FC4_TYPE_BITMASK)
+				ndlp->nlp_fc4_type |= NLP_FC4_NVME;
+			lpfc_printf_vlog(vport, KERN_INFO, LOG_DISCOVERY,
+					 "3064 Setting ndlp %p, DID x%06x with "
+					 "FC4 x%08x, Data: x%08x x%08x\n",
+					 ndlp, did, ndlp->nlp_fc4_type,
+					 FC_TYPE_FCP, FC_TYPE_NVME);
+			ndlp->nlp_prev_state = NLP_STE_REG_LOGIN_ISSUE;
+
+			lpfc_nlp_set_state(vport, ndlp, NLP_STE_PRLI_ISSUE);
+			lpfc_issue_els_prli(vport, ndlp, 0);
+		}
+	} else
+		lpfc_printf_vlog(vport, KERN_ERR, LOG_DISCOVERY,
+				 "3065 GFT_ID failed x%08x\n", irsp->ulpStatus);
+
+	lpfc_ct_free_iocb(phba, cmdiocb);
+}
 
 static void
 lpfc_cmpl_ct(struct lpfc_hba *phba, struct lpfc_iocbq *cmdiocb,
@@ -1071,30 +1198,26 @@ lpfc_cmpl_ct_cmd_rff_id(struct lpfc_hba *phba, struct lpfc_iocbq *cmdiocb,
 	return;
 }
 
+/*
+ * Although the symbolic port name is thought to be an integer
+ * as of January 18, 2016, leave it as a string until more of
+ * the record state becomes defined.
+ */
 int
 lpfc_vport_symbolic_port_name(struct lpfc_vport *vport, char *symbol,
 	size_t size)
 {
 	int n;
-	uint8_t *wwn = vport->phba->wwpn;
 
-	n = snprintf(symbol, size,
-		     "Emulex PPN-%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
-		     wwn[0], wwn[1], wwn[2], wwn[3],
-		     wwn[4], wwn[5], wwn[6], wwn[7]);
-
-	if (vport->port_type == LPFC_PHYSICAL_PORT)
-		return n;
-
-	if (n < size)
-		n += snprintf(symbol + n, size - n, " VPort-%d", vport->vpi);
-
-	if (n < size &&
-	    strlen(vport->fc_vport->symbolic_name))
-		n += snprintf(symbol + n, size - n, " VName-%s",
-			      vport->fc_vport->symbolic_name);
+	/*
+	 * Use the lpfc board number as the Symbolic Port
+	 * Name object.  NPIV is not in play so this integer
+	 * value is sufficient and unique per FC-ID.
+	 */
+	n = snprintf(symbol, size, "%d", vport->phba->brd_no);
 	return n;
 }
+
 
 int
 lpfc_vport_symbolic_node_name(struct lpfc_vport *vport, char *symbol,
@@ -1106,24 +1229,26 @@ lpfc_vport_symbolic_node_name(struct lpfc_vport *vport, char *symbol,
 	lpfc_decode_firmware_rev(vport->phba, fwrev, 0);
 
 	n = snprintf(symbol, size, "Emulex %s", vport->phba->ModelName);
-
 	if (size < n)
 		return n;
+
 	n += snprintf(symbol + n, size - n, " FV%s", fwrev);
-
 	if (size < n)
 		return n;
-	n += snprintf(symbol + n, size - n, " DV%s", lpfc_release_version);
 
+	n += snprintf(symbol + n, size - n, " DV%s.",
+		      lpfc_release_version);
 	if (size < n)
 		return n;
-	n += snprintf(symbol + n, size - n, " HN:%s", init_utsname()->nodename);
+
+	n += snprintf(symbol + n, size - n, " HN:%s.",
+		      init_utsname()->nodename);
+	if (size < n)
+		return n;
 
 	/* Note :- OS name is "Linux" */
-	if (size < n)
-		return n;
-	n += snprintf(symbol + n, size - n, " OS:%s", init_utsname()->sysname);
-
+	n += snprintf(symbol + n, size - n, " OS:%s\n",
+		      init_utsname()->sysname);
 	return n;
 }
 
@@ -1145,6 +1270,27 @@ lpfc_find_map_node(struct lpfc_vport *vport)
 	}
 	spin_unlock_irq(shost->host_lock);
 	return cnt;
+}
+
+/*
+ * This routine will return the FC4 Type associated with the CT
+ * GID_FT command.
+ */
+int
+lpfc_get_gidft_type(struct lpfc_vport *vport, struct lpfc_iocbq *cmdiocb)
+{
+	struct lpfc_sli_ct_request *CtReq;
+	struct lpfc_dmabuf *mp;
+	uint32_t type;
+
+	mp = cmdiocb->context1;
+	if (mp == NULL)
+		return 0;
+	CtReq = (struct lpfc_sli_ct_request *)mp->virt;
+	type = (uint32_t)CtReq->un.gid.Fc4Type;
+	if ((type != SLI_CTPT_FCP) && (type != SLI_CTPT_NVME))
+		return 0;
+	return type;
 }
 
 /*
@@ -1207,8 +1353,9 @@ lpfc_ns_cmd(struct lpfc_vport *vport, int cmdcode,
 
 	/* NameServer Req */
 	lpfc_printf_vlog(vport, KERN_INFO ,LOG_DISCOVERY,
-			 "0236 NameServer Req Data: x%x x%x x%x\n",
-			 cmdcode, vport->fc_flag, vport->fc_rscn_id_cnt);
+			 "0236 NameServer Req Data: x%x x%x x%x x%x\n",
+			 cmdcode, vport->fc_flag, vport->fc_rscn_id_cnt,
+			 context);
 
 	bpl = (struct ulp_bde64 *) bmp->virt;
 	memset(bpl, 0, sizeof(struct ulp_bde64));
@@ -1219,6 +1366,8 @@ lpfc_ns_cmd(struct lpfc_vport *vport, int cmdcode,
 		bpl->tus.f.bdeSize = GID_REQUEST_SZ;
 	else if (cmdcode == SLI_CTNS_GFF_ID)
 		bpl->tus.f.bdeSize = GFF_REQUEST_SZ;
+	else if (cmdcode == SLI_CTNS_GFT_ID)
+		bpl->tus.f.bdeSize = GFT_REQUEST_SZ;
 	else if (cmdcode == SLI_CTNS_RFT_ID)
 		bpl->tus.f.bdeSize = RFT_REQUEST_SZ;
 	else if (cmdcode == SLI_CTNS_RNN_ID)
@@ -1246,7 +1395,8 @@ lpfc_ns_cmd(struct lpfc_vport *vport, int cmdcode,
 	case SLI_CTNS_GID_FT:
 		CtReq->CommandResponse.bits.CmdRsp =
 		    cpu_to_be16(SLI_CTNS_GID_FT);
-		CtReq->un.gid.Fc4Type = SLI_CTPT_FCP;
+		CtReq->un.gid.Fc4Type = context;
+
 		if (vport->port_state < LPFC_NS_QRY)
 			vport->port_state = LPFC_NS_QRY;
 		lpfc_set_disctmo(vport);
@@ -1261,12 +1411,32 @@ lpfc_ns_cmd(struct lpfc_vport *vport, int cmdcode,
 		cmpl = lpfc_cmpl_ct_cmd_gff_id;
 		break;
 
+	case SLI_CTNS_GFT_ID:
+		CtReq->CommandResponse.bits.CmdRsp =
+			cpu_to_be16(SLI_CTNS_GFT_ID);
+		CtReq->un.gft.PortId = cpu_to_be32(context);
+		cmpl = lpfc_cmpl_ct_cmd_gft_id;
+		break;
+
 	case SLI_CTNS_RFT_ID:
 		vport->ct_flags &= ~FC_CT_RFT_ID;
 		CtReq->CommandResponse.bits.CmdRsp =
 		    cpu_to_be16(SLI_CTNS_RFT_ID);
 		CtReq->un.rft.PortId = cpu_to_be32(vport->fc_myDID);
-		CtReq->un.rft.fcpReg = 1;
+
+		/* Register FC4 FCP type if enabled.  */
+		if ((phba->cfg_enable_fc4_type == LPFC_ENABLE_BOTH) ||
+		    (phba->cfg_enable_fc4_type == LPFC_ENABLE_FCP))
+			CtReq->un.rft.fcpReg = 1;
+
+		/* Register NVME type if enabled.  Defined LE and swapped.
+		 * rsvd[0] is used as word1 because of the hard-coded
+		 * word0 usage in the ct_request data structure.
+		 */
+		if ((phba->cfg_enable_fc4_type == LPFC_ENABLE_BOTH) ||
+		    (phba->cfg_enable_fc4_type == LPFC_ENABLE_NVME))
+			CtReq->un.rft.rsvd[0] = cpu_to_be32(0x00000100);
+
 		cmpl = lpfc_cmpl_ct_cmd_rft_id;
 		break;
 
@@ -1316,7 +1486,31 @@ lpfc_ns_cmd(struct lpfc_vport *vport, int cmdcode,
 		    cpu_to_be16(SLI_CTNS_RFF_ID);
 		CtReq->un.rff.PortId = cpu_to_be32(vport->fc_myDID);
 		CtReq->un.rff.fbits = FC4_FEATURE_INIT;
-		CtReq->un.rff.type_code = FC_TYPE_FCP;
+
+		/* The driver always supports FC_TYPE_FCP.  However, the
+		 * caller can specify NVME (type x28) as well.  But only
+		 * these that FC4 type is supported.
+		 */
+		if (((phba->cfg_enable_fc4_type == LPFC_ENABLE_BOTH) ||
+		     (phba->cfg_enable_fc4_type == LPFC_ENABLE_NVME)) &&
+		    (context == FC_TYPE_NVME)) {
+			if ((vport == phba->pport) && phba->nvmet_support) {
+				CtReq->un.rff.fbits = (FC4_FEATURE_TARGET |
+					FC4_FEATURE_NVME_DISC);
+				lpfc_nvmet_update_targetport(phba);
+			} else {
+				lpfc_nvme_update_localport(vport);
+			}
+			CtReq->un.rff.type_code = context;
+
+		} else if (((phba->cfg_enable_fc4_type == LPFC_ENABLE_BOTH) ||
+			    (phba->cfg_enable_fc4_type == LPFC_ENABLE_FCP)) &&
+			   (context == FC_TYPE_FCP))
+			CtReq->un.rff.type_code = context;
+
+		else
+			goto ns_cmd_free_bmpvirt;
+
 		cmpl = lpfc_cmpl_ct_cmd_rff_id;
 		break;
 	}
@@ -1337,6 +1531,7 @@ lpfc_ns_cmd(struct lpfc_vport *vport, int cmdcode,
 	 */
 	lpfc_nlp_put(ndlp);
 
+ns_cmd_free_bmpvirt:
 	lpfc_mbuf_free(phba, bmp->virt, bmp->phys);
 ns_cmd_free_bmp:
 	kfree(bmp);
@@ -1477,6 +1672,7 @@ lpfc_cmpl_ct_disc_fdmi(struct lpfc_hba *phba, struct lpfc_iocbq *cmdiocb,
 	case SLI_MGMT_RHBA:
 		lpfc_fdmi_cmd(vport, ndlp, SLI_MGMT_RPA, 0);
 		break;
+<<<<<<< HEAD
 
 	case SLI_MGMT_DHBA:
 		lpfc_fdmi_cmd(vport, ndlp, SLI_MGMT_DPRT, 0);
@@ -1805,6 +2001,21 @@ lpfc_fdmi_hba_attr_vendor_info(struct lpfc_vport *vport,
 	ad->AttrLen = cpu_to_be16(size);
 	ad->AttrType = cpu_to_be16(RHBA_VENDOR_INFO);
 	return size;
+=======
+
+	case SLI_MGMT_DHBA:
+		lpfc_fdmi_cmd(vport, ndlp, SLI_MGMT_DPRT, 0);
+		break;
+
+	case SLI_MGMT_DPRT:
+		if (vport->port_type == LPFC_PHYSICAL_PORT)
+			lpfc_fdmi_cmd(vport, ndlp, SLI_MGMT_RHBA, 0);
+		else
+			lpfc_fdmi_cmd(vport, ndlp, SLI_MGMT_RPRT, 0);
+		break;
+	}
+	return;
+>>>>>>> temp
 }
 
 int
@@ -1842,6 +2053,7 @@ lpfc_fdmi_hba_attr_fabric_wwnn(struct lpfc_vport *vport,
 	return size;
 }
 
+<<<<<<< HEAD
 int
 lpfc_fdmi_hba_attr_bios_ver(struct lpfc_vport *vport,
 			    struct lpfc_fdmi_attr_def *ad)
@@ -2490,6 +2702,1015 @@ lpfc_fdmi_cmd(struct lpfc_vport *vport, struct lpfc_nodelist *ndlp,
 		return 0;
 
 	cmpl = lpfc_cmpl_ct_disc_fdmi; /* called from discovery */
+=======
+/**
+ * lpfc_fdmi_num_disc_check - Check how many mapped NPorts we are connected to
+ * @vport: pointer to a host virtual N_Port data structure.
+ *
+ * Called from hbeat timeout routine to check if the number of discovered
+ * ports has changed. If so, re-register thar port Attribute.
+ */
+void
+lpfc_fdmi_num_disc_check(struct lpfc_vport *vport)
+{
+	struct lpfc_hba *phba = vport->phba;
+	struct lpfc_nodelist *ndlp;
+	uint16_t cnt;
+>>>>>>> temp
+
+	if (!lpfc_is_link_up(phba))
+		return;
+
+	/* Must be connected to a Fabric */
+	if (!(vport->fc_flag & FC_FABRIC))
+		return;
+
+	if (!(vport->fdmi_port_mask & LPFC_FDMI_PORT_ATTR_num_disc))
+		return;
+
+	cnt = lpfc_find_map_node(vport);
+	if (cnt == vport->fdmi_num_disc)
+		return;
+
+	ndlp = lpfc_findnode_did(vport, FDMI_DID);
+	if (!ndlp || !NLP_CHK_NODE_ACT(ndlp))
+		return;
+
+	if (vport->port_type == LPFC_PHYSICAL_PORT) {
+		lpfc_fdmi_cmd(vport, ndlp, SLI_MGMT_RPA,
+			      LPFC_FDMI_PORT_ATTR_num_disc);
+	} else {
+		lpfc_fdmi_cmd(vport, ndlp, SLI_MGMT_RPRT,
+			      LPFC_FDMI_PORT_ATTR_num_disc);
+	}
+}
+
+/* Routines for all individual HBA attributes */
+static int
+lpfc_fdmi_hba_attr_wwnn(struct lpfc_vport *vport, struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	memset(ae, 0, sizeof(struct lpfc_name));
+
+	memcpy(&ae->un.AttrWWN, &vport->fc_sparam.nodeName,
+	       sizeof(struct lpfc_name));
+	size = FOURBYTES + sizeof(struct lpfc_name);
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RHBA_NODENAME);
+	return size;
+}
+static int
+lpfc_fdmi_hba_attr_manufacturer(struct lpfc_vport *vport,
+				struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t len, size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	memset(ae, 0, 256);
+
+	strncpy(ae->un.AttrString,
+		"Emulex Corporation",
+		       sizeof(ae->un.AttrString));
+	len = strnlen(ae->un.AttrString,
+			  sizeof(ae->un.AttrString));
+	len += (len & 3) ? (4 - (len & 3)) : 4;
+	size = FOURBYTES + len;
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RHBA_MANUFACTURER);
+	return size;
+}
+
+static int
+lpfc_fdmi_hba_attr_sn(struct lpfc_vport *vport, struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_hba *phba = vport->phba;
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t len, size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	memset(ae, 0, 256);
+
+	strncpy(ae->un.AttrString, phba->SerialNumber,
+		sizeof(ae->un.AttrString));
+	len = strnlen(ae->un.AttrString,
+			  sizeof(ae->un.AttrString));
+	len += (len & 3) ? (4 - (len & 3)) : 4;
+	size = FOURBYTES + len;
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RHBA_SERIAL_NUMBER);
+	return size;
+}
+
+static int
+lpfc_fdmi_hba_attr_model(struct lpfc_vport *vport,
+			 struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_hba *phba = vport->phba;
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t len, size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	memset(ae, 0, 256);
+
+	strncpy(ae->un.AttrString, phba->ModelName,
+		sizeof(ae->un.AttrString));
+	len = strnlen(ae->un.AttrString, sizeof(ae->un.AttrString));
+	len += (len & 3) ? (4 - (len & 3)) : 4;
+	size = FOURBYTES + len;
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RHBA_MODEL);
+	return size;
+}
+
+static int
+lpfc_fdmi_hba_attr_description(struct lpfc_vport *vport,
+			       struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_hba *phba = vport->phba;
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t len, size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	memset(ae, 0, 256);
+
+	strncpy(ae->un.AttrString, phba->ModelDesc,
+		sizeof(ae->un.AttrString));
+	len = strnlen(ae->un.AttrString,
+				  sizeof(ae->un.AttrString));
+	len += (len & 3) ? (4 - (len & 3)) : 4;
+	size = FOURBYTES + len;
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RHBA_MODEL_DESCRIPTION);
+	return size;
+}
+
+static int
+lpfc_fdmi_hba_attr_hdw_ver(struct lpfc_vport *vport,
+			   struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_hba *phba = vport->phba;
+	lpfc_vpd_t *vp = &phba->vpd;
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t i, j, incr, size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	memset(ae, 0, 256);
+
+	/* Convert JEDEC ID to ascii for hardware version */
+	incr = vp->rev.biuRev;
+	for (i = 0; i < 8; i++) {
+		j = (incr & 0xf);
+		if (j <= 9)
+			ae->un.AttrString[7 - i] =
+			    (char)((uint8_t) 0x30 +
+				   (uint8_t) j);
+		else
+			ae->un.AttrString[7 - i] =
+			    (char)((uint8_t) 0x61 +
+				   (uint8_t) (j - 10));
+		incr = (incr >> 4);
+	}
+	size = FOURBYTES + 8;
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RHBA_HARDWARE_VERSION);
+	return size;
+}
+
+static int
+lpfc_fdmi_hba_attr_drvr_ver(struct lpfc_vport *vport,
+			    struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t len, size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	memset(ae, 0, 256);
+
+	strncpy(ae->un.AttrString, lpfc_release_version,
+		sizeof(ae->un.AttrString));
+	len = strnlen(ae->un.AttrString,
+			  sizeof(ae->un.AttrString));
+	len += (len & 3) ? (4 - (len & 3)) : 4;
+	size = FOURBYTES + len;
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RHBA_DRIVER_VERSION);
+	return size;
+}
+
+static int
+lpfc_fdmi_hba_attr_rom_ver(struct lpfc_vport *vport,
+			   struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_hba *phba = vport->phba;
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t len, size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	memset(ae, 0, 256);
+
+	if (phba->sli_rev == LPFC_SLI_REV4)
+		lpfc_decode_firmware_rev(phba, ae->un.AttrString, 1);
+	else
+		strncpy(ae->un.AttrString, phba->OptionROMVersion,
+			sizeof(ae->un.AttrString));
+	len = strnlen(ae->un.AttrString,
+			  sizeof(ae->un.AttrString));
+	len += (len & 3) ? (4 - (len & 3)) : 4;
+	size = FOURBYTES + len;
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RHBA_OPTION_ROM_VERSION);
+	return size;
+}
+
+static int
+lpfc_fdmi_hba_attr_fmw_ver(struct lpfc_vport *vport,
+			   struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_hba *phba = vport->phba;
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t len, size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	memset(ae, 0, 256);
+
+	lpfc_decode_firmware_rev(phba, ae->un.AttrString, 1);
+	len = strnlen(ae->un.AttrString,
+			  sizeof(ae->un.AttrString));
+	len += (len & 3) ? (4 - (len & 3)) : 4;
+	size = FOURBYTES + len;
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RHBA_FIRMWARE_VERSION);
+	return size;
+}
+
+static int
+lpfc_fdmi_hba_attr_os_ver(struct lpfc_vport *vport,
+			  struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t len, size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	memset(ae, 0, 256);
+
+	snprintf(ae->un.AttrString, sizeof(ae->un.AttrString), "%s %s %s",
+		 init_utsname()->sysname,
+		 init_utsname()->release,
+		 init_utsname()->version);
+
+	len = strnlen(ae->un.AttrString, sizeof(ae->un.AttrString));
+	len += (len & 3) ? (4 - (len & 3)) : 4;
+	size = FOURBYTES + len;
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RHBA_OS_NAME_VERSION);
+	return size;
+}
+
+static int
+lpfc_fdmi_hba_attr_ct_len(struct lpfc_vport *vport,
+			  struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+
+	ae->un.AttrInt =  cpu_to_be32(LPFC_MAX_CT_SIZE);
+	size = FOURBYTES + sizeof(uint32_t);
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RHBA_MAX_CT_PAYLOAD_LEN);
+	return size;
+}
+
+static int
+lpfc_fdmi_hba_attr_symbolic_name(struct lpfc_vport *vport,
+				 struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t len, size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	memset(ae, 0, 256);
+
+	len = lpfc_vport_symbolic_node_name(vport,
+				ae->un.AttrString, 256);
+	len += (len & 3) ? (4 - (len & 3)) : 4;
+	size = FOURBYTES + len;
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RHBA_SYM_NODENAME);
+	return size;
+}
+
+static int
+lpfc_fdmi_hba_attr_vendor_info(struct lpfc_vport *vport,
+			       struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+
+	/* Nothing is defined for this currently */
+	ae->un.AttrInt =  cpu_to_be32(0);
+	size = FOURBYTES + sizeof(uint32_t);
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RHBA_VENDOR_INFO);
+	return size;
+}
+
+static int
+lpfc_fdmi_hba_attr_num_ports(struct lpfc_vport *vport,
+			     struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+
+	/* Each driver instance corresponds to a single port */
+	ae->un.AttrInt =  cpu_to_be32(1);
+	size = FOURBYTES + sizeof(uint32_t);
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RHBA_NUM_PORTS);
+	return size;
+}
+
+static int
+lpfc_fdmi_hba_attr_fabric_wwnn(struct lpfc_vport *vport,
+			       struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	memset(ae, 0, sizeof(struct lpfc_name));
+
+	memcpy(&ae->un.AttrWWN, &vport->fabric_nodename,
+	       sizeof(struct lpfc_name));
+	size = FOURBYTES + sizeof(struct lpfc_name);
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RHBA_FABRIC_WWNN);
+	return size;
+}
+
+static int
+lpfc_fdmi_hba_attr_bios_ver(struct lpfc_vport *vport,
+			    struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_hba *phba = vport->phba;
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t len, size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	memset(ae, 0, 256);
+
+	lpfc_decode_firmware_rev(phba, ae->un.AttrString, 1);
+	len = strnlen(ae->un.AttrString,
+			  sizeof(ae->un.AttrString));
+	len += (len & 3) ? (4 - (len & 3)) : 4;
+	size = FOURBYTES + len;
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RHBA_BIOS_VERSION);
+	return size;
+}
+
+static int
+lpfc_fdmi_hba_attr_bios_state(struct lpfc_vport *vport,
+			      struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+
+	/* Driver doesn't have access to this information */
+	ae->un.AttrInt =  cpu_to_be32(0);
+	size = FOURBYTES + sizeof(uint32_t);
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RHBA_BIOS_STATE);
+	return size;
+}
+
+static int
+lpfc_fdmi_hba_attr_vendor_id(struct lpfc_vport *vport,
+			     struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t len, size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	memset(ae, 0, 256);
+
+	strncpy(ae->un.AttrString, "EMULEX",
+		sizeof(ae->un.AttrString));
+	len = strnlen(ae->un.AttrString,
+			  sizeof(ae->un.AttrString));
+	len += (len & 3) ? (4 - (len & 3)) : 4;
+	size = FOURBYTES + len;
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RHBA_VENDOR_ID);
+	return size;
+}
+
+/* Routines for all individual PORT attributes */
+static int
+lpfc_fdmi_port_attr_fc4type(struct lpfc_vport *vport,
+			    struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	memset(ae, 0, 32);
+
+	ae->un.AttrTypes[3] = 0x02; /* Type 1 - ELS */
+	ae->un.AttrTypes[2] = 0x01; /* Type 8 - FCP */
+	ae->un.AttrTypes[6] = 0x01; /* Type 40 - NVME */
+	ae->un.AttrTypes[7] = 0x01; /* Type 32 - CT */
+	size = FOURBYTES + 32;
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RPRT_SUPPORTED_FC4_TYPES);
+	return size;
+}
+
+static int
+lpfc_fdmi_port_attr_support_speed(struct lpfc_vport *vport,
+				  struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_hba   *phba = vport->phba;
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+
+	ae->un.AttrInt = 0;
+	if (!(phba->hba_flag & HBA_FCOE_MODE)) {
+		if (phba->lmt & LMT_64Gb)
+			ae->un.AttrInt |= HBA_PORTSPEED_64GFC;
+		if (phba->lmt & LMT_32Gb)
+			ae->un.AttrInt |= HBA_PORTSPEED_32GFC;
+		if (phba->lmt & LMT_16Gb)
+			ae->un.AttrInt |= HBA_PORTSPEED_16GFC;
+		if (phba->lmt & LMT_10Gb)
+			ae->un.AttrInt |= HBA_PORTSPEED_10GFC;
+		if (phba->lmt & LMT_8Gb)
+			ae->un.AttrInt |= HBA_PORTSPEED_8GFC;
+		if (phba->lmt & LMT_4Gb)
+			ae->un.AttrInt |= HBA_PORTSPEED_4GFC;
+		if (phba->lmt & LMT_2Gb)
+			ae->un.AttrInt |= HBA_PORTSPEED_2GFC;
+		if (phba->lmt & LMT_1Gb)
+			ae->un.AttrInt |= HBA_PORTSPEED_1GFC;
+	} else {
+		/* FCoE links support only one speed */
+		switch (phba->fc_linkspeed) {
+		case LPFC_ASYNC_LINK_SPEED_10GBPS:
+			ae->un.AttrInt = HBA_PORTSPEED_10GE;
+			break;
+		case LPFC_ASYNC_LINK_SPEED_25GBPS:
+			ae->un.AttrInt = HBA_PORTSPEED_25GE;
+			break;
+		case LPFC_ASYNC_LINK_SPEED_40GBPS:
+			ae->un.AttrInt = HBA_PORTSPEED_40GE;
+			break;
+		case LPFC_ASYNC_LINK_SPEED_100GBPS:
+			ae->un.AttrInt = HBA_PORTSPEED_100GE;
+			break;
+		}
+	}
+	ae->un.AttrInt = cpu_to_be32(ae->un.AttrInt);
+	size = FOURBYTES + sizeof(uint32_t);
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RPRT_SUPPORTED_SPEED);
+	return size;
+}
+
+static int
+lpfc_fdmi_port_attr_speed(struct lpfc_vport *vport,
+			  struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_hba   *phba = vport->phba;
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+
+	if (!(phba->hba_flag & HBA_FCOE_MODE)) {
+		switch (phba->fc_linkspeed) {
+		case LPFC_LINK_SPEED_1GHZ:
+			ae->un.AttrInt = HBA_PORTSPEED_1GFC;
+			break;
+		case LPFC_LINK_SPEED_2GHZ:
+			ae->un.AttrInt = HBA_PORTSPEED_2GFC;
+			break;
+		case LPFC_LINK_SPEED_4GHZ:
+			ae->un.AttrInt = HBA_PORTSPEED_4GFC;
+			break;
+		case LPFC_LINK_SPEED_8GHZ:
+			ae->un.AttrInt = HBA_PORTSPEED_8GFC;
+			break;
+		case LPFC_LINK_SPEED_10GHZ:
+			ae->un.AttrInt = HBA_PORTSPEED_10GFC;
+			break;
+		case LPFC_LINK_SPEED_16GHZ:
+			ae->un.AttrInt = HBA_PORTSPEED_16GFC;
+			break;
+		case LPFC_LINK_SPEED_32GHZ:
+			ae->un.AttrInt = HBA_PORTSPEED_32GFC;
+			break;
+		case LPFC_LINK_SPEED_64GHZ:
+			ae->un.AttrInt = HBA_PORTSPEED_64GFC;
+			break;
+		default:
+			ae->un.AttrInt = HBA_PORTSPEED_UNKNOWN;
+			break;
+		}
+	} else {
+		switch (phba->fc_linkspeed) {
+		case LPFC_ASYNC_LINK_SPEED_10GBPS:
+			ae->un.AttrInt = HBA_PORTSPEED_10GE;
+			break;
+		case LPFC_ASYNC_LINK_SPEED_25GBPS:
+			ae->un.AttrInt = HBA_PORTSPEED_25GE;
+			break;
+		case LPFC_ASYNC_LINK_SPEED_40GBPS:
+			ae->un.AttrInt = HBA_PORTSPEED_40GE;
+			break;
+		case LPFC_ASYNC_LINK_SPEED_100GBPS:
+			ae->un.AttrInt = HBA_PORTSPEED_100GE;
+			break;
+		default:
+			ae->un.AttrInt = HBA_PORTSPEED_UNKNOWN;
+			break;
+		}
+	}
+
+	ae->un.AttrInt = cpu_to_be32(ae->un.AttrInt);
+	size = FOURBYTES + sizeof(uint32_t);
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RPRT_PORT_SPEED);
+	return size;
+}
+
+static int
+lpfc_fdmi_port_attr_max_frame(struct lpfc_vport *vport,
+			      struct lpfc_fdmi_attr_def *ad)
+{
+	struct serv_parm *hsp;
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+
+	hsp = (struct serv_parm *)&vport->fc_sparam;
+	ae->un.AttrInt = (((uint32_t) hsp->cmn.bbRcvSizeMsb) << 8) |
+			  (uint32_t) hsp->cmn.bbRcvSizeLsb;
+	ae->un.AttrInt = cpu_to_be32(ae->un.AttrInt);
+	size = FOURBYTES + sizeof(uint32_t);
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RPRT_MAX_FRAME_SIZE);
+	return size;
+}
+
+static int
+lpfc_fdmi_port_attr_os_devname(struct lpfc_vport *vport,
+			       struct lpfc_fdmi_attr_def *ad)
+{
+	struct Scsi_Host *shost = lpfc_shost_from_vport(vport);
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t len, size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	memset(ae, 0, 256);
+
+	snprintf(ae->un.AttrString, sizeof(ae->un.AttrString),
+		 "/sys/class/scsi_host/host%d", shost->host_no);
+	len = strnlen((char *)ae->un.AttrString,
+			  sizeof(ae->un.AttrString));
+	len += (len & 3) ? (4 - (len & 3)) : 4;
+	size = FOURBYTES + len;
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RPRT_OS_DEVICE_NAME);
+	return size;
+}
+
+static int
+lpfc_fdmi_port_attr_host_name(struct lpfc_vport *vport,
+			      struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t len, size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	memset(ae, 0, 256);
+
+	snprintf(ae->un.AttrString, sizeof(ae->un.AttrString), "%s",
+		 init_utsname()->nodename);
+
+	len = strnlen(ae->un.AttrString, sizeof(ae->un.AttrString));
+	len += (len & 3) ? (4 - (len & 3)) : 4;
+	size = FOURBYTES + len;
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RPRT_HOST_NAME);
+	return size;
+}
+
+static int
+lpfc_fdmi_port_attr_wwnn(struct lpfc_vport *vport,
+			 struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	memset(ae, 0,  sizeof(struct lpfc_name));
+
+	memcpy(&ae->un.AttrWWN, &vport->fc_sparam.nodeName,
+	       sizeof(struct lpfc_name));
+	size = FOURBYTES + sizeof(struct lpfc_name);
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RPRT_NODENAME);
+	return size;
+}
+
+static int
+lpfc_fdmi_port_attr_wwpn(struct lpfc_vport *vport,
+			 struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	memset(ae, 0,  sizeof(struct lpfc_name));
+
+	memcpy(&ae->un.AttrWWN, &vport->fc_sparam.portName,
+	       sizeof(struct lpfc_name));
+	size = FOURBYTES + sizeof(struct lpfc_name);
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RPRT_PORTNAME);
+	return size;
+}
+
+static int
+lpfc_fdmi_port_attr_symbolic_name(struct lpfc_vport *vport,
+				  struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t len, size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	memset(ae, 0, 256);
+
+	len = lpfc_vport_symbolic_port_name(vport, ae->un.AttrString, 256);
+	len += (len & 3) ? (4 - (len & 3)) : 4;
+	size = FOURBYTES + len;
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RPRT_SYM_PORTNAME);
+	return size;
+}
+
+static int
+lpfc_fdmi_port_attr_port_type(struct lpfc_vport *vport,
+			      struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_hba *phba = vport->phba;
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	if (phba->fc_topology == LPFC_TOPOLOGY_LOOP)
+		ae->un.AttrInt =  cpu_to_be32(LPFC_FDMI_PORTTYPE_NLPORT);
+	else
+		ae->un.AttrInt =  cpu_to_be32(LPFC_FDMI_PORTTYPE_NPORT);
+	size = FOURBYTES + sizeof(uint32_t);
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RPRT_PORT_TYPE);
+	return size;
+}
+
+static int
+lpfc_fdmi_port_attr_class(struct lpfc_vport *vport,
+			  struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	ae->un.AttrInt = cpu_to_be32(FC_COS_CLASS2 | FC_COS_CLASS3);
+	size = FOURBYTES + sizeof(uint32_t);
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RPRT_SUPPORTED_CLASS);
+	return size;
+}
+
+static int
+lpfc_fdmi_port_attr_fabric_wwpn(struct lpfc_vport *vport,
+				struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	memset(ae, 0,  sizeof(struct lpfc_name));
+
+	memcpy(&ae->un.AttrWWN, &vport->fabric_portname,
+	       sizeof(struct lpfc_name));
+	size = FOURBYTES + sizeof(struct lpfc_name);
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RPRT_FABRICNAME);
+	return size;
+}
+
+static int
+lpfc_fdmi_port_attr_active_fc4type(struct lpfc_vport *vport,
+				   struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	memset(ae, 0, 32);
+
+	ae->un.AttrTypes[3] = 0x02; /* Type 1 - ELS */
+	ae->un.AttrTypes[2] = 0x01; /* Type 8 - FCP */
+	ae->un.AttrTypes[7] = 0x01; /* Type 32 - CT */
+	size = FOURBYTES + 32;
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RPRT_ACTIVE_FC4_TYPES);
+	return size;
+}
+
+static int
+lpfc_fdmi_port_attr_port_state(struct lpfc_vport *vport,
+			       struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	/* Link Up - operational */
+	ae->un.AttrInt =  cpu_to_be32(LPFC_FDMI_PORTSTATE_ONLINE);
+	size = FOURBYTES + sizeof(uint32_t);
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RPRT_PORT_STATE);
+	return size;
+}
+
+static int
+lpfc_fdmi_port_attr_num_disc(struct lpfc_vport *vport,
+			     struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	vport->fdmi_num_disc = lpfc_find_map_node(vport);
+	ae->un.AttrInt = cpu_to_be32(vport->fdmi_num_disc);
+	size = FOURBYTES + sizeof(uint32_t);
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RPRT_DISC_PORT);
+	return size;
+}
+
+static int
+lpfc_fdmi_port_attr_nportid(struct lpfc_vport *vport,
+			    struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	ae->un.AttrInt =  cpu_to_be32(vport->fc_myDID);
+	size = FOURBYTES + sizeof(uint32_t);
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RPRT_PORT_ID);
+	return size;
+}
+
+static int
+lpfc_fdmi_smart_attr_service(struct lpfc_vport *vport,
+			     struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t len, size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	memset(ae, 0, 256);
+
+	strncpy(ae->un.AttrString, "Smart SAN Initiator",
+		sizeof(ae->un.AttrString));
+	len = strnlen(ae->un.AttrString,
+			  sizeof(ae->un.AttrString));
+	len += (len & 3) ? (4 - (len & 3)) : 4;
+	size = FOURBYTES + len;
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RPRT_SMART_SERVICE);
+	return size;
+}
+
+static int
+lpfc_fdmi_smart_attr_guid(struct lpfc_vport *vport,
+			  struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	memset(ae, 0, 256);
+
+	memcpy(&ae->un.AttrString, &vport->fc_sparam.nodeName,
+	       sizeof(struct lpfc_name));
+	memcpy((((uint8_t *)&ae->un.AttrString) +
+		sizeof(struct lpfc_name)),
+		&vport->fc_sparam.portName, sizeof(struct lpfc_name));
+	size = FOURBYTES + (2 * sizeof(struct lpfc_name));
+	ad->AttrLen =  cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RPRT_SMART_GUID);
+	return size;
+}
+
+static int
+lpfc_fdmi_smart_attr_version(struct lpfc_vport *vport,
+			     struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t len, size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	memset(ae, 0, 256);
+
+	strncpy(ae->un.AttrString, "Smart SAN Version 2.0",
+		sizeof(ae->un.AttrString));
+	len = strnlen(ae->un.AttrString,
+			  sizeof(ae->un.AttrString));
+	len += (len & 3) ? (4 - (len & 3)) : 4;
+	size = FOURBYTES + len;
+	ad->AttrLen =  cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RPRT_SMART_VERSION);
+	return size;
+}
+
+static int
+lpfc_fdmi_smart_attr_model(struct lpfc_vport *vport,
+			   struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_hba *phba = vport->phba;
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t len, size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	memset(ae, 0, 256);
+
+	strncpy(ae->un.AttrString, phba->ModelName,
+		sizeof(ae->un.AttrString));
+	len = strnlen(ae->un.AttrString, sizeof(ae->un.AttrString));
+	len += (len & 3) ? (4 - (len & 3)) : 4;
+	size = FOURBYTES + len;
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RPRT_SMART_MODEL);
+	return size;
+}
+
+static int
+lpfc_fdmi_smart_attr_port_info(struct lpfc_vport *vport,
+			       struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+
+	/* SRIOV (type 3) is not supported */
+	if (vport->vpi)
+		ae->un.AttrInt =  cpu_to_be32(2);  /* NPIV */
+	else
+		ae->un.AttrInt =  cpu_to_be32(1);  /* Physical */
+	size = FOURBYTES + sizeof(uint32_t);
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RPRT_SMART_PORT_INFO);
+	return size;
+}
+
+static int
+lpfc_fdmi_smart_attr_qos(struct lpfc_vport *vport,
+			 struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	ae->un.AttrInt =  cpu_to_be32(0);
+	size = FOURBYTES + sizeof(uint32_t);
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RPRT_SMART_QOS);
+	return size;
+}
+
+static int
+lpfc_fdmi_smart_attr_security(struct lpfc_vport *vport,
+			      struct lpfc_fdmi_attr_def *ad)
+{
+	struct lpfc_fdmi_attr_entry *ae;
+	uint32_t size;
+
+	ae = (struct lpfc_fdmi_attr_entry *)&ad->AttrValue;
+	ae->un.AttrInt =  cpu_to_be32(1);
+	size = FOURBYTES + sizeof(uint32_t);
+	ad->AttrLen = cpu_to_be16(size);
+	ad->AttrType = cpu_to_be16(RPRT_SMART_SECURITY);
+	return size;
+}
+
+/* RHBA attribute jump table */
+int (*lpfc_fdmi_hba_action[])
+	(struct lpfc_vport *vport, struct lpfc_fdmi_attr_def *ad) = {
+	/* Action routine                 Mask bit     Attribute type */
+	lpfc_fdmi_hba_attr_wwnn,	  /* bit0     RHBA_NODENAME           */
+	lpfc_fdmi_hba_attr_manufacturer,  /* bit1     RHBA_MANUFACTURER       */
+	lpfc_fdmi_hba_attr_sn,		  /* bit2     RHBA_SERIAL_NUMBER      */
+	lpfc_fdmi_hba_attr_model,	  /* bit3     RHBA_MODEL              */
+	lpfc_fdmi_hba_attr_description,	  /* bit4     RHBA_MODEL_DESCRIPTION  */
+	lpfc_fdmi_hba_attr_hdw_ver,	  /* bit5     RHBA_HARDWARE_VERSION   */
+	lpfc_fdmi_hba_attr_drvr_ver,	  /* bit6     RHBA_DRIVER_VERSION     */
+	lpfc_fdmi_hba_attr_rom_ver,	  /* bit7     RHBA_OPTION_ROM_VERSION */
+	lpfc_fdmi_hba_attr_fmw_ver,	  /* bit8     RHBA_FIRMWARE_VERSION   */
+	lpfc_fdmi_hba_attr_os_ver,	  /* bit9     RHBA_OS_NAME_VERSION    */
+	lpfc_fdmi_hba_attr_ct_len,	  /* bit10    RHBA_MAX_CT_PAYLOAD_LEN */
+	lpfc_fdmi_hba_attr_symbolic_name, /* bit11    RHBA_SYM_NODENAME       */
+	lpfc_fdmi_hba_attr_vendor_info,	  /* bit12    RHBA_VENDOR_INFO        */
+	lpfc_fdmi_hba_attr_num_ports,	  /* bit13    RHBA_NUM_PORTS          */
+	lpfc_fdmi_hba_attr_fabric_wwnn,	  /* bit14    RHBA_FABRIC_WWNN        */
+	lpfc_fdmi_hba_attr_bios_ver,	  /* bit15    RHBA_BIOS_VERSION       */
+	lpfc_fdmi_hba_attr_bios_state,	  /* bit16    RHBA_BIOS_STATE         */
+	lpfc_fdmi_hba_attr_vendor_id,	  /* bit17    RHBA_VENDOR_ID          */
+};
+
+/* RPA / RPRT attribute jump table */
+int (*lpfc_fdmi_port_action[])
+	(struct lpfc_vport *vport, struct lpfc_fdmi_attr_def *ad) = {
+	/* Action routine                   Mask bit   Attribute type */
+	lpfc_fdmi_port_attr_fc4type,        /* bit0   RPRT_SUPPORT_FC4_TYPES  */
+	lpfc_fdmi_port_attr_support_speed,  /* bit1   RPRT_SUPPORTED_SPEED    */
+	lpfc_fdmi_port_attr_speed,          /* bit2   RPRT_PORT_SPEED         */
+	lpfc_fdmi_port_attr_max_frame,      /* bit3   RPRT_MAX_FRAME_SIZE     */
+	lpfc_fdmi_port_attr_os_devname,     /* bit4   RPRT_OS_DEVICE_NAME     */
+	lpfc_fdmi_port_attr_host_name,      /* bit5   RPRT_HOST_NAME          */
+	lpfc_fdmi_port_attr_wwnn,           /* bit6   RPRT_NODENAME           */
+	lpfc_fdmi_port_attr_wwpn,           /* bit7   RPRT_PORTNAME           */
+	lpfc_fdmi_port_attr_symbolic_name,  /* bit8   RPRT_SYM_PORTNAME       */
+	lpfc_fdmi_port_attr_port_type,      /* bit9   RPRT_PORT_TYPE          */
+	lpfc_fdmi_port_attr_class,          /* bit10  RPRT_SUPPORTED_CLASS    */
+	lpfc_fdmi_port_attr_fabric_wwpn,    /* bit11  RPRT_FABRICNAME         */
+	lpfc_fdmi_port_attr_active_fc4type, /* bit12  RPRT_ACTIVE_FC4_TYPES   */
+	lpfc_fdmi_port_attr_port_state,     /* bit13  RPRT_PORT_STATE         */
+	lpfc_fdmi_port_attr_num_disc,       /* bit14  RPRT_DISC_PORT          */
+	lpfc_fdmi_port_attr_nportid,        /* bit15  RPRT_PORT_ID            */
+	lpfc_fdmi_smart_attr_service,       /* bit16  RPRT_SMART_SERVICE      */
+	lpfc_fdmi_smart_attr_guid,          /* bit17  RPRT_SMART_GUID         */
+	lpfc_fdmi_smart_attr_version,       /* bit18  RPRT_SMART_VERSION      */
+	lpfc_fdmi_smart_attr_model,         /* bit19  RPRT_SMART_MODEL        */
+	lpfc_fdmi_smart_attr_port_info,     /* bit20  RPRT_SMART_PORT_INFO    */
+	lpfc_fdmi_smart_attr_qos,           /* bit21  RPRT_SMART_QOS          */
+	lpfc_fdmi_smart_attr_security,      /* bit22  RPRT_SMART_SECURITY     */
+};
+
+/**
+ * lpfc_fdmi_cmd - Build and send a FDMI cmd to the specified NPort
+ * @vport: pointer to a host virtual N_Port data structure.
+ * @ndlp: ndlp to send FDMI cmd to (if NULL use FDMI_DID)
+ * cmdcode: FDMI command to send
+ * mask: Mask of HBA or PORT Attributes to send
+ *
+ * Builds and sends a FDMI command using the CT subsystem.
+ */
+int
+lpfc_fdmi_cmd(struct lpfc_vport *vport, struct lpfc_nodelist *ndlp,
+	      int cmdcode, uint32_t new_mask)
+{
+	struct lpfc_hba *phba = vport->phba;
+	struct lpfc_dmabuf *mp, *bmp;
+	struct lpfc_sli_ct_request *CtReq;
+	struct ulp_bde64 *bpl;
+	uint32_t bit_pos;
+	uint32_t size;
+	uint32_t rsp_size;
+	uint32_t mask;
+	struct lpfc_fdmi_reg_hba *rh;
+	struct lpfc_fdmi_port_entry *pe;
+	struct lpfc_fdmi_reg_portattr *pab = NULL;
+	struct lpfc_fdmi_attr_block *ab = NULL;
+	int  (*func)(struct lpfc_vport *vport, struct lpfc_fdmi_attr_def *ad);
+	void (*cmpl)(struct lpfc_hba *, struct lpfc_iocbq *,
+		     struct lpfc_iocbq *);
+
+	if (!ndlp || !NLP_CHK_NODE_ACT(ndlp))
+		return 0;
+
+	cmpl = lpfc_cmpl_ct_disc_fdmi; /* called from discovery */
 
 	/* fill in BDEs for command */
 	/* Allocate buffer for command payload */
@@ -2707,9 +3928,9 @@ fdmi_cmd_exit:
  * the worker thread.
  **/
 void
-lpfc_delayed_disc_tmo(unsigned long ptr)
+lpfc_delayed_disc_tmo(struct timer_list *t)
 {
-	struct lpfc_vport *vport = (struct lpfc_vport *)ptr;
+	struct lpfc_vport *vport = from_timer(vport, t, delayed_disc_tmo);
 	struct lpfc_hba   *phba = vport->phba;
 	uint32_t tmo_posted;
 	unsigned long iflag;

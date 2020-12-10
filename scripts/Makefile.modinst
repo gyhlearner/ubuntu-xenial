@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-2.0
 # ==========================================================================
 # Installing modules
 # ==========================================================================
@@ -23,6 +24,10 @@ quiet_cmd_modules_install = INSTALL $@
     cp $@ $(2) ; \
     $(mod_strip_cmd) $(2)/$(notdir $@) ; \
     if (echo "$(2)/$(notdir $@)" | egrep -q "\/drivers\/staging\/") && \
+<<<<<<< HEAD
+=======
+	[ -f $(srctree)/drivers/staging/signature-inclusion ] && \
+>>>>>>> temp
 	(! egrep -x "$(notdir $@)" $(srctree)/drivers/staging/signature-inclusion) ; \
 	then echo Not signing "$(2)/$(notdir $@)"; \
 	else $(mod_sign_cmd) $(2)/$(notdir $@) $(patsubst %,|| true,$(KBUILD_EXTMOD)) && \

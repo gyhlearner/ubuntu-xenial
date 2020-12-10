@@ -76,7 +76,11 @@ extern ssize_t zpl_xattr_list(struct dentry *dentry, char *buf, size_t size);
 extern int zpl_xattr_security_init(struct inode *ip, struct inode *dip,
     const struct qstr *qstr);
 #if defined(CONFIG_FS_POSIX_ACL)
+<<<<<<< HEAD
 extern int zpl_set_acl(struct inode *ip, int type, struct posix_acl *acl);
+=======
+extern int zpl_set_acl(struct inode *ip, struct posix_acl *acl, int type);
+>>>>>>> temp
 extern struct posix_acl *zpl_get_acl(struct inode *ip, int type);
 #if !defined(HAVE_GET_ACL)
 #if defined(HAVE_CHECK_ACL_WITH_FLAGS)
@@ -123,7 +127,11 @@ extern const struct inode_operations zpl_ops_snapdirs;
 extern const struct file_operations zpl_fops_shares;
 extern const struct inode_operations zpl_ops_shares;
 
+<<<<<<< HEAD
 #ifdef HAVE_VFS_ITERATE
+=======
+#if defined(HAVE_VFS_ITERATE) || defined(HAVE_VFS_ITERATE_SHARED)
+>>>>>>> temp
 
 #define	DIR_CONTEXT_INIT(_dirent, _actor, _pos) {	\
 	.actor = _actor,				\
@@ -148,22 +156,34 @@ static inline bool
 dir_emit(struct dir_context *ctx, const char *name, int namelen,
     uint64_t ino, unsigned type)
 {
+<<<<<<< HEAD
 	return (ctx->actor(ctx->dirent, name, namelen, ctx->pos, ino, type)
 		== 0);
+=======
+	return (!ctx->actor(ctx->dirent, name, namelen, ctx->pos, ino, type));
+>>>>>>> temp
 }
 
 static inline bool
 dir_emit_dot(struct file *file, struct dir_context *ctx)
 {
 	return (ctx->actor(ctx->dirent, ".", 1, ctx->pos,
+<<<<<<< HEAD
 	    file->f_path.dentry->d_inode->i_ino, DT_DIR) == 0);
+=======
+	    file_inode(file)->i_ino, DT_DIR) == 0);
+>>>>>>> temp
 }
 
 static inline bool
 dir_emit_dotdot(struct file *file, struct dir_context *ctx)
 {
 	return (ctx->actor(ctx->dirent, "..", 2, ctx->pos,
+<<<<<<< HEAD
 	    parent_ino(file->f_path.dentry), DT_DIR) == 0);
+=======
+	    parent_ino(file_dentry(file)), DT_DIR) == 0);
+>>>>>>> temp
 }
 
 static inline bool

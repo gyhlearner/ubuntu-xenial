@@ -111,6 +111,7 @@ static int ena_change_mtu(struct net_device *dev, int new_mtu)
 	struct ena_adapter *adapter = netdev_priv(dev);
 	int ret;
 
+<<<<<<< HEAD
 	if ((new_mtu > adapter->max_mtu) || (new_mtu < ENA_MIN_MTU)) {
 		netif_err(adapter, drv, dev,
 			  "Invalid MTU setting. new_mtu: %d\n", new_mtu);
@@ -118,6 +119,8 @@ static int ena_change_mtu(struct net_device *dev, int new_mtu)
 		return -EINVAL;
 	}
 
+=======
+>>>>>>> temp
 	ret = ena_com_set_dev_mtu(adapter->ena_dev, new_mtu);
 	if (!ret) {
 		netif_dbg(adapter, drv, dev, "set MTU to %d\n", new_mtu);
@@ -144,7 +147,11 @@ static int ena_init_rx_cpu_rmap(struct ena_adapter *adapter)
 		int irq_idx = ENA_IO_IRQ_IDX(i);
 
 		rc = irq_cpu_rmap_add(adapter->netdev->rx_cpu_rmap,
+<<<<<<< HEAD
 				      adapter->msix_entries[irq_idx].vector);
+=======
+				      pci_irq_vector(adapter->pdev, irq_idx));
+>>>>>>> temp
 		if (rc) {
 			free_irq_cpu_rmap(adapter->netdev->rx_cpu_rmap);
 			adapter->netdev->rx_cpu_rmap = NULL;
@@ -543,7 +550,11 @@ static int ena_refill_rx_bufs(struct ena_ring *rx_ring, u32 num)
 
 
 		rc = ena_alloc_rx_page(rx_ring, rx_info,
+<<<<<<< HEAD
 				       __GFP_COLD | GFP_ATOMIC | __GFP_COMP);
+=======
+				       GFP_ATOMIC | __GFP_COMP);
+>>>>>>> temp
 		if (unlikely(rc < 0)) {
 			netif_warn(rx_ring->adapter, rx_err, rx_ring->netdev,
 				   "failed to alloc buffer for rx queue %d\n",
@@ -1175,6 +1186,29 @@ inline void ena_adjust_intr_moderation(struct ena_ring *rx_ring,
 	rx_ring->per_napi_bytes = 0;
 }
 
+<<<<<<< HEAD
+=======
+static inline void ena_unmask_interrupt(struct ena_ring *tx_ring,
+					struct ena_ring *rx_ring)
+{
+	struct ena_eth_io_intr_reg intr_reg;
+
+	/* Update intr register: rx intr delay,
+	 * tx intr delay and interrupt unmask
+	 */
+	ena_com_update_intr_reg(&intr_reg,
+				rx_ring->smoothed_interval,
+				tx_ring->smoothed_interval,
+				true);
+
+	/* It is a shared MSI-X.
+	 * Tx and Rx CQ have pointer to it.
+	 * So we use one of them to reach the intr reg
+	 */
+	ena_com_unmask_intr(rx_ring->ena_com_io_cq, &intr_reg);
+}
+
+>>>>>>> temp
 static inline void ena_update_ring_numa_node(struct ena_ring *tx_ring,
 					     struct ena_ring *rx_ring)
 {
@@ -1205,7 +1239,10 @@ static int ena_io_poll(struct napi_struct *napi, int budget)
 {
 	struct ena_napi *ena_napi = container_of(napi, struct ena_napi, napi);
 	struct ena_ring *tx_ring, *rx_ring;
+<<<<<<< HEAD
 	struct ena_eth_io_intr_reg intr_reg;
+=======
+>>>>>>> temp
 
 	u32 tx_work_done;
 	u32 rx_work_done;
@@ -1227,6 +1264,7 @@ static int ena_io_poll(struct napi_struct *napi, int budget)
 	tx_work_done = ena_clean_tx_irq(tx_ring, tx_budget);
 	rx_work_done = ena_clean_rx_irq(rx_ring, napi, budget);
 
+<<<<<<< HEAD
 	if ((budget > rx_work_done) && (tx_budget > tx_work_done)) {
 		napi_complete_done(napi, rx_work_done);
 
@@ -1247,6 +1285,29 @@ static int ena_io_poll(struct napi_struct *napi, int budget)
 		 * So we use one of them to reach the intr reg
 		 */
 		ena_com_unmask_intr(rx_ring->ena_com_io_cq, &intr_reg);
+=======
+	/* If the device is about to reset or down, avoid unmask
+	 * the interrupt and return 0 so NAPI won't reschedule
+	 */
+	if (unlikely(!test_bit(ENA_FLAG_DEV_UP, &tx_ring->adapter->flags) ||
+		     test_bit(ENA_FLAG_TRIGGER_RESET, &tx_ring->adapter->flags))) {
+		napi_complete_done(napi, 0);
+		ret = 0;
+
+	} else if ((budget > rx_work_done) && (tx_budget > tx_work_done)) {
+		napi_comp_call = 1;
+
+		/* Update numa and unmask the interrupt only when schedule
+		 * from the interrupt context (vs from sk_busy_loop)
+		 */
+		if (napi_complete_done(napi, rx_work_done)) {
+			/* Tx and Rx share the same interrupt vector */
+			if (ena_com_get_adaptive_moderation_enabled(rx_ring->ena_dev))
+				ena_adjust_intr_moderation(rx_ring, tx_ring);
+
+			ena_unmask_interrupt(tx_ring, rx_ring);
+		}
+>>>>>>> temp
 
 		ena_update_ring_numa_node(tx_ring, rx_ring);
 
@@ -1292,9 +1353,20 @@ static irqreturn_t ena_intr_msix_io(int irq, void *data)
 	return IRQ_HANDLED;
 }
 
+<<<<<<< HEAD
 static int ena_enable_msix(struct ena_adapter *adapter, int num_queues)
 {
 	int i, msix_vecs, rc;
+=======
+/* Reserve a single MSI-X vector for management (admin + aenq).
+ * plus reserve one vector for each potential io queue.
+ * the number of potential io queues is the minimum of what the device
+ * supports and the number of vCPUs.
+ */
+static int ena_enable_msix(struct ena_adapter *adapter, int num_queues)
+{
+	int msix_vecs, irq_cnt;
+>>>>>>> temp
 
 	if (test_bit(ENA_FLAG_MSIX_ENABLED, &adapter->flags)) {
 		netif_err(adapter, probe, adapter->netdev,
@@ -1307,6 +1379,7 @@ static int ena_enable_msix(struct ena_adapter *adapter, int num_queues)
 	netif_dbg(adapter, probe, adapter->netdev,
 		  "trying to enable MSI-X, vectors %d\n", msix_vecs);
 
+<<<<<<< HEAD
 	adapter->msix_entries = vzalloc(msix_vecs * sizeof(struct msix_entry));
 
 	if (!adapter->msix_entries)
@@ -1333,6 +1406,29 @@ static int ena_enable_msix(struct ena_adapter *adapter, int num_queues)
 	}
 
 	adapter->msix_vecs = msix_vecs;
+=======
+	irq_cnt = pci_alloc_irq_vectors(adapter->pdev, ENA_MIN_MSIX_VEC,
+					msix_vecs, PCI_IRQ_MSIX);
+
+	if (irq_cnt < 0) {
+		netif_err(adapter, probe, adapter->netdev,
+			  "Failed to enable MSI-X. irq_cnt %d\n", irq_cnt);
+		return -ENOSPC;
+	}
+
+	if (irq_cnt != msix_vecs) {
+		netif_notice(adapter, probe, adapter->netdev,
+			     "enable only %d MSI-X (out of %d), reduce the number of queues\n",
+			     irq_cnt, msix_vecs);
+		adapter->num_queues = irq_cnt - ENA_ADMIN_MSIX_VEC;
+	}
+
+	if (ena_init_rx_cpu_rmap(adapter))
+		netif_warn(adapter, probe, adapter->netdev,
+			   "Failed to map IRQs to CPUs\n");
+
+	adapter->msix_vecs = irq_cnt;
+>>>>>>> temp
 	set_bit(ENA_FLAG_MSIX_ENABLED, &adapter->flags);
 
 	return 0;
@@ -1349,7 +1445,11 @@ static void ena_setup_mgmnt_intr(struct ena_adapter *adapter)
 		ena_intr_msix_mgmnt;
 	adapter->irq_tbl[ENA_MGMNT_IRQ_IDX].data = adapter;
 	adapter->irq_tbl[ENA_MGMNT_IRQ_IDX].vector =
+<<<<<<< HEAD
 		adapter->msix_entries[ENA_MGMNT_IRQ_IDX].vector;
+=======
+		pci_irq_vector(adapter->pdev, ENA_MGMNT_IRQ_IDX);
+>>>>>>> temp
 	cpu = cpumask_first(cpu_online_mask);
 	adapter->irq_tbl[ENA_MGMNT_IRQ_IDX].cpu = cpu;
 	cpumask_set_cpu(cpu,
@@ -1372,7 +1472,11 @@ static void ena_setup_io_intr(struct ena_adapter *adapter)
 		adapter->irq_tbl[irq_idx].handler = ena_intr_msix_io;
 		adapter->irq_tbl[irq_idx].data = &adapter->ena_napi[i];
 		adapter->irq_tbl[irq_idx].vector =
+<<<<<<< HEAD
 			adapter->msix_entries[irq_idx].vector;
+=======
+			pci_irq_vector(adapter->pdev, irq_idx);
+>>>>>>> temp
 		adapter->irq_tbl[irq_idx].cpu = cpu;
 
 		cpumask_set_cpu(cpu,
@@ -1477,11 +1581,15 @@ static void ena_free_io_irq(struct ena_adapter *adapter)
 static void ena_disable_msix(struct ena_adapter *adapter)
 {
 	if (test_and_clear_bit(ENA_FLAG_MSIX_ENABLED, &adapter->flags))
+<<<<<<< HEAD
 		pci_disable_msix(adapter->pdev);
 
 	if (adapter->msix_entries)
 		vfree(adapter->msix_entries);
 	adapter->msix_entries = NULL;
+=======
+		pci_free_irq_vectors(adapter->pdev);
+>>>>>>> temp
 }
 
 static void ena_disable_io_intr_sync(struct ena_adapter *adapter)
@@ -1581,7 +1689,11 @@ static int ena_rss_configure(struct ena_adapter *adapter)
 
 static int ena_up_complete(struct ena_adapter *adapter)
 {
+<<<<<<< HEAD
 	int rc, i;
+=======
+	int rc;
+>>>>>>> temp
 
 	rc = ena_rss_configure(adapter);
 	if (rc)
@@ -1598,12 +1710,15 @@ static int ena_up_complete(struct ena_adapter *adapter)
 
 	ena_napi_enable_all(adapter);
 
+<<<<<<< HEAD
 	/* schedule napi in case we had pending packets
 	 * from the last time we disable napi
 	 */
 	for (i = 0; i < adapter->num_queues; i++)
 		napi_schedule(&adapter->ena_napi[i].napi);
 
+=======
+>>>>>>> temp
 	return 0;
 }
 
@@ -1744,7 +1859,11 @@ create_err:
 
 static int ena_up(struct ena_adapter *adapter)
 {
+<<<<<<< HEAD
 	int rc;
+=======
+	int rc, i;
+>>>>>>> temp
 
 	netdev_dbg(adapter->netdev, "%s\n", __func__);
 
@@ -1794,6 +1913,20 @@ static int ena_up(struct ena_adapter *adapter)
 
 	set_bit(ENA_FLAG_DEV_UP, &adapter->flags);
 
+<<<<<<< HEAD
+=======
+	/* Enable completion queues interrupt */
+	for (i = 0; i < adapter->num_queues; i++)
+		ena_unmask_interrupt(&adapter->tx_ring[i],
+				     &adapter->rx_ring[i]);
+
+	/* schedule napi in case we had pending packets
+	 * from the last time we disable napi
+	 */
+	for (i = 0; i < adapter->num_queues; i++)
+		napi_schedule(&adapter->ena_napi[i].napi);
+
+>>>>>>> temp
 	return rc;
 
 err_up:
@@ -2343,8 +2476,13 @@ err:
 	ena_com_delete_debug_area(adapter->ena_dev);
 }
 
+<<<<<<< HEAD
 static struct rtnl_link_stats64 *ena_get_stats64(struct net_device *netdev,
 						 struct rtnl_link_stats64 *stats)
+=======
+static void ena_get_stats64(struct net_device *netdev,
+			    struct rtnl_link_stats64 *stats)
+>>>>>>> temp
 {
 	struct ena_adapter *adapter = netdev_priv(netdev);
 	struct ena_ring *rx_ring, *tx_ring;
@@ -2353,7 +2491,11 @@ static struct rtnl_link_stats64 *ena_get_stats64(struct net_device *netdev,
 	int i;
 
 	if (!test_bit(ENA_FLAG_DEV_UP, &adapter->flags))
+<<<<<<< HEAD
 		return NULL;
+=======
+		return;
+>>>>>>> temp
 
 	for (i = 0; i < adapter->num_queues; i++) {
 		u64 bytes, packets;
@@ -2400,8 +2542,11 @@ static struct rtnl_link_stats64 *ena_get_stats64(struct net_device *netdev,
 
 	stats->rx_errors = 0;
 	stats->tx_errors = 0;
+<<<<<<< HEAD
 
 	return stats;
+=======
+>>>>>>> temp
 }
 
 static const struct net_device_ops ena_netdev_ops = {
@@ -2973,9 +3118,15 @@ static void ena_update_host_info(struct ena_admin_host_info *host_info,
 		(netdev->features & GENMASK_ULL(63, 32)) >> 32;
 }
 
+<<<<<<< HEAD
 static void ena_timer_service(unsigned long data)
 {
 	struct ena_adapter *adapter = (struct ena_adapter *)data;
+=======
+static void ena_timer_service(struct timer_list *t)
+{
+	struct ena_adapter *adapter = from_timer(adapter, t, timer_service);
+>>>>>>> temp
 	u8 *debug_area = adapter->ena_dev->host_attr.debug_area_virt_addr;
 	struct ena_admin_host_info *host_info =
 		adapter->ena_dev->host_attr.host_info;
@@ -3139,6 +3290,11 @@ static void ena_set_conf_feat_params(struct ena_adapter *adapter,
 	ena_set_dev_offloads(feat, netdev);
 
 	adapter->max_mtu = feat->dev_attr.max_mtu;
+<<<<<<< HEAD
+=======
+	netdev->max_mtu = adapter->max_mtu;
+	netdev->min_mtu = ENA_MIN_MTU;
+>>>>>>> temp
 }
 
 static int ena_rss_init_default(struct ena_adapter *adapter)
@@ -3417,8 +3573,12 @@ static int ena_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 
 	ena_update_hints(adapter, &get_feat_ctx.hw_hints);
 
+<<<<<<< HEAD
 	setup_timer(&adapter->timer_service, ena_timer_service,
 		    (unsigned long)adapter);
+=======
+	timer_setup(&adapter->timer_service, ena_timer_service, 0);
+>>>>>>> temp
 	mod_timer(&adapter->timer_service, round_jiffies(jiffies + HZ));
 
 	if (ena_dev->tx_mem_queue_type == ENA_ADMIN_PLACEMENT_POLICY_HOST)

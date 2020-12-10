@@ -1,6 +1,9 @@
 /*
  * Copyright (C) 2011 matt mooney <mfm@muteddisk.com>
  *               2005-2007 Takahiro Hirofuchi
+ * Copyright (C) 2015-2016 Samsung Electronics
+ *               Igor Kotrasinski <i.kotrasinsk@samsung.com>
+ *               Krzysztof Opasiak <k.opasiak@samsung.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,23 +19,16 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-
-#include <errno.h>
 #include <unistd.h>
-
 #include <libudev.h>
 
-#include "usbip_common.h"
+#include "usbip_host_common.h"
 #include "usbip_host_driver.h"
-#include "list.h"
-#include "sysfs_utils.h"
 
 #undef  PROGNAME
 #define PROGNAME "libusbip"
 
+<<<<<<< HEAD
 struct usbip_host_driver *host_driver;
 struct udev *udev_context;
 
@@ -119,57 +115,19 @@ err:
 }
 
 static int refresh_exported_devices(void)
+=======
+static int is_my_device(struct udev_device *dev)
+>>>>>>> temp
 {
-	struct usbip_exported_device *edev;
-	struct udev_enumerate *enumerate;
-	struct udev_list_entry *devices, *dev_list_entry;
-	struct udev_device *dev;
-	const char *path;
 	const char *driver;
 
-	enumerate = udev_enumerate_new(udev_context);
-	udev_enumerate_add_match_subsystem(enumerate, "usb");
-	udev_enumerate_scan_devices(enumerate);
-
-	devices = udev_enumerate_get_list_entry(enumerate);
-
-	udev_list_entry_foreach(dev_list_entry, devices) {
-		path = udev_list_entry_get_name(dev_list_entry);
-		dev = udev_device_new_from_syspath(udev_context, path);
-		if (dev == NULL)
-			continue;
-
-		/* Check whether device uses usbip-host driver. */
-		driver = udev_device_get_driver(dev);
-		if (driver != NULL && !strcmp(driver, USBIP_HOST_DRV_NAME)) {
-			edev = usbip_exported_device_new(path);
-			if (!edev) {
-				dbg("usbip_exported_device_new failed");
-				continue;
-			}
-
-			list_add(&edev->node, &host_driver->edev_list);
-			host_driver->ndevs++;
-		}
-	}
-
-	return 0;
+	driver = udev_device_get_driver(dev);
+	return driver != NULL && !strcmp(driver, USBIP_HOST_DRV_NAME);
 }
 
-static void usbip_exported_device_destroy(void)
+static int usbip_host_driver_open(struct usbip_host_driver *hdriver)
 {
-	struct list_head *i, *tmp;
-	struct usbip_exported_device *edev;
-
-	list_for_each_safe(i, tmp, &host_driver->edev_list) {
-		edev = list_entry(i, struct usbip_exported_device, node);
-		list_del(i);
-		free(edev);
-	}
-}
-
-int usbip_host_driver_open(void)
-{
+<<<<<<< HEAD
 	int rc;
 
 	udev_context = udev_new();
@@ -275,23 +233,30 @@ int usbip_host_export_device(struct usbip_exported_device *edev, int sockfd)
 	}
 
 	info("connect: %s", edev->udev.busid);
+=======
+	int ret;
 
+	hdriver->ndevs = 0;
+	INIT_LIST_HEAD(&hdriver->edev_list);
+>>>>>>> temp
+
+	ret = usbip_generic_driver_open(hdriver);
+	if (ret)
+		err("please load " USBIP_CORE_MOD_NAME ".ko and "
+		    USBIP_HOST_DRV_NAME ".ko!");
 	return ret;
 }
 
-struct usbip_exported_device *usbip_host_get_device(int num)
-{
-	struct list_head *i;
-	struct usbip_exported_device *edev;
-	int cnt = 0;
-
-	list_for_each(i, &host_driver->edev_list) {
-		edev = list_entry(i, struct usbip_exported_device, node);
-		if (num == cnt)
-			return edev;
-		else
-			cnt++;
-	}
-
-	return NULL;
-}
+struct usbip_host_driver host_driver = {
+	.edev_list = LIST_HEAD_INIT(host_driver.edev_list),
+	.udev_subsystem = "usb",
+	.ops = {
+		.open = usbip_host_driver_open,
+		.close = usbip_generic_driver_close,
+		.refresh_device_list = usbip_generic_refresh_device_list,
+		.get_device = usbip_generic_get_device,
+		.read_device = read_usb_device,
+		.read_interface = read_usb_interface,
+		.is_my_device = is_my_device,
+	},
+};

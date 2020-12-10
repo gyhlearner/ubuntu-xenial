@@ -5,7 +5,11 @@
  */
 
 /*
+<<<<<<< HEAD
  * Copyright (C) 2006-2012 Oracle Corporation
+=======
+ * Copyright (C) 2006-2017 Oracle Corporation
+>>>>>>> temp
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -686,8 +690,12 @@ static int sf_unlink_aux(struct inode *parent, struct dentry *dentry, int fDirec
         goto fail0;
 
     fFlags = fDirectory ? SHFL_REMOVE_DIR : SHFL_REMOVE_FILE;
+<<<<<<< HEAD
     if (   dentry
         && dentry->d_inode
+=======
+    if (   dentry->d_inode
+>>>>>>> temp
         && ((dentry->d_inode->i_mode & S_IFLNK) == S_IFLNK))
         fFlags |= SHFL_REMOVE_SYMLINK;
     rc = VbglR0SfRemove(&client_handle, &sf_g->map, path, fFlags);
@@ -745,16 +753,39 @@ static int sf_rmdir(struct inode *parent, struct dentry *dentry)
  * @param old_dentry    old directory cache entry
  * @param new_parent    inode of the new parent directory
  * @param new_dentry    new directory cache entry
+<<<<<<< HEAD
  * @returns 0 on success, Linux error code otherwise
  */
 static int sf_rename(struct inode *old_parent, struct dentry *old_dentry,
                      struct inode *new_parent, struct dentry *new_dentry)
+=======
+ * @param flags         flags
+ * @returns 0 on success, Linux error code otherwise
+ */
+static int sf_rename(struct inode *old_parent, struct dentry *old_dentry,
+                     struct inode *new_parent, struct dentry *new_dentry
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
+                     , unsigned flags
+#endif
+                     )
+>>>>>>> temp
 {
     int err = 0, rc = VINF_SUCCESS;
     struct sf_glob_info *sf_g = GET_GLOB_INFO(old_parent->i_sb);
 
     TRACE();
 
+<<<<<<< HEAD
+=======
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
+    if (flags)
+    {
+        LogFunc(("rename with flags=%x\n", flags));
+        return -EINVAL;
+    }
+#endif
+
+>>>>>>> temp
     if (sf_g != GET_GLOB_INFO(new_parent->i_sb))
     {
         LogFunc(("rename with different roots\n"));

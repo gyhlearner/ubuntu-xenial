@@ -88,6 +88,10 @@ vdev_ops_t vdev_missing_ops = {
 	NULL,
 	NULL,
 	NULL,
+<<<<<<< HEAD
+=======
+	NULL,
+>>>>>>> temp
 	VDEV_TYPE_MISSING,	/* name of this vdev type */
 	B_TRUE			/* leaf vdev */
 };
@@ -101,6 +105,10 @@ vdev_ops_t vdev_hole_ops = {
 	NULL,
 	NULL,
 	NULL,
+<<<<<<< HEAD
+=======
+	NULL,
+>>>>>>> temp
 	VDEV_TYPE_HOLE,		/* name of this vdev type */
 	B_TRUE			/* leaf vdev */
 };

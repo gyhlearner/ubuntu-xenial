@@ -23,7 +23,11 @@
  * Use is subject to license terms.
  */
 /*
+<<<<<<< HEAD
  * Copyright (c) 2013 by Delphix. All rights reserved.
+=======
+ * Copyright (c) 2012, 2016 by Delphix. All rights reserved.
+>>>>>>> temp
  */
 
 #ifndef	_SYS_DMU_TX_H
@@ -70,6 +74,12 @@ struct dmu_tx {
 	/* has this transaction already been delayed? */
 	boolean_t tx_waited;
 
+<<<<<<< HEAD
+=======
+	/* transaction is marked as being a "net free" of space */
+	boolean_t tx_netfree;
+
+>>>>>>> temp
 	/* time this transaction was created */
 	hrtime_t tx_start;
 
@@ -77,6 +87,7 @@ struct dmu_tx {
 	boolean_t tx_wait_dirty;
 
 	int tx_err;
+<<<<<<< HEAD
 #ifdef DEBUG_DMU_TX
 	uint64_t tx_space_towrite;
 	uint64_t tx_space_tofree;
@@ -85,6 +96,8 @@ struct dmu_tx {
 	refcount_t tx_space_written;
 	refcount_t tx_space_freed;
 #endif
+=======
+>>>>>>> temp
 };
 
 enum dmu_tx_hold_type {
@@ -102,6 +115,7 @@ typedef struct dmu_tx_hold {
 	dmu_tx_t *txh_tx;
 	list_node_t txh_node;
 	struct dnode *txh_dnode;
+<<<<<<< HEAD
 	uint64_t txh_space_towrite;
 	uint64_t txh_space_tofree;
 	uint64_t txh_space_tooverwrite;
@@ -113,6 +127,13 @@ typedef struct dmu_tx_hold {
 	uint64_t txh_arg1;
 	uint64_t txh_arg2;
 #endif
+=======
+	refcount_t txh_space_towrite;
+	refcount_t txh_memory_tohold;
+	enum dmu_tx_hold_type txh_type;
+	uint64_t txh_arg1;
+	uint64_t txh_arg2;
+>>>>>>> temp
 } dmu_tx_hold_t;
 
 typedef struct dmu_tx_callback {
@@ -156,10 +177,13 @@ uint64_t dmu_tx_get_txg(dmu_tx_t *tx);
 struct dsl_pool *dmu_tx_pool(dmu_tx_t *tx);
 void dmu_tx_wait(dmu_tx_t *tx);
 
+<<<<<<< HEAD
 void dmu_tx_callback_register(dmu_tx_t *tx, dmu_tx_callback_func_t *dcb_func,
     void *dcb_data);
 void dmu_tx_do_callbacks(list_t *cb_list, int error);
 
+=======
+>>>>>>> temp
 /*
  * These routines are defined in dmu_spa.h, and are called by the SPA.
  */
@@ -171,6 +195,7 @@ extern dmu_tx_t *dmu_tx_create_assigned(struct dsl_pool *dp, uint64_t txg);
 dmu_tx_t *dmu_tx_create_dd(dsl_dir_t *dd);
 int dmu_tx_is_syncing(dmu_tx_t *tx);
 int dmu_tx_private_ok(dmu_tx_t *tx);
+<<<<<<< HEAD
 void dmu_tx_add_new_object(dmu_tx_t *tx, objset_t *os, uint64_t object);
 void dmu_tx_willuse_space(dmu_tx_t *tx, int64_t delta);
 void dmu_tx_dirty_buf(dmu_tx_t *tx, struct dmu_buf_impl *db);
@@ -178,6 +203,13 @@ int dmu_tx_holds(dmu_tx_t *tx, uint64_t object);
 void dmu_tx_hold_space(dmu_tx_t *tx, uint64_t space);
 
 #ifdef DEBUG_DMU_TX
+=======
+void dmu_tx_add_new_object(dmu_tx_t *tx, dnode_t *dn);
+void dmu_tx_dirty_buf(dmu_tx_t *tx, struct dmu_buf_impl *db);
+void dmu_tx_hold_space(dmu_tx_t *tx, uint64_t space);
+
+#ifdef ZFS_DEBUG
+>>>>>>> temp
 #define	DMU_TX_DIRTY_BUF(tx, db)	dmu_tx_dirty_buf(tx, db)
 #else
 #define	DMU_TX_DIRTY_BUF(tx, db)

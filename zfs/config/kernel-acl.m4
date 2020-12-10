@@ -16,18 +16,56 @@ AC_DEFUN([ZFS_AC_KERNEL_POSIX_ACL_RELEASE], [
 		AC_MSG_RESULT(yes)
 		AC_DEFINE(HAVE_POSIX_ACL_RELEASE, 1,
 		    [posix_acl_release() is available])
+<<<<<<< HEAD
 	],[
 		AC_MSG_RESULT(no)
 	])
 
 	AC_MSG_CHECKING([whether posix_acl_release() is GPL-only])
 	ZFS_LINUX_TRY_COMPILE([
+=======
+
+		AC_MSG_CHECKING([whether posix_acl_release() is GPL-only])
+		ZFS_LINUX_TRY_COMPILE([
+			#include <linux/module.h>
+			#include <linux/cred.h>
+			#include <linux/fs.h>
+			#include <linux/posix_acl.h>
+
+			MODULE_LICENSE("$ZFS_META_LICENSE");
+		],[
+			struct posix_acl* tmp = posix_acl_alloc(1, 0);
+			posix_acl_release(tmp);
+		],[
+			AC_MSG_RESULT(no)
+		],[
+			AC_MSG_RESULT(yes)
+			AC_DEFINE(HAVE_POSIX_ACL_RELEASE_GPL_ONLY, 1,
+			    [posix_acl_release() is GPL-only])
+		])
+	],[
+		AC_MSG_RESULT(no)
+	])
+])
+
+dnl #
+dnl # 3.14 API change,
+dnl # set_cached_acl() and forget_cached_acl() changed from inline to
+dnl # EXPORT_SYMBOL. In the former case, they may not be usable because of
+dnl # posix_acl_release. In the latter case, we can always use them.
+dnl #
+AC_DEFUN([ZFS_AC_KERNEL_SET_CACHED_ACL_USABLE], [
+	AC_MSG_CHECKING([whether set_cached_acl() is usable])
+	ZFS_LINUX_TRY_COMPILE([
+		#include <linux/module.h>
+>>>>>>> temp
 		#include <linux/cred.h>
 		#include <linux/fs.h>
 		#include <linux/posix_acl.h>
 
 		MODULE_LICENSE("$ZFS_META_LICENSE");
 	],[
+<<<<<<< HEAD
 		struct posix_acl* tmp = posix_acl_alloc(1, 0);
 		posix_acl_release(tmp);
 	],[
@@ -36,6 +74,18 @@ AC_DEFUN([ZFS_AC_KERNEL_POSIX_ACL_RELEASE], [
 		AC_MSG_RESULT(yes)
 		AC_DEFINE(HAVE_POSIX_ACL_RELEASE_GPL_ONLY, 1,
 		    [posix_acl_release() is GPL-only])
+=======
+		struct inode *ip = NULL;
+		struct posix_acl *acl = posix_acl_alloc(1, 0);
+		set_cached_acl(ip, ACL_TYPE_ACCESS, acl);
+		forget_cached_acl(ip, ACL_TYPE_ACCESS);
+	],[
+		AC_MSG_RESULT(yes)
+		AC_DEFINE(HAVE_SET_CACHED_ACL_USABLE, 1,
+		    [posix_acl_release() is usable])
+	],[
+		AC_MSG_RESULT(no)
+>>>>>>> temp
 	])
 ])
 
@@ -76,6 +126,7 @@ AC_DEFUN([ZFS_AC_KERNEL_POSIX_ACL_CHMOD], [
 ])
 
 dnl #
+<<<<<<< HEAD
 dnl # 2.6.30 API change,
 dnl # caching of ACL into the inode was added in this version.
 dnl #
@@ -97,6 +148,8 @@ AC_DEFUN([ZFS_AC_KERNEL_POSIX_ACL_CACHING], [
 ])
 
 dnl #
+=======
+>>>>>>> temp
 dnl # 3.1 API change,
 dnl # posix_acl_equiv_mode now wants an umode_t* instead of a mode_t*
 dnl #
@@ -271,6 +324,7 @@ AC_DEFUN([ZFS_AC_KERNEL_INODE_OPERATIONS_GET_ACL], [
 ])
 
 dnl #
+<<<<<<< HEAD
 dnl # 2.6.30 API change,
 dnl # current_umask exists only since this version.
 dnl #
@@ -283,6 +337,47 @@ AC_DEFUN([ZFS_AC_KERNEL_CURRENT_UMASK], [
 	],[
 		AC_MSG_RESULT(yes)
 		AC_DEFINE(HAVE_CURRENT_UMASK, 1, [current_umask() exists])
+=======
+dnl # 3.14 API change,
+dnl # Check if inode_operations contains the function set_acl
+dnl #
+AC_DEFUN([ZFS_AC_KERNEL_INODE_OPERATIONS_SET_ACL], [
+	AC_MSG_CHECKING([whether iops->set_acl() exists])
+	ZFS_LINUX_TRY_COMPILE([
+		#include <linux/fs.h>
+
+		int set_acl_fn(struct inode *inode, struct posix_acl *acl, int type)
+		    { return 0; }
+
+		static const struct inode_operations
+		    iops __attribute__ ((unused)) = {
+			.set_acl = set_acl_fn,
+		};
+	],[
+	],[
+		AC_MSG_RESULT(yes)
+		AC_DEFINE(HAVE_SET_ACL, 1, [iops->set_acl() exists])
+	],[
+		AC_MSG_RESULT(no)
+	])
+])
+
+dnl #
+dnl # 4.7 API change,
+dnl # The kernel get_acl will now check cache before calling i_op->get_acl and
+dnl # do set_cached_acl after that, so i_op->get_acl don't need to do that
+dnl # anymore.
+dnl #
+AC_DEFUN([ZFS_AC_KERNEL_GET_ACL_HANDLE_CACHE], [
+	AC_MSG_CHECKING([whether uncached_acl_sentinel() exists])
+	ZFS_LINUX_TRY_COMPILE([
+		#include <linux/fs.h>
+	],[
+		void *sentinel __attribute__ ((unused)) = uncached_acl_sentinel(NULL);
+	],[
+		AC_MSG_RESULT(yes)
+		AC_DEFINE(HAVE_KERNEL_GET_ACL_HANDLE_CACHE, 1, [uncached_acl_sentinel() exists])
+>>>>>>> temp
 	],[
 		AC_MSG_RESULT(no)
 	])

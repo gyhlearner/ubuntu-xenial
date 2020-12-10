@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  *  Copyright (C) 1994  Linus Torvalds
  *
@@ -10,7 +11,10 @@
 #include <linux/init.h>
 #include <linux/utsname.h>
 #include <linux/cpu.h>
+<<<<<<< HEAD
 #include <linux/smp.h>
+=======
+>>>>>>> temp
 #include <linux/module.h>
 #include <linux/nospec.h>
 #include <linux/prctl.h>
@@ -26,6 +30,7 @@
 #include <asm/paravirt.h>
 #include <asm/alternative.h>
 #include <asm/pgtable.h>
+<<<<<<< HEAD
 #include <asm/cacheflush.h>
 #include <asm/intel-family.h>
 #include <asm/e820.h>
@@ -49,6 +54,11 @@ static int __init noibrs_handler(char *str)
 }
 
 early_param("noibrs", noibrs_handler);
+=======
+#include <asm/set_memory.h>
+#include <asm/intel-family.h>
+#include <asm/e820/api.h>
+>>>>>>> temp
 
 static void __init spectre_v2_select_mitigation(void);
 static void __init ssb_select_mitigation(void);
@@ -392,7 +402,11 @@ retpoline_auto:
 	if (boot_cpu_data.x86_vendor == X86_VENDOR_AMD) {
 	retpoline_amd:
 		if (!boot_cpu_has(X86_FEATURE_LFENCE_RDTSC)) {
+<<<<<<< HEAD
 			pr_err("Spectre mitigation: LFENCE not serializing. Switching to generic retpoline\n");
+=======
+			pr_err("Spectre mitigation: LFENCE not serializing, switching to generic retpoline\n");
+>>>>>>> temp
 			goto retpoline_generic;
 		}
 		mode = retp_compiler() ? SPECTRE_V2_RETPOLINE_AMD :
@@ -421,6 +435,7 @@ specv2_set_mode:
 	setup_force_cpu_cap(X86_FEATURE_RSB_CTXSW);
 	pr_info("Spectre v2 / SpectreRSB mitigation: Filling RSB on context switch\n");
 
+<<<<<<< HEAD
 	/*
 	 * Initialize Indirect Branch Prediction Barrier if supported and not
 	 * disabled on the commandline
@@ -429,6 +444,12 @@ specv2_set_mode:
 		setup_force_cpu_cap(X86_FEATURE_USE_IBPB);
 		if (!noibpb)
 			set_ibpb_enabled(1);   /* Enable IBPB */
+=======
+	/* Initialize Indirect Branch Prediction Barrier if supported */
+	if (boot_cpu_has(X86_FEATURE_IBPB)) {
+		setup_force_cpu_cap(X86_FEATURE_USE_IBPB);
+		pr_info("Spectre v2 mitigation: Enabling Indirect Branch Prediction Barrier\n");
+>>>>>>> temp
 	}
 
 	/*
@@ -445,6 +466,7 @@ specv2_set_mode:
 	if (boot_cpu_has(X86_FEATURE_IBRS) && mode != SPECTRE_V2_IBRS_ENHANCED) {
 		setup_force_cpu_cap(X86_FEATURE_USE_IBRS_FW);
 		pr_info("Enabling Restricted Speculation for firmware calls\n");
+<<<<<<< HEAD
 
 		if (!noibrs &&
 		    mode != SPECTRE_V2_RETPOLINE_GENERIC &&
@@ -516,6 +538,74 @@ static enum ssb_mitigation_cmd __init ssb_parse_cmdline(void)
 	return cmd;
 }
 
+=======
+	}
+}
+
+#undef pr_fmt
+#define pr_fmt(fmt)	"Speculative Store Bypass: " fmt
+
+static enum ssb_mitigation ssb_mode __ro_after_init = SPEC_STORE_BYPASS_NONE;
+
+/* The kernel command line selection */
+enum ssb_mitigation_cmd {
+	SPEC_STORE_BYPASS_CMD_NONE,
+	SPEC_STORE_BYPASS_CMD_AUTO,
+	SPEC_STORE_BYPASS_CMD_ON,
+	SPEC_STORE_BYPASS_CMD_PRCTL,
+	SPEC_STORE_BYPASS_CMD_SECCOMP,
+};
+
+static const char *ssb_strings[] = {
+	[SPEC_STORE_BYPASS_NONE]	= "Vulnerable",
+	[SPEC_STORE_BYPASS_DISABLE]	= "Mitigation: Speculative Store Bypass disabled",
+	[SPEC_STORE_BYPASS_PRCTL]	= "Mitigation: Speculative Store Bypass disabled via prctl",
+	[SPEC_STORE_BYPASS_SECCOMP]	= "Mitigation: Speculative Store Bypass disabled via prctl and seccomp",
+};
+
+static const struct {
+	const char *option;
+	enum ssb_mitigation_cmd cmd;
+} ssb_mitigation_options[] = {
+	{ "auto",	SPEC_STORE_BYPASS_CMD_AUTO },    /* Platform decides */
+	{ "on",		SPEC_STORE_BYPASS_CMD_ON },      /* Disable Speculative Store Bypass */
+	{ "off",	SPEC_STORE_BYPASS_CMD_NONE },    /* Don't touch Speculative Store Bypass */
+	{ "prctl",	SPEC_STORE_BYPASS_CMD_PRCTL },   /* Disable Speculative Store Bypass via prctl */
+	{ "seccomp",	SPEC_STORE_BYPASS_CMD_SECCOMP }, /* Disable Speculative Store Bypass via prctl and seccomp */
+};
+
+static enum ssb_mitigation_cmd __init ssb_parse_cmdline(void)
+{
+	enum ssb_mitigation_cmd cmd = SPEC_STORE_BYPASS_CMD_AUTO;
+	char arg[20];
+	int ret, i;
+
+	if (cmdline_find_option_bool(boot_command_line, "nospec_store_bypass_disable")) {
+		return SPEC_STORE_BYPASS_CMD_NONE;
+	} else {
+		ret = cmdline_find_option(boot_command_line, "spec_store_bypass_disable",
+					  arg, sizeof(arg));
+		if (ret < 0)
+			return SPEC_STORE_BYPASS_CMD_AUTO;
+
+		for (i = 0; i < ARRAY_SIZE(ssb_mitigation_options); i++) {
+			if (!match_option(arg, ret, ssb_mitigation_options[i].option))
+				continue;
+
+			cmd = ssb_mitigation_options[i].cmd;
+			break;
+		}
+
+		if (i >= ARRAY_SIZE(ssb_mitigation_options)) {
+			pr_err("unknown option (%s). Switching to AUTO select\n", arg);
+			return SPEC_STORE_BYPASS_CMD_AUTO;
+		}
+	}
+
+	return cmd;
+}
+
+>>>>>>> temp
 static enum ssb_mitigation __init __ssb_select_mitigation(void)
 {
 	enum ssb_mitigation mode = SPEC_STORE_BYPASS_NONE;
@@ -766,12 +856,17 @@ static void __init l1tf_select_mitigation(void)
 #endif
 
 	half_pa = (u64)l1tf_pfn_limit() << PAGE_SHIFT;
+<<<<<<< HEAD
 	if (e820_any_mapped(half_pa, ULLONG_MAX - half_pa, E820_RAM)) {
 		pr_warn("System has more than MAX_PA/2 memory. L1TF mitigation not effective.\n");
 		pr_info("You may make it effective by booting the kernel with mem=%llu parameter.\n",
 				half_pa);
 		pr_info("However, doing so will make a part of your RAM unusable.\n");
 		pr_info("Reading https://www.kernel.org/doc/html/latest/admin-guide/l1tf.html might help you decide.\n");
+=======
+	if (e820__mapped_any(half_pa, ULLONG_MAX - half_pa, E820_TYPE_RAM)) {
+		pr_warn("System has more than MAX_PA/2 memory. L1TF mitigation not effective.\n");
+>>>>>>> temp
 		return;
 	}
 
@@ -849,19 +944,30 @@ static ssize_t cpu_show_common(struct device *dev, struct device_attribute *attr
 
 	switch (bug) {
 	case X86_BUG_CPU_MELTDOWN:
+<<<<<<< HEAD
 		if (boot_cpu_has(X86_FEATURE_KAISER))
+=======
+		if (boot_cpu_has(X86_FEATURE_PTI))
+>>>>>>> temp
 			return sprintf(buf, "Mitigation: PTI\n");
 
 		break;
 
 	case X86_BUG_SPECTRE_V1:
 		return sprintf(buf, "Mitigation: __user pointer sanitization\n");
+<<<<<<< HEAD
 		break;
 
 	case X86_BUG_SPECTRE_V2:
 		return sprintf(buf, "%s%s%s%s%s\n", spectre_v2_strings[spectre_v2_enabled],
 			       ibpb_enabled ? ", IBPB" : "",
 			       ibrs_enabled == 2 ? ", IBRS (user space)" : ibrs_enabled ? ", IBRS" : "",
+=======
+
+	case X86_BUG_SPECTRE_V2:
+		return sprintf(buf, "%s%s%s%s\n", spectre_v2_strings[spectre_v2_enabled],
+			       boot_cpu_has(X86_FEATURE_USE_IBPB) ? ", IBPB" : "",
+>>>>>>> temp
 			       boot_cpu_has(X86_FEATURE_USE_IBRS_FW) ? ", IBRS_FW" : "",
 			       spectre_v2_module_string());
 

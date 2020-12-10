@@ -34,6 +34,10 @@
 
 #include <linux/tracepoint.h>
 #include <sys/types.h>
+<<<<<<< HEAD
+=======
+#include <sys/trace_common.h> /* For ZIO macros */
+>>>>>>> temp
 
 /*
  * Generic support for one argument tracepoints of the form:
@@ -41,7 +45,11 @@
  * DTRACE_PROBE1(...,
  *     arc_buf_hdr_t *, ...);
  */
+<<<<<<< HEAD
 
+=======
+/* BEGIN CSTYLED */
+>>>>>>> temp
 DECLARE_EVENT_CLASS(zfs_arc_buf_hdr_class,
 	TP_PROTO(arc_buf_hdr_t *ab),
 	TP_ARGS(ab),
@@ -49,9 +57,16 @@ DECLARE_EVENT_CLASS(zfs_arc_buf_hdr_class,
 	    __array(uint64_t,		hdr_dva_word, 2)
 	    __field(uint64_t,		hdr_birth)
 	    __field(uint32_t,		hdr_flags)
+<<<<<<< HEAD
 	    __field(uint32_t,		hdr_datacnt)
 	    __field(arc_buf_contents_t,	hdr_type)
 	    __field(uint64_t,		hdr_size)
+=======
+	    __field(uint32_t,		hdr_bufcnt)
+	    __field(arc_buf_contents_t,	hdr_type)
+	    __field(uint16_t,		hdr_psize)
+	    __field(uint16_t,		hdr_lsize)
+>>>>>>> temp
 	    __field(uint64_t,		hdr_spa)
 	    __field(arc_state_type_t,	hdr_state_type)
 	    __field(clock_t,		hdr_access)
@@ -67,8 +82,14 @@ DECLARE_EVENT_CLASS(zfs_arc_buf_hdr_class,
 	    __entry->hdr_dva_word[1]	= ab->b_dva.dva_word[1];
 	    __entry->hdr_birth		= ab->b_birth;
 	    __entry->hdr_flags		= ab->b_flags;
+<<<<<<< HEAD
 	    __entry->hdr_datacnt	= ab->b_l1hdr.b_datacnt;
 	    __entry->hdr_size		= ab->b_size;
+=======
+	    __entry->hdr_bufcnt	= ab->b_l1hdr.b_bufcnt;
+	    __entry->hdr_psize		= ab->b_psize;
+	    __entry->hdr_lsize		= ab->b_lsize;
+>>>>>>> temp
 	    __entry->hdr_spa		= ab->b_spa;
 	    __entry->hdr_state_type	= ab->b_l1hdr.b_state->arcs_state;
 	    __entry->hdr_access		= ab->b_l1hdr.b_arc_access;
@@ -80,28 +101,52 @@ DECLARE_EVENT_CLASS(zfs_arc_buf_hdr_class,
 	    __entry->hdr_refcount	= ab->b_l1hdr.b_refcnt.rc_count;
 	),
 	TP_printk("hdr { dva 0x%llx:0x%llx birth %llu "
+<<<<<<< HEAD
 	    "flags 0x%x datacnt %u type %u size %llu spa %llu "
+=======
+	    "flags 0x%x bufcnt %u type %u psize %u lsize %u spa %llu "
+>>>>>>> temp
 	    "state_type %u access %lu mru_hits %u mru_ghost_hits %u "
 	    "mfu_hits %u mfu_ghost_hits %u l2_hits %u refcount %lli }",
 	    __entry->hdr_dva_word[0], __entry->hdr_dva_word[1],
 	    __entry->hdr_birth, __entry->hdr_flags,
+<<<<<<< HEAD
 	    __entry->hdr_datacnt, __entry->hdr_type, __entry->hdr_size,
 	    __entry->hdr_spa, __entry->hdr_state_type,
+=======
+	    __entry->hdr_bufcnt, __entry->hdr_type, __entry->hdr_psize,
+	    __entry->hdr_lsize, __entry->hdr_spa, __entry->hdr_state_type,
+>>>>>>> temp
 	    __entry->hdr_access, __entry->hdr_mru_hits,
 	    __entry->hdr_mru_ghost_hits, __entry->hdr_mfu_hits,
 	    __entry->hdr_mfu_ghost_hits, __entry->hdr_l2_hits,
 	    __entry->hdr_refcount)
 );
+<<<<<<< HEAD
 
+=======
+/* END CSTYLED */
+
+/* BEGIN CSTYLED */
+>>>>>>> temp
 #define	DEFINE_ARC_BUF_HDR_EVENT(name) \
 DEFINE_EVENT(zfs_arc_buf_hdr_class, name, \
 	TP_PROTO(arc_buf_hdr_t *ab), \
 	TP_ARGS(ab))
+<<<<<<< HEAD
+=======
+/* END CSTYLED */
+>>>>>>> temp
 DEFINE_ARC_BUF_HDR_EVENT(zfs_arc__hit);
 DEFINE_ARC_BUF_HDR_EVENT(zfs_arc__evict);
 DEFINE_ARC_BUF_HDR_EVENT(zfs_arc__delete);
 DEFINE_ARC_BUF_HDR_EVENT(zfs_new_state__mru);
 DEFINE_ARC_BUF_HDR_EVENT(zfs_new_state__mfu);
+<<<<<<< HEAD
+=======
+DEFINE_ARC_BUF_HDR_EVENT(zfs_arc__sync__wait__for__async);
+DEFINE_ARC_BUF_HDR_EVENT(zfs_arc__demand__hit__predictive__prefetch);
+>>>>>>> temp
 DEFINE_ARC_BUF_HDR_EVENT(zfs_l2arc__hit);
 DEFINE_ARC_BUF_HDR_EVENT(zfs_l2arc__miss);
 
@@ -112,6 +157,7 @@ DEFINE_ARC_BUF_HDR_EVENT(zfs_l2arc__miss);
  *     vdev_t *, ...,
  *     zio_t *, ...);
  */
+<<<<<<< HEAD
 
 #define	ZIO_TP_STRUCT_ENTRY						\
 		__field(zio_type_t,		zio_type)		\
@@ -193,6 +239,9 @@ DEFINE_ARC_BUF_HDR_EVENT(zfs_l2arc__miss);
 	__entry->zp_level, __entry->zp_copies, __entry->zp_dedup,	\
 	__entry->zp_dedup_verify, __entry->zp_nopwrite
 
+=======
+/* BEGIN CSTYLED */
+>>>>>>> temp
 DECLARE_EVENT_CLASS(zfs_l2arc_rw_class,
 	TP_PROTO(vdev_t *vd, zio_t *zio),
 	TP_ARGS(vd, zio),
@@ -212,11 +261,21 @@ DECLARE_EVENT_CLASS(zfs_l2arc_rw_class,
 	    ZIO_TP_PRINTK_FMT, __entry->vdev_id, __entry->vdev_guid,
 	    __entry->vdev_state, ZIO_TP_PRINTK_ARGS)
 );
+<<<<<<< HEAD
 
+=======
+/* END CSTYLED */
+
+/* BEGIN CSTYLED */
+>>>>>>> temp
 #define	DEFINE_L2ARC_RW_EVENT(name) \
 DEFINE_EVENT(zfs_l2arc_rw_class, name, \
 	TP_PROTO(vdev_t *vd, zio_t *zio), \
 	TP_ARGS(vd, zio))
+<<<<<<< HEAD
+=======
+/* END CSTYLED */
+>>>>>>> temp
 DEFINE_L2ARC_RW_EVENT(zfs_l2arc__read);
 DEFINE_L2ARC_RW_EVENT(zfs_l2arc__write);
 
@@ -228,7 +287,11 @@ DEFINE_L2ARC_RW_EVENT(zfs_l2arc__write);
  *     zio_t *, ...,
  *     l2arc_write_callback_t *, ...);
  */
+<<<<<<< HEAD
 
+=======
+/* BEGIN CSTYLED */
+>>>>>>> temp
 DECLARE_EVENT_CLASS(zfs_l2arc_iodone_class,
 	TP_PROTO(zio_t *zio, l2arc_write_callback_t *cb),
 	TP_ARGS(zio, cb),
@@ -236,11 +299,21 @@ DECLARE_EVENT_CLASS(zfs_l2arc_iodone_class,
 	TP_fast_assign(ZIO_TP_FAST_ASSIGN),
 	TP_printk(ZIO_TP_PRINTK_FMT, ZIO_TP_PRINTK_ARGS)
 );
+<<<<<<< HEAD
 
+=======
+/* END CSTYLED */
+
+/* BEGIN CSTYLED */
+>>>>>>> temp
 #define	DEFINE_L2ARC_IODONE_EVENT(name) \
 DEFINE_EVENT(zfs_l2arc_iodone_class, name, \
 	TP_PROTO(zio_t *zio, l2arc_write_callback_t *cb), \
 	TP_ARGS(zio, cb))
+<<<<<<< HEAD
+=======
+/* END CSTYLED */
+>>>>>>> temp
 DEFINE_L2ARC_IODONE_EVENT(zfs_l2arc__iodone);
 
 
@@ -253,7 +326,11 @@ DEFINE_L2ARC_IODONE_EVENT(zfs_l2arc__iodone);
  *     uint64_t,
  *     const zbookmark_phys_t *);
  */
+<<<<<<< HEAD
 
+=======
+/* BEGIN CSTYLED */
+>>>>>>> temp
 DECLARE_EVENT_CLASS(zfs_arc_miss_class,
 	TP_PROTO(arc_buf_hdr_t *hdr,
 	    const blkptr_t *bp, uint64_t size, const zbookmark_phys_t *zb),
@@ -262,9 +339,16 @@ DECLARE_EVENT_CLASS(zfs_arc_miss_class,
 	    __array(uint64_t,		hdr_dva_word, 2)
 	    __field(uint64_t,		hdr_birth)
 	    __field(uint32_t,		hdr_flags)
+<<<<<<< HEAD
 	    __field(uint32_t,		hdr_datacnt)
 	    __field(arc_buf_contents_t,	hdr_type)
 	    __field(uint64_t,		hdr_size)
+=======
+	    __field(uint32_t,		hdr_bufcnt)
+	    __field(arc_buf_contents_t,	hdr_type)
+	    __field(uint16_t,		hdr_psize)
+	    __field(uint16_t,		hdr_lsize)
+>>>>>>> temp
 	    __field(uint64_t,		hdr_spa)
 	    __field(arc_state_type_t,	hdr_state_type)
 	    __field(clock_t,		hdr_access)
@@ -292,8 +376,14 @@ DECLARE_EVENT_CLASS(zfs_arc_miss_class,
 	    __entry->hdr_dva_word[1]	= hdr->b_dva.dva_word[1];
 	    __entry->hdr_birth		= hdr->b_birth;
 	    __entry->hdr_flags		= hdr->b_flags;
+<<<<<<< HEAD
 	    __entry->hdr_datacnt	= hdr->b_l1hdr.b_datacnt;
 	    __entry->hdr_size		= hdr->b_size;
+=======
+	    __entry->hdr_bufcnt		= hdr->b_l1hdr.b_bufcnt;
+	    __entry->hdr_psize		= hdr->b_psize;
+	    __entry->hdr_lsize		= hdr->b_lsize;
+>>>>>>> temp
 	    __entry->hdr_spa		= hdr->b_spa;
 	    __entry->hdr_state_type	= hdr->b_l1hdr.b_state->arcs_state;
 	    __entry->hdr_access		= hdr->b_l1hdr.b_arc_access;
@@ -323,7 +413,11 @@ DECLARE_EVENT_CLASS(zfs_arc_miss_class,
 	    __entry->zb_blkid		= zb->zb_blkid;
 	),
 	TP_printk("hdr { dva 0x%llx:0x%llx birth %llu "
+<<<<<<< HEAD
 	    "flags 0x%x datacnt %u size %llu spa %llu state_type %u "
+=======
+	    "flags 0x%x bufcnt %u psize %u lsize %u spa %llu state_type %u "
+>>>>>>> temp
 	    "access %lu mru_hits %u mru_ghost_hits %u mfu_hits %u "
 	    "mfu_ghost_hits %u l2_hits %u refcount %lli } "
 	    "bp { dva0 0x%llx:0x%llx dva1 0x%llx:0x%llx dva2 "
@@ -332,7 +426,11 @@ DECLARE_EVENT_CLASS(zfs_arc_miss_class,
 	    "blkid %llu }",
 	    __entry->hdr_dva_word[0], __entry->hdr_dva_word[1],
 	    __entry->hdr_birth, __entry->hdr_flags,
+<<<<<<< HEAD
 	    __entry->hdr_datacnt, __entry->hdr_size,
+=======
+	    __entry->hdr_bufcnt, __entry->hdr_psize, __entry->hdr_lsize,
+>>>>>>> temp
 	    __entry->hdr_spa, __entry->hdr_state_type, __entry->hdr_access,
 	    __entry->hdr_mru_hits, __entry->hdr_mru_ghost_hits,
 	    __entry->hdr_mfu_hits, __entry->hdr_mfu_ghost_hits,
@@ -345,12 +443,22 @@ DECLARE_EVENT_CLASS(zfs_arc_miss_class,
 	    __entry->bp_lsize, __entry->zb_objset, __entry->zb_object,
 	    __entry->zb_level, __entry->zb_blkid)
 );
+<<<<<<< HEAD
 
+=======
+/* END CSTYLED */
+
+/* BEGIN CSTYLED */
+>>>>>>> temp
 #define	DEFINE_ARC_MISS_EVENT(name) \
 DEFINE_EVENT(zfs_arc_miss_class, name, \
 	TP_PROTO(arc_buf_hdr_t *hdr, \
 	    const blkptr_t *bp, uint64_t size, const zbookmark_phys_t *zb), \
 	TP_ARGS(hdr, bp, size, zb))
+<<<<<<< HEAD
+=======
+/* END CSTYLED */
+>>>>>>> temp
 DEFINE_ARC_MISS_EVENT(zfs_arc__miss);
 
 /*
@@ -362,7 +470,11 @@ DEFINE_ARC_MISS_EVENT(zfs_arc__miss);
  *     uint64_t, ...,
  *     boolean_t, ...);
  */
+<<<<<<< HEAD
 
+=======
+/* BEGIN CSTYLED */
+>>>>>>> temp
 DECLARE_EVENT_CLASS(zfs_l2arc_evict_class,
 	TP_PROTO(l2arc_dev_t *dev,
 	    list_t *buflist, uint64_t taddr, boolean_t all),
@@ -403,12 +515,22 @@ DECLARE_EVENT_CLASS(zfs_l2arc_evict_class,
 	    __entry->l2ad_end, __entry->l2ad_first, __entry->l2ad_writing,
 	    __entry->taddr, __entry->all)
 );
+<<<<<<< HEAD
 
+=======
+/* END CSTYLED */
+
+/* BEGIN CSTYLED */
+>>>>>>> temp
 #define	DEFINE_L2ARC_EVICT_EVENT(name) \
 DEFINE_EVENT(zfs_l2arc_evict_class, name, \
 	TP_PROTO(l2arc_dev_t *dev, \
 	    list_t *buflist, uint64_t taddr, boolean_t all), \
 	TP_ARGS(dev, buflist, taddr, all))
+<<<<<<< HEAD
+=======
+/* END CSTYLED */
+>>>>>>> temp
 DEFINE_L2ARC_EVICT_EVENT(zfs_l2arc__evict);
 
 #endif /* _TRACE_ARC_H */

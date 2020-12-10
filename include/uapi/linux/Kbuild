@@ -1,35 +1,10 @@
 # UAPI Header export list
-header-y += android/
-header-y += byteorder/
-header-y += can/
-header-y += caif/
-header-y += dvb/
-header-y += hdlc/
-header-y += hsi/
-header-y += iio/
-header-y += isdn/
-header-y += mmc/
-header-y += nfsd/
-header-y += raid/
-header-y += spi/
-header-y += sunrpc/
-header-y += tc_act/
-header-y += tc_ematch/
-header-y += netfilter/
-header-y += netfilter_arp/
-header-y += netfilter_bridge/
-header-y += netfilter_ipv4/
-header-y += netfilter_ipv6/
-header-y += usb/
-header-y += wimax/
 
-genhdr-y += version.h
-
-ifneq ($(wildcard $(srctree)/arch/$(SRCARCH)/include/uapi/asm/a.out.h \
-		  $(srctree)/arch/$(SRCARCH)/include/asm/a.out.h),)
-header-y += a.out.h
+ifeq ($(wildcard $(srctree)/arch/$(SRCARCH)/include/uapi/asm/a.out.h),)
+no-export-headers += a.out.h
 endif
 
+<<<<<<< HEAD
 header-y += acct.h
 header-y += adb.h
 header-y += adfs_fs.h
@@ -231,13 +206,16 @@ header-y += keyctl.h
 ifneq ($(wildcard $(srctree)/arch/$(SRCARCH)/include/uapi/asm/kvm.h \
 		  $(srctree)/arch/$(SRCARCH)/include/asm/kvm.h),)
 header-y += kvm.h
+=======
+ifeq ($(wildcard $(srctree)/arch/$(SRCARCH)/include/uapi/asm/kvm.h),)
+no-export-headers += kvm.h
+>>>>>>> temp
 endif
 
-
-ifneq ($(wildcard $(srctree)/arch/$(SRCARCH)/include/uapi/asm/kvm_para.h \
-		  $(srctree)/arch/$(SRCARCH)/include/asm/kvm_para.h),)
-header-y += kvm_para.h
+ifeq ($(wildcard $(srctree)/arch/$(SRCARCH)/include/uapi/asm/kvm_para.h),)
+no-export-headers += kvm_para.h
 endif
+<<<<<<< HEAD
 
 header-y += hw_breakpoint.h
 header-y += l2tp.h
@@ -462,3 +440,5 @@ header-y += xilinx-v4l2-controls.h
 header-y += zorro.h
 header-y += zorro_ids.h
 header-y += userfaultfd.h
+=======
+>>>>>>> temp

@@ -1,2 +1,7 @@
+<<<<<<< HEAD
 Source: http://ports.ubuntu.com/pool/multiverse/v/virtualbox/virtualbox-guest-dkms_5.0.18-dfsg-2build1_all.deb
 Version: 5.0.18-dfsg-2build1
+=======
+Source: http://ports.ubuntu.com/pool/multiverse/v/virtualbox/virtualbox-guest-dkms_5.2.8-dfsg-2_all.deb
+Version: 5.2.8-dfsg-2
+>>>>>>> temp

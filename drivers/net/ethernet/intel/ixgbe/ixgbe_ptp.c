@@ -1,7 +1,11 @@
 /*******************************************************************************
 
   Intel 10 Gigabit PCI Express Linux driver
+<<<<<<< HEAD
   Copyright(c) 1999 - 2015 Intel Corporation.
+=======
+  Copyright(c) 1999 - 2016 Intel Corporation.
+>>>>>>> temp
 
   This program is free software; you can redistribute it and/or modify it
   under the terms and conditions of the GNU General Public License,
@@ -245,7 +249,11 @@ static void ixgbe_ptp_setup_sdp_x540(struct ixgbe_adapter *adapter)
  * result of SYSTIME is 32bits of "billions of cycles" and 32 bits of
  * "cycles", rather than seconds and nanoseconds.
  */
+<<<<<<< HEAD
 static cycle_t ixgbe_ptp_read_X550(const struct cyclecounter *hw_cc)
+=======
+static u64 ixgbe_ptp_read_X550(const struct cyclecounter *hw_cc)
+>>>>>>> temp
 {
 	struct ixgbe_adapter *adapter =
 			container_of(hw_cc, struct ixgbe_adapter, hw_cc);
@@ -282,7 +290,11 @@ static cycle_t ixgbe_ptp_read_X550(const struct cyclecounter *hw_cc)
  * cyclecounter structure used to construct a ns counter from the
  * arbitrary fixed point registers
  */
+<<<<<<< HEAD
 static cycle_t ixgbe_ptp_read_82599(const struct cyclecounter *cc)
+=======
+static u64 ixgbe_ptp_read_82599(const struct cyclecounter *cc)
+>>>>>>> temp
 {
 	struct ixgbe_adapter *adapter =
 		container_of(cc, struct ixgbe_adapter, hw_cc);
@@ -333,6 +345,10 @@ static void ixgbe_ptp_convert_to_hwtstamp(struct ixgbe_adapter *adapter,
 	 */
 	case ixgbe_mac_X550:
 	case ixgbe_mac_X550EM_x:
+<<<<<<< HEAD
+=======
+	case ixgbe_mac_x550em_a:
+>>>>>>> temp
 		/* Upper 32 bits represent billions of cycles, lower 32 bits
 		 * represent cycles. However, we use timespec64_to_ns for the
 		 * correct math even though the units haven't been corrected
@@ -377,7 +393,7 @@ static int ixgbe_ptp_adjfreq_82599(struct ptp_clock_info *ptp, s32 ppb)
 	}
 
 	smp_mb();
-	incval = ACCESS_ONCE(adapter->base_incval);
+	incval = READ_ONCE(adapter->base_incval);
 
 	freq = incval;
 	freq *= ppb;
@@ -395,7 +411,11 @@ static int ixgbe_ptp_adjfreq_82599(struct ptp_clock_info *ptp, s32 ppb)
 		if (incval > 0x00FFFFFFULL)
 			e_dev_warn("PTP ppb adjusted SYSTIME rate overflowed!\n");
 		IXGBE_WRITE_REG(hw, IXGBE_TIMINCA,
+<<<<<<< HEAD
 				(1 << IXGBE_INCPER_SHIFT_82599) |
+=======
+				BIT(IXGBE_INCPER_SHIFT_82599) |
+>>>>>>> temp
 				((u32)incval & 0x00FFFFFFUL));
 		break;
 	default:
@@ -662,6 +682,36 @@ static void ixgbe_ptp_clear_tx_timestamp(struct ixgbe_adapter *adapter)
 }
 
 /**
+<<<<<<< HEAD
+=======
+ * ixgbe_ptp_tx_hang - detect error case where Tx timestamp never finishes
+ * @adapter: private network adapter structure
+ */
+void ixgbe_ptp_tx_hang(struct ixgbe_adapter *adapter)
+{
+	bool timeout = time_is_before_jiffies(adapter->ptp_tx_start +
+					      IXGBE_PTP_TX_TIMEOUT);
+
+	if (!adapter->ptp_tx_skb)
+		return;
+
+	if (!test_bit(__IXGBE_PTP_TX_IN_PROGRESS, &adapter->state))
+		return;
+
+	/* If we haven't received a timestamp within the timeout, it is
+	 * reasonable to assume that it will never occur, so we can unlock the
+	 * timestamp bit when this occurs.
+	 */
+	if (timeout) {
+		cancel_work_sync(&adapter->ptp_tx_work);
+		ixgbe_ptp_clear_tx_timestamp(adapter);
+		adapter->tx_hwtstamp_timeouts++;
+		e_warn(drv, "clearing Tx timestamp hang\n");
+	}
+}
+
+/**
+>>>>>>> temp
  * ixgbe_ptp_tx_hwtstamp - utility function which checks for TX time stamp
  * @adapter: the private adapter struct
  *
@@ -671,17 +721,33 @@ static void ixgbe_ptp_clear_tx_timestamp(struct ixgbe_adapter *adapter)
  */
 static void ixgbe_ptp_tx_hwtstamp(struct ixgbe_adapter *adapter)
 {
+	struct sk_buff *skb = adapter->ptp_tx_skb;
 	struct ixgbe_hw *hw = &adapter->hw;
 	struct skb_shared_hwtstamps shhwtstamps;
 	u64 regval = 0;
 
 	regval |= (u64)IXGBE_READ_REG(hw, IXGBE_TXSTMPL);
 	regval |= (u64)IXGBE_READ_REG(hw, IXGBE_TXSTMPH) << 32;
+	ixgbe_ptp_convert_to_hwtstamp(adapter, &shhwtstamps, regval);
 
+<<<<<<< HEAD
 	ixgbe_ptp_convert_to_hwtstamp(adapter, &shhwtstamps, regval);
 	skb_tstamp_tx(adapter->ptp_tx_skb, &shhwtstamps);
 
 	ixgbe_ptp_clear_tx_timestamp(adapter);
+=======
+	/* Handle cleanup of the ptp_tx_skb ourselves, and unlock the state
+	 * bit prior to notifying the stack via skb_tstamp_tx(). This prevents
+	 * well behaved applications from attempting to timestamp again prior
+	 * to the lock bit being clear.
+	 */
+	adapter->ptp_tx_skb = NULL;
+	clear_bit_unlock(__IXGBE_PTP_TX_IN_PROGRESS, &adapter->state);
+
+	/* Notify the stack and then free the skb after we've unlocked */
+	skb_tstamp_tx(skb, &shhwtstamps);
+	dev_kfree_skb_any(skb);
+>>>>>>> temp
 }
 
 /**
@@ -857,14 +923,24 @@ static int ixgbe_ptp_set_timestamp_mode(struct ixgbe_adapter *adapter,
 	case HWTSTAMP_FILTER_PTP_V1_L4_SYNC:
 		tsync_rx_ctl |= IXGBE_TSYNCRXCTL_TYPE_L4_V1;
 		tsync_rx_mtrl |= IXGBE_RXMTRL_V1_SYNC_MSG;
+<<<<<<< HEAD
 		adapter->flags &= ~(IXGBE_FLAG_RX_HWTSTAMP_ENABLED |
 				    IXGBE_FLAG_RX_HWTSTAMP_IN_REGISTER);
+=======
+		adapter->flags |= (IXGBE_FLAG_RX_HWTSTAMP_ENABLED |
+				   IXGBE_FLAG_RX_HWTSTAMP_IN_REGISTER);
+>>>>>>> temp
 		break;
 	case HWTSTAMP_FILTER_PTP_V1_L4_DELAY_REQ:
 		tsync_rx_ctl |= IXGBE_TSYNCRXCTL_TYPE_L4_V1;
 		tsync_rx_mtrl |= IXGBE_RXMTRL_V1_DELAY_REQ_MSG;
+<<<<<<< HEAD
 		adapter->flags &= ~(IXGBE_FLAG_RX_HWTSTAMP_ENABLED |
 				    IXGBE_FLAG_RX_HWTSTAMP_IN_REGISTER);
+=======
+		adapter->flags |= (IXGBE_FLAG_RX_HWTSTAMP_ENABLED |
+				   IXGBE_FLAG_RX_HWTSTAMP_IN_REGISTER);
+>>>>>>> temp
 		break;
 	case HWTSTAMP_FILTER_PTP_V2_EVENT:
 	case HWTSTAMP_FILTER_PTP_V2_L2_EVENT:
@@ -878,10 +954,16 @@ static int ixgbe_ptp_set_timestamp_mode(struct ixgbe_adapter *adapter,
 		tsync_rx_ctl |= IXGBE_TSYNCRXCTL_TYPE_EVENT_V2;
 		is_l2 = true;
 		config->rx_filter = HWTSTAMP_FILTER_PTP_V2_EVENT;
+<<<<<<< HEAD
 		adapter->flags &= ~(IXGBE_FLAG_RX_HWTSTAMP_ENABLED |
 				    IXGBE_FLAG_RX_HWTSTAMP_IN_REGISTER);
+=======
+		adapter->flags |= (IXGBE_FLAG_RX_HWTSTAMP_ENABLED |
+				   IXGBE_FLAG_RX_HWTSTAMP_IN_REGISTER);
+>>>>>>> temp
 		break;
 	case HWTSTAMP_FILTER_PTP_V1_L4_EVENT:
+	case HWTSTAMP_FILTER_NTP_ALL:
 	case HWTSTAMP_FILTER_ALL:
 		/* The X550 controller is capable of timestamping all packets,
 		 * which allows it to accept any filter.
@@ -921,6 +1003,10 @@ static int ixgbe_ptp_set_timestamp_mode(struct ixgbe_adapter *adapter,
 	switch (hw->mac.type) {
 	case ixgbe_mac_X550:
 	case ixgbe_mac_X550EM_x:
+<<<<<<< HEAD
+=======
+	case ixgbe_mac_x550em_a:
+>>>>>>> temp
 		/* enable timestamping all packets only if at least some
 		 * packets were requested. Otherwise, play nice and disable
 		 * timestamping
@@ -1083,6 +1169,10 @@ void ixgbe_ptp_start_cyclecounter(struct ixgbe_adapter *adapter)
 			cc.shift = 2;
 		}
 		/* fallthrough */
+<<<<<<< HEAD
+=======
+	case ixgbe_mac_x550em_a:
+>>>>>>> temp
 	case ixgbe_mac_X550:
 		cc.read = ixgbe_ptp_read_X550;
 
@@ -1111,7 +1201,11 @@ void ixgbe_ptp_start_cyclecounter(struct ixgbe_adapter *adapter)
 		incval >>= IXGBE_INCVAL_SHIFT_82599;
 		cc.shift -= IXGBE_INCVAL_SHIFT_82599;
 		IXGBE_WRITE_REG(hw, IXGBE_TIMINCA,
+<<<<<<< HEAD
 				(1 << IXGBE_INCPER_SHIFT_82599) | incval);
+=======
+				BIT(IXGBE_INCPER_SHIFT_82599) | incval);
+>>>>>>> temp
 		break;
 	default:
 		/* other devices aren't supported */
@@ -1119,7 +1213,7 @@ void ixgbe_ptp_start_cyclecounter(struct ixgbe_adapter *adapter)
 	}
 
 	/* update the base incval used to calculate frequency adjustment */
-	ACCESS_ONCE(adapter->base_incval) = incval;
+	WRITE_ONCE(adapter->base_incval, incval);
 	smp_mb();
 
 	/* need lock to prevent incorrect read while modifying cyclecounter */
@@ -1216,6 +1310,7 @@ static long ixgbe_ptp_create_clock(struct ixgbe_adapter *adapter)
 		adapter->ptp_caps.n_per_out = 0;
 		adapter->ptp_caps.pps = 0;
 		adapter->ptp_caps.adjfreq = ixgbe_ptp_adjfreq_82599;
+<<<<<<< HEAD
 		adapter->ptp_caps.adjtime = ixgbe_ptp_adjtime;
 		adapter->ptp_caps.gettime64 = ixgbe_ptp_gettime;
 		adapter->ptp_caps.settime64 = ixgbe_ptp_settime;
@@ -1223,6 +1318,25 @@ static long ixgbe_ptp_create_clock(struct ixgbe_adapter *adapter)
 		break;
 	case ixgbe_mac_X550:
 	case ixgbe_mac_X550EM_x:
+		snprintf(adapter->ptp_caps.name, 16, "%s", netdev->name);
+		adapter->ptp_caps.owner = THIS_MODULE;
+		adapter->ptp_caps.max_adj = 30000000;
+		adapter->ptp_caps.n_alarm = 0;
+		adapter->ptp_caps.n_ext_ts = 0;
+		adapter->ptp_caps.n_per_out = 0;
+		adapter->ptp_caps.pps = 0;
+		adapter->ptp_caps.adjfreq = ixgbe_ptp_adjfreq_X550;
+=======
+>>>>>>> temp
+		adapter->ptp_caps.adjtime = ixgbe_ptp_adjtime;
+		adapter->ptp_caps.gettime64 = ixgbe_ptp_gettime;
+		adapter->ptp_caps.settime64 = ixgbe_ptp_settime;
+		adapter->ptp_caps.enable = ixgbe_ptp_feature_enable;
+		adapter->ptp_setup_sdp = NULL;
+		break;
+	case ixgbe_mac_X550:
+	case ixgbe_mac_X550EM_x:
+	case ixgbe_mac_x550em_a:
 		snprintf(adapter->ptp_caps.name, 16, "%s", netdev->name);
 		adapter->ptp_caps.owner = THIS_MODULE;
 		adapter->ptp_caps.max_adj = 30000000;
@@ -1250,7 +1364,7 @@ static long ixgbe_ptp_create_clock(struct ixgbe_adapter *adapter)
 		adapter->ptp_clock = NULL;
 		e_dev_err("ptp_clock_register failed\n");
 		return err;
-	} else
+	} else if (adapter->ptp_clock)
 		e_dev_info("registered PHC device on %s\n", netdev->name);
 
 	/* set default timestamp mode to disabled here. We do this in

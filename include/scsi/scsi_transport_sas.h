@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 #ifndef SCSI_TRANSPORT_SAS_H
 #define SCSI_TRANSPORT_SAS_H
 
@@ -5,23 +6,30 @@
 #include <linux/types.h>
 #include <linux/mutex.h>
 #include <scsi/sas.h>
+#include <linux/bsg-lib.h>
 
 struct scsi_transport_template;
 struct sas_rphy;
 struct request;
 
 #if !IS_ENABLED(CONFIG_SCSI_SAS_ATTRS)
+<<<<<<< HEAD
 static inline int is_sas_attached(struct scsi_device *sdev)
 {
 	return 0;
 }
 
+=======
+>>>>>>> temp
 static inline int scsi_is_sas_rphy(const struct device *sdev)
 {
 	return 0;
 }
 #else
+<<<<<<< HEAD
 extern int is_sas_attached(struct scsi_device *sdev);
+=======
+>>>>>>> temp
 extern int scsi_is_sas_rphy(const struct device *);
 #endif
 
@@ -160,6 +168,7 @@ struct sas_port {
 
 	struct mutex		phy_list_mutex;
 	struct list_head	phy_list;
+	struct list_head	del_list; /* libsas only */
 };
 
 #define dev_to_sas_port(d) \
@@ -182,7 +191,8 @@ struct sas_function_template {
 	int (*phy_setup)(struct sas_phy *);
 	void (*phy_release)(struct sas_phy *);
 	int (*set_phy_speed)(struct sas_phy *, struct sas_phy_linkrates *);
-	int (*smp_handler)(struct Scsi_Host *, struct sas_rphy *, struct request *);
+	void (*smp_handler)(struct bsg_job *, struct Scsi_Host *,
+			struct sas_rphy *);
 };
 
 

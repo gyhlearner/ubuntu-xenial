@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright (C) 2005-2015 Junjiro R. Okajima
+=======
+ * Copyright (C) 2005-2017 Junjiro R. Okajima
+>>>>>>> temp
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,15 +44,26 @@
 #include "dbgaufs.h"
 #include "dentry.h"
 #include "dir.h"
+<<<<<<< HEAD
 #include "dynop.h"
 #include "file.h"
 #include "fstype.h"
+=======
+#include "dirren.h"
+#include "dynop.h"
+#include "file.h"
+#include "fstype.h"
+#include "hbl.h"
+>>>>>>> temp
 #include "inode.h"
 #include "loop.h"
 #include "module.h"
 #include "opts.h"
 #include "rwsem.h"
+<<<<<<< HEAD
 #include "spl.h"
+=======
+>>>>>>> temp
 #include "super.h"
 #include "sysaufs.h"
 #include "vfsub.h"

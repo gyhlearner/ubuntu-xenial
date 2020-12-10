@@ -156,6 +156,7 @@ struct pp_power_state {
 	struct pp_hw_power_state  hardware;
 };
 
+<<<<<<< HEAD
 
 /*Structure to hold a VCE state entry*/
 struct PP_VCEState {
@@ -165,22 +166,34 @@ struct PP_VCEState {
 	uint32_t mclk;
 };
 
+=======
+>>>>>>> temp
 enum PP_MMProfilingState {
 	PP_MMProfilingState_NA = 0,
 	PP_MMProfilingState_Started,
 	PP_MMProfilingState_Stopped
 };
 
+<<<<<<< HEAD
 struct PP_Clock_Engine_Request {
 	unsigned long clientType;
 	unsigned long ctxid;
 	uint64_t  context_handle;
 	unsigned long sclk;
 	unsigned long sclkHardMin;
+=======
+struct pp_clock_engine_request {
+	unsigned long client_type;
+	unsigned long ctx_id;
+	uint64_t  context_handle;
+	unsigned long sclk;
+	unsigned long sclk_hard_min;
+>>>>>>> temp
 	unsigned long mclk;
 	unsigned long iclk;
 	unsigned long evclk;
 	unsigned long ecclk;
+<<<<<<< HEAD
 	unsigned long ecclkHardMin;
 	unsigned long vclk;
 	unsigned long dclk;
@@ -188,13 +201,25 @@ struct PP_Clock_Engine_Request {
 	unsigned long acpclk;
 	unsigned long sclkOverdrive;
 	unsigned long mclkOverdrive;
+=======
+	unsigned long ecclk_hard_min;
+	unsigned long vclk;
+	unsigned long dclk;
+	unsigned long sclk_over_drive;
+	unsigned long mclk_over_drive;
+>>>>>>> temp
 	unsigned long sclk_threshold;
 	unsigned long flag;
 	unsigned long vclk_ceiling;
 	unsigned long dclk_ceiling;
 	unsigned long num_cus;
+<<<<<<< HEAD
 	unsigned long pmflag;
 	enum PP_MMProfilingState MMProfilingState;
+=======
+	unsigned long pm_flag;
+	enum PP_MMProfilingState mm_profiling_state;
+>>>>>>> temp
 };
 
 #endif

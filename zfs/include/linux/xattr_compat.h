@@ -102,12 +102,32 @@ fn(struct inode *ip, char *list, size_t list_size,			\
 #endif
 
 /*
+<<<<<<< HEAD
+=======
+ * 4.7 API change,
+ * The xattr_handler->get() callback was changed to take a both dentry and
+ * inode, because the dentry might not be attached to an inode yet.
+ */
+#if defined(HAVE_XATTR_GET_DENTRY_INODE)
+#define	ZPL_XATTR_GET_WRAPPER(fn)					\
+static int								\
+fn(const struct xattr_handler *handler, struct dentry *dentry,		\
+    struct inode *inode, const char *name, void *buffer, size_t size)	\
+{									\
+	return (__ ## fn(inode, name, buffer, size));			\
+}
+/*
+>>>>>>> temp
  * 4.4 API change,
  * The xattr_handler->get() callback was changed to take a xattr_handler,
  * and handler_flags argument was removed and should be accessed by
  * handler->flags.
  */
+<<<<<<< HEAD
 #if defined(HAVE_XATTR_GET_HANDLER)
+=======
+#elif defined(HAVE_XATTR_GET_HANDLER)
+>>>>>>> temp
 #define	ZPL_XATTR_GET_WRAPPER(fn)					\
 static int								\
 fn(const struct xattr_handler *handler, struct dentry *dentry,		\
@@ -141,12 +161,33 @@ fn(struct inode *ip, const char *name, void *buffer, size_t size)	\
 #endif
 
 /*
+<<<<<<< HEAD
+=======
+ * 4.7 API change,
+ * The xattr_handler->set() callback was changed to take a both dentry and
+ * inode, because the dentry might not be attached to an inode yet.
+ */
+#if defined(HAVE_XATTR_SET_DENTRY_INODE)
+#define	ZPL_XATTR_SET_WRAPPER(fn)					\
+static int								\
+fn(const struct xattr_handler *handler, struct dentry *dentry,		\
+    struct inode *inode, const char *name, const void *buffer,		\
+    size_t size, int flags)						\
+{									\
+	return (__ ## fn(inode, name, buffer, size, flags));		\
+}
+/*
+>>>>>>> temp
  * 4.4 API change,
  * The xattr_handler->set() callback was changed to take a xattr_handler,
  * and handler_flags argument was removed and should be accessed by
  * handler->flags.
  */
+<<<<<<< HEAD
 #if defined(HAVE_XATTR_SET_HANDLER)
+=======
+#elif defined(HAVE_XATTR_SET_HANDLER)
+>>>>>>> temp
 #define	ZPL_XATTR_SET_WRAPPER(fn)					\
 static int								\
 fn(const struct xattr_handler *handler, struct dentry *dentry,		\

@@ -187,7 +187,8 @@ Description:	Processor frequency boosting control
 		This switch controls the boost setting for the whole system.
 		Boosting allows the CPU and the firmware to run at a frequency
 		beyound it's nominal limit.
-		More details can be found in Documentation/cpu-freq/boost.txt
+		More details can be found in
+		Documentation/admin-guide/pm/cpufreq.rst
 
 
 What:		/sys/devices/system/cpu/cpu#/crash_notes
@@ -223,7 +224,8 @@ Description:	Parameters for the Intel P-state driver
 		no_turbo: limits the driver to selecting P states below the turbo
 		frequency range.
 
-		More details can be found in Documentation/cpu-freq/intel-pstate.txt
+		More details can be found in
+		Documentation/admin-guide/pm/intel_pstate.rst
 
 What:		/sys/devices/system/cpu/cpu*/cache/index*/<set_of_attributes_mentioned_below>
 Date:		July 2014(documented, existed before August 2008)
@@ -272,6 +274,25 @@ Description:	Parameters for the CPU cache attributes
 				     the modified cache line is written to main
 				     memory only when it is replaced
 
+<<<<<<< HEAD
+=======
+
+What:		/sys/devices/system/cpu/cpu*/cache/index*/id
+Date:		September 2016
+Contact:	Linux kernel mailing list <linux-kernel@vger.kernel.org>
+Description:	Cache id
+
+		The id provides a unique number for a specific instance of
+		a cache of a particular type. E.g. there may be a level
+		3 unified cache on each socket in a server and we may
+		assign them ids 0, 1, 2, ...
+
+		Note that id value can be non-contiguous. E.g. level 1
+		caches typically exist per core, but there may not be a
+		power of two cores on a socket, so these caches may be
+		numbered 0, 1, 2, 3, 4, 5, 8, 9, 10, ...
+
+>>>>>>> temp
 What:		/sys/devices/system/cpu/cpuX/cpufreq/throttle_stats
 		/sys/devices/system/cpu/cpuX/cpufreq/throttle_stats/turbo_stat
 		/sys/devices/system/cpu/cpuX/cpufreq/throttle_stats/sub_turbo_stat
@@ -341,6 +362,26 @@ Description:	POWERNV CPUFreq driver's frequency throttle stats directory and
 		the /sys/devices/system/cpu/cpuX/cpufreq/throttle_stats directory and
 		attributes which give the frequency throttle information of the chip.
 
+<<<<<<< HEAD
+=======
+What:		/sys/devices/system/cpu/cpuX/regs/
+		/sys/devices/system/cpu/cpuX/regs/identification/
+		/sys/devices/system/cpu/cpuX/regs/identification/midr_el1
+		/sys/devices/system/cpu/cpuX/regs/identification/revidr_el1
+Date:		June 2016
+Contact:	Linux ARM Kernel Mailing list <linux-arm-kernel@lists.infradead.org>
+Description:	AArch64 CPU registers
+		'identification' directory exposes the CPU ID registers for
+		 identifying model and revision of the CPU.
+
+What:		/sys/devices/system/cpu/cpu#/cpu_capacity
+Date:		December 2016
+Contact:	Linux kernel mailing list <linux-kernel@vger.kernel.org>
+Description:	information about CPUs heterogeneity.
+
+		cpu_capacity: capacity of cpu#.
+
+>>>>>>> temp
 What:		/sys/devices/system/cpu/vulnerabilities
 		/sys/devices/system/cpu/vulnerabilities/meltdown
 		/sys/devices/system/cpu/vulnerabilities/spectre_v1
@@ -360,7 +401,11 @@ Description:	Information about CPU vulnerabilities
 		"Mitigation: $M"  CPU is affected and mitigation $M is in effect
 
 		Details about the l1tf file can be found in
+<<<<<<< HEAD
 		Documentation/security/l1tf.txt
+=======
+		Documentation/admin-guide/l1tf.rst
+>>>>>>> temp
 
 What:		/sys/devices/system/cpu/smt
 		/sys/devices/system/cpu/smt/active

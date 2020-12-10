@@ -37,8 +37,6 @@ extern void cifs_buf_release(void *);
 extern struct smb_hdr *cifs_small_buf_get(void);
 extern void cifs_small_buf_release(void *);
 extern void free_rsp_buf(int, void *);
-extern void cifs_rqst_page_to_kvec(struct smb_rqst *rqst, unsigned int idx,
-					struct kvec *iov);
 extern int smb_send(struct TCP_Server_Info *, struct smb_hdr *,
 			unsigned int /* length */);
 extern unsigned int _get_xid(void);
@@ -60,10 +58,15 @@ do {								\
 } while (0)
 extern int init_cifs_idmap(void);
 extern void exit_cifs_idmap(void);
+extern int init_cifs_spnego(void);
+extern void exit_cifs_spnego(void);
 extern char *build_path_from_dentry(struct dentry *);
+extern char *build_path_from_dentry_optional_prefix(struct dentry *direntry,
+						    bool prefix);
 extern char *cifs_build_path_to_root(struct smb_vol *vol,
 				     struct cifs_sb_info *cifs_sb,
-				     struct cifs_tcon *tcon);
+				     struct cifs_tcon *tcon,
+				     int add_treename);
 extern char *build_wildcard_path_from_dentry(struct dentry *direntry);
 extern char *cifs_compose_mount_options(const char *sb_mountdata,
 		const char *fullpath, const struct dfs_info3_param *ref,
@@ -73,6 +76,7 @@ extern struct mid_q_entry *AllocMidQEntry(const struct smb_hdr *smb_buffer,
 					struct TCP_Server_Info *server);
 extern void DeleteMidQEntry(struct mid_q_entry *midEntry);
 extern void cifs_delete_mid(struct mid_q_entry *mid);
+extern void cifs_mid_q_entry_release(struct mid_q_entry *midEntry);
 extern void cifs_wake_up_task(struct mid_q_entry *mid);
 extern int cifs_handle_standard(struct TCP_Server_Info *server,
 				struct mid_q_entry *mid);
@@ -200,6 +204,8 @@ extern struct smb_vol *cifs_get_volume_info(char *mount_data,
 extern int cifs_mount(struct cifs_sb_info *, struct smb_vol *);
 extern void cifs_umount(struct cifs_sb_info *);
 extern void cifs_mark_open_files_invalid(struct cifs_tcon *tcon);
+extern void cifs_reopen_persistent_handles(struct cifs_tcon *tcon);
+
 extern bool cifs_find_lock_conflict(struct cifsFileInfo *cfile, __u64 offset,
 				    __u64 length, __u8 type,
 				    struct cifsLockInfo **conf_lock,
@@ -281,6 +287,11 @@ extern int get_dfs_path(const unsigned int xid, struct cifs_ses *ses,
 			const struct nls_table *nls_codepage,
 			unsigned int *num_referrals,
 			struct dfs_info3_param **referrals, int remap);
+extern int parse_dfs_referrals(struct get_dfs_referral_rsp *rsp, u32 rsp_size,
+			       unsigned int *num_of_nodes,
+			       struct dfs_info3_param **target_nodes,
+			       const struct nls_table *nls_codepage, int remap,
+			       const char *searchName, bool is_unicode);
 extern void reset_cifs_unix_caps(unsigned int xid, struct cifs_tcon *tcon,
 				 struct cifs_sb_info *cifs_sb,
 				 struct smb_vol *vol);
@@ -402,8 +413,7 @@ extern int CIFSSMBRead(const unsigned int xid, struct cifs_io_parms *io_parms,
 			unsigned int *nbytes, char **buf,
 			int *return_buf_type);
 extern int CIFSSMBWrite(const unsigned int xid, struct cifs_io_parms *io_parms,
-			unsigned int *nbytes, const char *buf,
-			const char __user *ubuf, const int long_op);
+			unsigned int *nbytes, const char *buf);
 extern int CIFSSMBWrite2(const unsigned int xid, struct cifs_io_parms *io_parms,
 			unsigned int *nbytes, struct kvec *iov, const int nvec);
 extern int CIFSGetSrvInodeNumber(const unsigned int xid, struct cifs_tcon *tcon,
@@ -471,12 +481,12 @@ extern int CIFSSMBCopy(unsigned int xid,
 extern ssize_t CIFSSMBQAllEAs(const unsigned int xid, struct cifs_tcon *tcon,
 			const unsigned char *searchName,
 			const unsigned char *ea_name, char *EAData,
-			size_t bufsize, const struct nls_table *nls_codepage,
-			int remap_special_chars);
+			size_t bufsize, struct cifs_sb_info *cifs_sb);
 extern int CIFSSMBSetEA(const unsigned int xid, struct cifs_tcon *tcon,
 		const char *fileName, const char *ea_name,
 		const void *ea_value, const __u16 ea_value_len,
-		const struct nls_table *nls_codepage, int remap_special_chars);
+		const struct nls_table *nls_codepage,
+		struct cifs_sb_info *cifs_sb);
 extern int CIFSSMBGetCIFSACL(const unsigned int xid, struct cifs_tcon *tcon,
 			__u16 fid, struct cifs_ntsd **acl_inf, __u32 *buflen);
 extern int CIFSSMBSetCIFSACL(const unsigned int, struct cifs_tcon *, __u16,
@@ -524,4 +534,17 @@ int cifs_create_mf_symlink(unsigned int xid, struct cifs_tcon *tcon,
 int __cifs_calc_signature(struct smb_rqst *rqst,
 			struct TCP_Server_Info *server, char *signature,
 			struct shash_desc *shash);
+<<<<<<< HEAD
+=======
+enum securityEnum cifs_select_sectype(struct TCP_Server_Info *,
+					enum securityEnum);
+struct cifs_aio_ctx *cifs_aio_ctx_alloc(void);
+void cifs_aio_ctx_release(struct kref *refcount);
+int setup_aio_ctx_iter(struct cifs_aio_ctx *ctx, struct iov_iter *iter, int rw);
+
+int cifs_alloc_hash(const char *name, struct crypto_shash **shash,
+		    struct sdesc **sdesc);
+void cifs_free_hash(struct crypto_shash **shash, struct sdesc **sdesc);
+
+>>>>>>> temp
 #endif			/* _CIFSPROTO_H */

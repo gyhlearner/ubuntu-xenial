@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+/* SPDX-License-Identifier: GPL-2.0 */
+>>>>>>> temp
 #ifndef _ASM_X86_CPUFEATURE_H
 #define _ASM_X86_CPUFEATURE_H
 
@@ -57,7 +61,11 @@ extern const char * const x86_bug_flags[NBUGINTS*32];
  * (1UL<<((bit)&31) gives us a mask for the feature_bit so we can
  * see if it is set in the mask word.
  */
+<<<<<<< HEAD
 #define CHECK_BIT_IN_MASK_WORD(maskname, word, bit)    \
+=======
+#define CHECK_BIT_IN_MASK_WORD(maskname, word, bit)	\
+>>>>>>> temp
 	(((bit)>>5)==(word) && (1UL<<((bit)&31) & maskname##word ))
 
 #define REQUIRED_MASK_BIT_SET(feature_bit)		\
@@ -128,17 +136,17 @@ extern const char * const x86_bug_flags[NBUGINTS*32];
 #define boot_cpu_has(bit)	cpu_has(&boot_cpu_data, bit)
 
 #define set_cpu_cap(c, bit)	set_bit(bit, (unsigned long *)((c)->x86_capability))
-#define clear_cpu_cap(c, bit)	clear_bit(bit, (unsigned long *)((c)->x86_capability))
-#define setup_clear_cpu_cap(bit) do { \
-	clear_cpu_cap(&boot_cpu_data, bit);	\
-	set_bit(bit, (unsigned long *)cpu_caps_cleared); \
-} while (0)
+
+extern void setup_clear_cpu_cap(unsigned int bit);
+extern void clear_cpu_cap(struct cpuinfo_x86 *c, unsigned int bit);
+
 #define setup_force_cpu_cap(bit) do { \
 	set_cpu_cap(&boot_cpu_data, bit);	\
 	set_bit(bit, (unsigned long *)cpu_caps_set);	\
 } while (0)
 
 #define setup_force_cpu_bug(bit) setup_force_cpu_cap(bit)
+<<<<<<< HEAD
 
 #define cpu_has_fpu		boot_cpu_has(X86_FEATURE_FPU)
 #define cpu_has_pse		boot_cpu_has(X86_FEATURE_PSE)
@@ -164,6 +172,8 @@ extern const char * const x86_bug_flags[NBUGINTS*32];
  * Do not add any more of those clumsy macros - use static_cpu_has() for
  * fast paths and boot_cpu_has() otherwise!
  */
+=======
+>>>>>>> temp
 
 #if defined(CC_HAVE_ASM_GOTO) && defined(CONFIG_X86_FAST_FEATURE_TESTS)
 /*
@@ -234,6 +244,7 @@ static __always_inline __pure bool _static_cpu_has(u16 bit)
 
 #define static_cpu_has_bug(bit)		static_cpu_has((bit))
 #define boot_cpu_has_bug(bit)		cpu_has_bug(&boot_cpu_data, (bit))
+#define boot_cpu_set_bug(bit)		set_cpu_cap(&boot_cpu_data, (bit))
 
 #define MAX_CPU_FEATURES		(NCAPINTS * 32)
 #define cpu_have_feature		boot_cpu_has

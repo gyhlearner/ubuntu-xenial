@@ -3,7 +3,11 @@
  *
  * This file contains AppArmor lib definitions
  *
+<<<<<<< HEAD
  * 2016 Canonical Ltd.
+=======
+ * 2017 Canonical Ltd.
+>>>>>>> temp
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -19,6 +23,7 @@
 
 #include "match.h"
 
+<<<<<<< HEAD
 /* Provide our own test for whether a write lock is held for asserts
  * this is because on none SMP systems write_can_lock will always
  * resolve to true, which is what you want for code making decisions
@@ -30,11 +35,14 @@
 #define write_is_locked(X) (1)
 #endif /* CONFIG_SMP */
 
+=======
+>>>>>>> temp
 /*
  * DEBUG remains global (no per profile flag) since it is mostly used in sysctl
  * which is not related to profile accesses.
  */
 
+<<<<<<< HEAD
 #define DEBUG_ON (aa_g_debug && printk_ratelimit())
 #define dbg_printk(__fmt, __args...) printk(KERN_DEBUG __fmt, ##__args)
 #define AA_DEBUG(fmt, args...)						\
@@ -54,15 +62,42 @@
 		if (printk_ratelimit())					\
 			printk(KERN_ERR "AppArmor: " fmt, ##args);	\
 	} while (0)
+=======
+#define DEBUG_ON (aa_g_debug)
+#define dbg_printk(__fmt, __args...) pr_debug(__fmt, ##__args)
+#define AA_DEBUG(fmt, args...)						\
+	do {								\
+		if (DEBUG_ON)						\
+			pr_debug_ratelimited("AppArmor: " fmt, ##args);	\
+	} while (0)
+
+#define AA_WARN(X) WARN((X), "APPARMOR WARN %s: %s\n", __func__, #X)
+
+#define AA_BUG(X, args...) AA_BUG_FMT((X), "" args)
+#ifdef CONFIG_SECURITY_APPARMOR_DEBUG_ASSERTS
+#define AA_BUG_FMT(X, fmt, args...)					\
+	WARN((X), "AppArmor WARN %s: (" #X "): " fmt, __func__, ##args)
+#else
+#define AA_BUG_FMT(X, fmt, args...)
+#endif
+
+#define AA_ERROR(fmt, args...)						\
+	pr_err_ratelimited("AppArmor: " fmt, ##args)
+>>>>>>> temp
 
 /* Flag indicating whether initialization completed */
 extern int apparmor_initialized;
 
 /* fn's in lib */
+<<<<<<< HEAD
+=======
+const char *skipn_spaces(const char *str, size_t n);
+>>>>>>> temp
 char *aa_split_fqname(char *args, char **ns_name);
 const char *aa_splitn_fqname(const char *fqname, size_t n, const char **ns_name,
 			     size_t *ns_len);
 void aa_info_message(const char *str);
+<<<<<<< HEAD
 void *__aa_kvmalloc(size_t size, gfp_t flags);
 
 static inline void *kvmalloc(size_t size)
@@ -80,6 +115,8 @@ static inline int kref_get_not0(struct kref *kref)
 {
 	return atomic_inc_not_zero(&kref->refcount);
 }
+=======
+>>>>>>> temp
 
 /**
  * aa_strneq - compare null terminated @str to a non null terminated substring
@@ -112,7 +149,11 @@ static inline unsigned int aa_dfa_null_transition(struct aa_dfa *dfa,
 
 static inline bool path_mediated_fs(struct dentry *dentry)
 {
+<<<<<<< HEAD
 	return !(dentry->d_sb->s_flags & MS_NOUSER);
+=======
+	return !(dentry->d_sb->s_flags & SB_NOUSER);
+>>>>>>> temp
 }
 
 
@@ -122,7 +163,11 @@ struct counted_str {
 };
 
 #define str_to_counted(str) \
+<<<<<<< HEAD
 	((struct counted_str *)(str - offsetof(struct counted_str,name)))
+=======
+	((struct counted_str *)(str - offsetof(struct counted_str, name)))
+>>>>>>> temp
 
 #define __counted	/* atm just a notation */
 
@@ -144,12 +189,19 @@ static inline void aa_put_str(__counted char *str)
 		kref_put(&str_to_counted(str)->count, aa_str_kref);
 }
 
+<<<<<<< HEAD
 const char *aa_imode_name(umode_t mode);
 
 
 /* struct aa_policy - common part of both namespaces and profiles
  * @name: name of the object
  * @hname - The hierarchical name, NOTE: is .name of struct counted_str
+=======
+
+/* struct aa_policy - common part of both namespaces and profiles
+ * @name: name of the object
+ * @hname - The hierarchical name
+>>>>>>> temp
  * @list: list policy object is on
  * @profiles: head of the profiles list contained in the object
  */
@@ -160,8 +212,11 @@ struct aa_policy {
 	struct list_head profiles;
 };
 
+<<<<<<< HEAD
 #define aa_peer_name(peer) (peer)->base.hname
 
+=======
+>>>>>>> temp
 /**
  * basename - find the last component of an hname
  * @name: hname to find the base profile name component of  (NOT NULL)
@@ -171,6 +226,10 @@ struct aa_policy {
 static inline const char *basename(const char *hname)
 {
 	char *split;
+<<<<<<< HEAD
+=======
+
+>>>>>>> temp
 	hname = strim((char *)hname);
 	for (split = strstr(hname, "//"); split; split = strstr(hname, "//"))
 		hname = split + 2;
@@ -213,7 +272,11 @@ static inline struct aa_policy *__policy_find(struct list_head *head,
  * other wise it allows searching for policy by a partial match of name
  */
 static inline struct aa_policy *__policy_strn_find(struct list_head *head,
+<<<<<<< HEAD
 						   const char *str, int len)
+=======
+					    const char *str, int len)
+>>>>>>> temp
 {
 	struct aa_policy *policy;
 
@@ -285,7 +348,11 @@ void aa_policy_destroy(struct aa_policy *policy);
 			vec_cleanup(profile, __pvec, __count);		\
 		} else							\
 			__new_ = NULL;					\
+<<<<<<< HEAD
 	__cleanup:							\
+=======
+__cleanup:								\
+>>>>>>> temp
 		vec_cleanup(label, __lvec, (L)->size);			\
 	} else {							\
 		(P) = labels_profile(L);				\

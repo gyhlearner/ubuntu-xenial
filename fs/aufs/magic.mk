@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+# SPDX-License-Identifier: GPL-2.0
+>>>>>>> temp
 
 # defined in ${srctree}/fs/fuse/inode.c
 # tristate

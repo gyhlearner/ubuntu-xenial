@@ -108,7 +108,11 @@ splat_krng_init(void)
         spin_lock_init(&sub->test_lock);
         sub->desc.id = SPLAT_SUBSYSTEM_KRNG;
 
+<<<<<<< HEAD
         SPLAT_TEST_INIT(sub, SPLAT_KRNG_TEST1_NAME, SPLAT_KRNG_TEST1_DESC,
+=======
+        splat_test_init(sub, SPLAT_KRNG_TEST1_NAME, SPLAT_KRNG_TEST1_DESC,
+>>>>>>> temp
 	              SPLAT_KRNG_TEST1_ID, splat_krng_test1);
 
         return sub;
@@ -119,7 +123,11 @@ splat_krng_fini(splat_subsystem_t *sub)
 {
         ASSERT(sub);
 
+<<<<<<< HEAD
         SPLAT_TEST_FINI(sub, SPLAT_KRNG_TEST1_ID);
+=======
+        splat_test_fini(sub, SPLAT_KRNG_TEST1_ID);
+>>>>>>> temp
 
         kfree(sub);
 }

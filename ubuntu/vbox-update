@@ -37,6 +37,26 @@ do
 	sed -i -e '1iKBUILD_EXTMOD=${srctree}/ubuntu/vbox' $make
 done
 
+<<<<<<< HEAD
+=======
+# Fix up KERN_DIR to point at the kernel source tree
+for make in vbox/*/Makefile.include.header
+do
+	sed -i -e 's/^KERN_DIR := .*$/KERN_DIR := $(srctree)/' $make
+done
+
+# We're now using the vboxvideo module in drivers/staging, so disable
+# the version that was imported.
+sed -i -e 's: vboxvideo/::' vbox/Makefile
+
+# Reduce the version of the in-kernel module just slightly so it
+# will not clash with the dkms package.
+for version in vbox/*/version-generated.h
+do
+	sed -i -e 's/_Ubuntu"/_KernelUbuntu"/' $version
+done
+
+>>>>>>> temp
 # Record the version number and nominal source.
 {
 	echo "Source: http://ports.ubuntu.com/pool/multiverse/v/virtualbox/virtualbox-guest-dkms_${ver}_all.deb"

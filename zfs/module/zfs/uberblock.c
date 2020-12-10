@@ -44,7 +44,11 @@ uberblock_verify(uberblock_t *ub)
  * transaction group.
  */
 boolean_t
+<<<<<<< HEAD
 uberblock_update(uberblock_t *ub, vdev_t *rvd, uint64_t txg)
+=======
+uberblock_update(uberblock_t *ub, vdev_t *rvd, uint64_t txg, uint64_t mmp_delay)
+>>>>>>> temp
 {
 	ASSERT(ub->ub_txg < txg);
 
@@ -57,6 +61,12 @@ uberblock_update(uberblock_t *ub, vdev_t *rvd, uint64_t txg)
 	ub->ub_guid_sum = rvd->vdev_guid_sum;
 	ub->ub_timestamp = gethrestime_sec();
 	ub->ub_software_version = SPA_VERSION;
+<<<<<<< HEAD
+=======
+	ub->ub_mmp_magic = MMP_MAGIC;
+	ub->ub_mmp_delay = spa_multihost(rvd->vdev_spa) ? mmp_delay : 0;
+	ub->ub_mmp_seq = 0;
+>>>>>>> temp
 
 	return (ub->ub_rootbp.blk_birth == txg);
 }

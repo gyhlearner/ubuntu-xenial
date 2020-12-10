@@ -121,7 +121,7 @@ void core_tpg_add_node_to_devs(
 	struct se_portal_group *tpg,
 	struct se_lun *lun_orig)
 {
-	u32 lun_access = 0;
+	bool lun_access_ro = true;
 	struct se_lun *lun;
 	struct se_device *dev;
 
@@ -137,27 +137,26 @@ void core_tpg_add_node_to_devs(
 		 * demo_mode_write_protect is ON, or READ_ONLY;
 		 */
 		if (!tpg->se_tpg_tfo->tpg_check_demo_mode_write_protect(tpg)) {
-			lun_access = TRANSPORT_LUNFLAGS_READ_WRITE;
+			lun_access_ro = false;
 		} else {
 			/*
 			 * Allow only optical drives to issue R/W in default RO
 			 * demo mode.
 			 */
 			if (dev->transport->get_device_type(dev) == TYPE_DISK)
-				lun_access = TRANSPORT_LUNFLAGS_READ_ONLY;
+				lun_access_ro = true;
 			else
-				lun_access = TRANSPORT_LUNFLAGS_READ_WRITE;
+				lun_access_ro = false;
 		}
 
 		pr_debug("TARGET_CORE[%s]->TPG[%u]_LUN[%llu] - Adding %s"
 			" access for LUN in Demo Mode\n",
 			tpg->se_tpg_tfo->get_fabric_name(),
 			tpg->se_tpg_tfo->tpg_get_tag(tpg), lun->unpacked_lun,
-			(lun_access == TRANSPORT_LUNFLAGS_READ_WRITE) ?
-			"READ-WRITE" : "READ-ONLY");
+			lun_access_ro ? "READ-ONLY" : "READ-WRITE");
 
 		core_enable_device_list_for_node(lun, NULL, lun->unpacked_lun,
-						 lun_access, acl, tpg);
+						 lun_access_ro, acl, tpg);
 		/*
 		 * Check to see if there are any existing persistent reservation
 		 * APTPL pre-registrations that need to be enabled for this dynamic
@@ -224,7 +223,6 @@ static void target_add_node_acl(struct se_node_acl *acl)
 
 	mutex_lock(&tpg->acl_node_mutex);
 	list_add_tail(&acl->acl_list, &tpg->acl_node_list);
-	tpg->num_node_acls++;
 	mutex_unlock(&tpg->acl_node_mutex);
 
 	pr_debug("%s_TPG[%hu] - Added %s ACL with TCQ Depth: %d for %s"
@@ -338,12 +336,11 @@ struct se_node_acl *core_tpg_add_initiator_node_acl(
 	return acl;
 }
 
-void core_tpg_del_initiator_node_acl(struct se_node_acl *acl)
+static void target_shutdown_sessions(struct se_node_acl *acl)
 {
-	struct se_portal_group *tpg = acl->se_tpg;
-	LIST_HEAD(sess_list);
-	struct se_session *sess, *sess_tmp;
+	struct se_session *sess;
 	unsigned long flags;
+<<<<<<< HEAD
 	int rc;
 
 	mutex_lock(&tpg->acl_node_mutex);
@@ -353,30 +350,43 @@ void core_tpg_del_initiator_node_acl(struct se_node_acl *acl)
 	list_del_init(&acl->acl_list);
 	tpg->num_node_acls--;
 	mutex_unlock(&tpg->acl_node_mutex);
+=======
+>>>>>>> temp
 
+restart:
 	spin_lock_irqsave(&acl->nacl_sess_lock, flags);
-	acl->acl_stop = 1;
-
-	list_for_each_entry_safe(sess, sess_tmp, &acl->acl_sess_list,
-				sess_acl_list) {
-		if (sess->sess_tearing_down != 0)
+	list_for_each_entry(sess, &acl->acl_sess_list, sess_acl_list) {
+		if (sess->sess_tearing_down)
 			continue;
 
+<<<<<<< HEAD
 		if (!target_get_session(sess))
 			continue;
 		list_move(&sess->sess_acl_list, &sess_list);
+=======
+		list_del_init(&sess->sess_acl_list);
+		spin_unlock_irqrestore(&acl->nacl_sess_lock, flags);
+
+		if (acl->se_tpg->se_tpg_tfo->close_session)
+			acl->se_tpg->se_tpg_tfo->close_session(sess);
+		goto restart;
+>>>>>>> temp
 	}
 	spin_unlock_irqrestore(&acl->nacl_sess_lock, flags);
+}
 
-	list_for_each_entry_safe(sess, sess_tmp, &sess_list, sess_acl_list) {
-		list_del(&sess->sess_acl_list);
+void core_tpg_del_initiator_node_acl(struct se_node_acl *acl)
+{
+	struct se_portal_group *tpg = acl->se_tpg;
 
-		rc = tpg->se_tpg_tfo->shutdown_session(sess);
-		target_put_session(sess);
-		if (!rc)
-			continue;
-		target_put_session(sess);
-	}
+	mutex_lock(&tpg->acl_node_mutex);
+	if (acl->dynamic_node_acl)
+		acl->dynamic_node_acl = 0;
+	list_del_init(&acl->acl_list);
+	mutex_unlock(&tpg->acl_node_mutex);
+
+	target_shutdown_sessions(acl);
+
 	target_put_nacl(acl);
 	/*
 	 * Wait for last target_put_nacl() to complete in target_complete_nacl()
@@ -403,18 +413,30 @@ int core_tpg_set_initiator_node_queue_depth(
 	struct se_node_acl *acl,
 	u32 queue_depth)
 {
+<<<<<<< HEAD
 	LIST_HEAD(sess_list);
 	struct se_portal_group *tpg = acl->se_tpg;
 	struct se_session *sess, *sess_tmp;
 	unsigned long flags;
 	int rc;
+=======
+	struct se_portal_group *tpg = acl->se_tpg;
+>>>>>>> temp
 
+	/*
+	 * Allow the setting of se_node_acl queue_depth to be idempotent,
+	 * and not force a session shutdown event if the value is not
+	 * changing.
+	 */
+	if (acl->queue_depth == queue_depth)
+		return 0;
 	/*
 	 * User has requested to change the queue depth for a Initiator Node.
 	 * Change the value in the Node's struct se_node_acl, and call
 	 * target_set_nacl_queue_depth() to set the new queue depth.
 	 */
 	target_set_nacl_queue_depth(tpg, acl, queue_depth);
+<<<<<<< HEAD
 
 	spin_lock_irqsave(&acl->nacl_sess_lock, flags);
 	list_for_each_entry_safe(sess, sess_tmp, &acl->acl_sess_list,
@@ -440,6 +462,13 @@ int core_tpg_set_initiator_node_queue_depth(
 		spin_lock_irqsave(&acl->nacl_sess_lock, flags);
 	}
 	spin_unlock_irqrestore(&acl->nacl_sess_lock, flags);
+=======
+
+	/*
+	 * Shutdown all pending sessions to force session reinstatement.
+	 */
+	target_shutdown_sessions(acl);
+>>>>>>> temp
 
 	pr_debug("Successfully changed queue depth to: %d for Initiator"
 		" Node: %s on %s Target Portal Group: %u\n", acl->queue_depth,
@@ -480,6 +509,7 @@ static void core_tpg_lun_ref_release(struct percpu_ref *ref)
 	complete(&lun->lun_shutdown_comp);
 }
 
+/* Does not change se_wwn->priv. */
 int core_tpg_register(
 	struct se_wwn *se_wwn,
 	struct se_portal_group *se_tpg,
@@ -524,7 +554,7 @@ int core_tpg_register(
 			return PTR_ERR(se_tpg->tpg_virt_lun0);
 
 		ret = core_tpg_add_lun(se_tpg, se_tpg->tpg_virt_lun0,
-				TRANSPORT_LUNFLAGS_READ_ONLY, g_lun0_dev);
+				true, g_lun0_dev);
 		if (ret < 0) {
 			kfree(se_tpg->tpg_virt_lun0);
 			return ret;
@@ -573,7 +603,10 @@ int core_tpg_deregister(struct se_portal_group *se_tpg)
 	 */
 	list_for_each_entry_safe(nacl, nacl_tmp, &node_list, acl_list) {
 		list_del_init(&nacl->acl_list);
+<<<<<<< HEAD
 		se_tpg->num_node_acls--;
+=======
+>>>>>>> temp
 
 		core_tpg_wait_for_nacl_pr_ref(nacl);
 		core_free_device_list_for_node(nacl, se_tpg);
@@ -601,7 +634,6 @@ struct se_lun *core_tpg_alloc_lun(
 		return ERR_PTR(-ENOMEM);
 	}
 	lun->unpacked_lun = unpacked_lun;
-	lun->lun_link_magic = SE_LUN_LINK_MAGIC;
 	atomic_set(&lun->lun_acl_count, 0);
 	init_completion(&lun->lun_ref_comp);
 	init_completion(&lun->lun_shutdown_comp);
@@ -620,7 +652,7 @@ struct se_lun *core_tpg_alloc_lun(
 int core_tpg_add_lun(
 	struct se_portal_group *tpg,
 	struct se_lun *lun,
-	u32 lun_access,
+	bool lun_access_ro,
 	struct se_device *dev)
 {
 	int ret;
@@ -634,7 +666,8 @@ int core_tpg_add_lun(
 	if (ret)
 		goto out_kill_ref;
 
-	if (!(dev->transport->transport_flags & TRANSPORT_FLAG_PASSTHROUGH) &&
+	if (!(dev->transport->transport_flags &
+	     TRANSPORT_FLAG_PASSTHROUGH_ALUA) &&
 	    !(dev->se_hba->hba_flags & HBA_FLAGS_INTERNAL_USE))
 		target_attach_tg_pt_gp(lun, dev->t10_alua.default_tg_pt_gp);
 
@@ -648,9 +681,9 @@ int core_tpg_add_lun(
 	spin_unlock(&dev->se_port_lock);
 
 	if (dev->dev_flags & DF_READ_ONLY)
-		lun->lun_access = TRANSPORT_LUNFLAGS_READ_ONLY;
+		lun->lun_access_ro = true;
 	else
-		lun->lun_access = lun_access;
+		lun->lun_access_ro = lun_access_ro;
 	if (!(dev->se_hba->hba_flags & HBA_FLAGS_INTERNAL_USE))
 		hlist_add_head_rcu(&lun->link, &tpg->tpg_lun_hlist);
 	mutex_unlock(&tpg->tpg_lun_mutex);

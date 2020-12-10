@@ -373,15 +373,14 @@ static int __init do_mount_root(char *name, char *fs, int flags, void *data)
 	printk(KERN_INFO
 	       "VFS: Mounted root (%s filesystem)%s on device %u:%u.\n",
 	       s->s_type->name,
-	       s->s_flags & MS_RDONLY ?  " readonly" : "",
+	       sb_rdonly(s) ? " readonly" : "",
 	       MAJOR(ROOT_DEV), MINOR(ROOT_DEV));
 	return 0;
 }
 
 void __init mount_block_root(char *name, int flags)
 {
-	struct page *page = alloc_page(GFP_KERNEL |
-					__GFP_NOTRACK_FALSE_POSITIVE);
+	struct page *page = alloc_page(GFP_KERNEL);
 	char *fs_names = page_address(page);
 	char *p;
 #ifdef CONFIG_BLOCK
@@ -420,8 +419,8 @@ retry:
 #endif
 		panic("VFS: Unable to mount root fs on %s", b);
 	}
-	if (!(flags & MS_RDONLY)) {
-		flags |= MS_RDONLY;
+	if (!(flags & SB_RDONLY)) {
+		flags |= SB_RDONLY;
 		goto retry;
 	}
 
@@ -549,6 +548,7 @@ void __init mount_root(void)
 void __init prepare_namespace(void)
 {
 	int is_floppy;
+	int err;
 
 	if (root_delay) {
 		printk(KERN_INFO "Waiting %d sec before mounting root device...\n",
@@ -588,7 +588,7 @@ void __init prepare_namespace(void)
 			saved_root_name);
 		while (driver_probe_done() != 0 ||
 			(ROOT_DEV = name_to_dev_t(saved_root_name)) == 0)
-			msleep(100);
+			msleep(5);
 		async_synchronize_full();
 	}
 
@@ -602,6 +602,13 @@ out:
 	devtmpfs_mount("dev");
 	sys_mount(".", "/", NULL, MS_MOVE, NULL);
 	sys_chroot(".");
+#ifdef CONFIG_BLOCK
+	/* recreate the /dev/root */
+	err = create_dev("/dev/root", ROOT_DEV);
+
+	if (err < 0)
+		pr_emerg("Failed to create /dev/root: %d\n", err);
+#endif
 }
 
 static bool is_tmpfs;

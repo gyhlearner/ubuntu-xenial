@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * security/tomoyo/tomoyo.c
  *
@@ -17,7 +18,9 @@
  */
 static int tomoyo_cred_alloc_blank(struct cred *new, gfp_t gfp)
 {
-	new->security = NULL;
+	struct tomoyo_domain_info **blob = tomoyo_cred(new);
+
+	*blob = NULL;
 	return 0;
 }
 
@@ -33,8 +36,13 @@ static int tomoyo_cred_alloc_blank(struct cred *new, gfp_t gfp)
 static int tomoyo_cred_prepare(struct cred *new, const struct cred *old,
 			       gfp_t gfp)
 {
-	struct tomoyo_domain_info *domain = old->security;
-	new->security = domain;
+	struct tomoyo_domain_info **old_blob = tomoyo_cred(old);
+	struct tomoyo_domain_info **new_blob = tomoyo_cred(new);
+	struct tomoyo_domain_info *domain;
+
+	domain = *old_blob;
+	*new_blob = domain;
+
 	if (domain)
 		atomic_inc(&domain->users);
 	return 0;
@@ -58,7 +66,9 @@ static void tomoyo_cred_transfer(struct cred *new, const struct cred *old)
  */
 static void tomoyo_cred_free(struct cred *cred)
 {
-	struct tomoyo_domain_info *domain = cred->security;
+	struct tomoyo_domain_info **blob = tomoyo_cred(cred);
+	struct tomoyo_domain_info *domain = *blob;
+
 	if (domain)
 		atomic_dec(&domain->users);
 }
@@ -72,11 +82,14 @@ static void tomoyo_cred_free(struct cred *cred)
  */
 static int tomoyo_bprm_set_creds(struct linux_binprm *bprm)
 {
+	struct tomoyo_domain_info **blob;
+	struct tomoyo_domain_info *domain;
+
 	/*
 	 * Do only if this function is called for the first time of an execve
 	 * operation.
 	 */
-	if (bprm->cred_prepared)
+	if (bprm->called_set_creds)
 		return 0;
 #ifndef CONFIG_SECURITY_TOMOYO_OMIT_USERSPACE_LOADER
 	/*
@@ -92,13 +105,14 @@ static int tomoyo_bprm_set_creds(struct linux_binprm *bprm)
 	 * stored inside "bprm->cred->security" will be acquired later inside
 	 * tomoyo_find_next_domain().
 	 */
-	atomic_dec(&((struct tomoyo_domain_info *)
-		     bprm->cred->security)->users);
+	blob = tomoyo_cred(bprm->cred);
+	domain = *blob;
+	atomic_dec(&domain->users);
 	/*
 	 * Tell tomoyo_bprm_check_security() is called for the first time of an
 	 * execve operation.
 	 */
-	bprm->cred->security = NULL;
+	*blob = NULL;
 	return 0;
 }
 
@@ -111,8 +125,11 @@ static int tomoyo_bprm_set_creds(struct linux_binprm *bprm)
  */
 static int tomoyo_bprm_check_security(struct linux_binprm *bprm)
 {
-	struct tomoyo_domain_info *domain = bprm->cred->security;
+	struct tomoyo_domain_info **blob;
+	struct tomoyo_domain_info *domain;
 
+	blob = tomoyo_cred(bprm->cred);
+	domain = *blob;
 	/*
 	 * Execute permission is checked against pathname passed to do_execve()
 	 * using current domain.
@@ -150,7 +167,7 @@ static int tomoyo_inode_getattr(const struct path *path)
  *
  * Returns 0 on success, negative value otherwise.
  */
-static int tomoyo_path_truncate(struct path *path)
+static int tomoyo_path_truncate(const struct path *path)
 {
 	return tomoyo_path_perm(TOMOYO_TYPE_TRUNCATE, path, NULL);
 }
@@ -163,9 +180,9 @@ static int tomoyo_path_truncate(struct path *path)
  *
  * Returns 0 on success, negative value otherwise.
  */
-static int tomoyo_path_unlink(struct path *parent, struct dentry *dentry)
+static int tomoyo_path_unlink(const struct path *parent, struct dentry *dentry)
 {
-	struct path path = { parent->mnt, dentry };
+	struct path path = { .mnt = parent->mnt, .dentry = dentry };
 	return tomoyo_path_perm(TOMOYO_TYPE_UNLINK, &path, NULL);
 }
 
@@ -178,10 +195,10 @@ static int tomoyo_path_unlink(struct path *parent, struct dentry *dentry)
  *
  * Returns 0 on success, negative value otherwise.
  */
-static int tomoyo_path_mkdir(struct path *parent, struct dentry *dentry,
+static int tomoyo_path_mkdir(const struct path *parent, struct dentry *dentry,
 			     umode_t mode)
 {
-	struct path path = { parent->mnt, dentry };
+	struct path path = { .mnt = parent->mnt, .dentry = dentry };
 	return tomoyo_path_number_perm(TOMOYO_TYPE_MKDIR, &path,
 				       mode & S_IALLUGO);
 }
@@ -194,9 +211,9 @@ static int tomoyo_path_mkdir(struct path *parent, struct dentry *dentry,
  *
  * Returns 0 on success, negative value otherwise.
  */
-static int tomoyo_path_rmdir(struct path *parent, struct dentry *dentry)
+static int tomoyo_path_rmdir(const struct path *parent, struct dentry *dentry)
 {
-	struct path path = { parent->mnt, dentry };
+	struct path path = { .mnt = parent->mnt, .dentry = dentry };
 	return tomoyo_path_perm(TOMOYO_TYPE_RMDIR, &path, NULL);
 }
 
@@ -209,10 +226,10 @@ static int tomoyo_path_rmdir(struct path *parent, struct dentry *dentry)
  *
  * Returns 0 on success, negative value otherwise.
  */
-static int tomoyo_path_symlink(struct path *parent, struct dentry *dentry,
+static int tomoyo_path_symlink(const struct path *parent, struct dentry *dentry,
 			       const char *old_name)
 {
-	struct path path = { parent->mnt, dentry };
+	struct path path = { .mnt = parent->mnt, .dentry = dentry };
 	return tomoyo_path_perm(TOMOYO_TYPE_SYMLINK, &path, old_name);
 }
 
@@ -226,10 +243,10 @@ static int tomoyo_path_symlink(struct path *parent, struct dentry *dentry,
  *
  * Returns 0 on success, negative value otherwise.
  */
-static int tomoyo_path_mknod(struct path *parent, struct dentry *dentry,
+static int tomoyo_path_mknod(const struct path *parent, struct dentry *dentry,
 			     umode_t mode, unsigned int dev)
 {
-	struct path path = { parent->mnt, dentry };
+	struct path path = { .mnt = parent->mnt, .dentry = dentry };
 	int type = TOMOYO_TYPE_CREATE;
 	const unsigned int perm = mode & S_IALLUGO;
 
@@ -265,11 +282,11 @@ static int tomoyo_path_mknod(struct path *parent, struct dentry *dentry,
  *
  * Returns 0 on success, negative value otherwise.
  */
-static int tomoyo_path_link(struct dentry *old_dentry, struct path *new_dir,
+static int tomoyo_path_link(struct dentry *old_dentry, const struct path *new_dir,
 			    struct dentry *new_dentry)
 {
-	struct path path1 = { new_dir->mnt, old_dentry };
-	struct path path2 = { new_dir->mnt, new_dentry };
+	struct path path1 = { .mnt = new_dir->mnt, .dentry = old_dentry };
+	struct path path2 = { .mnt = new_dir->mnt, .dentry = new_dentry };
 	return tomoyo_path2_perm(TOMOYO_TYPE_LINK, &path1, &path2);
 }
 
@@ -283,13 +300,13 @@ static int tomoyo_path_link(struct dentry *old_dentry, struct path *new_dir,
  *
  * Returns 0 on success, negative value otherwise.
  */
-static int tomoyo_path_rename(struct path *old_parent,
+static int tomoyo_path_rename(const struct path *old_parent,
 			      struct dentry *old_dentry,
-			      struct path *new_parent,
+			      const struct path *new_parent,
 			      struct dentry *new_dentry)
 {
-	struct path path1 = { old_parent->mnt, old_dentry };
-	struct path path2 = { new_parent->mnt, new_dentry };
+	struct path path1 = { .mnt = old_parent->mnt, .dentry = old_dentry };
+	struct path path2 = { .mnt = new_parent->mnt, .dentry = new_dentry };
 	return tomoyo_path2_perm(TOMOYO_TYPE_RENAME, &path1, &path2);
 }
 
@@ -351,7 +368,7 @@ static int tomoyo_file_ioctl(struct file *file, unsigned int cmd,
  *
  * Returns 0 on success, negative value otherwise.
  */
-static int tomoyo_path_chmod(struct path *path, umode_t mode)
+static int tomoyo_path_chmod(const struct path *path, umode_t mode)
 {
 	return tomoyo_path_number_perm(TOMOYO_TYPE_CHMOD, path,
 				       mode & S_IALLUGO);
@@ -366,7 +383,7 @@ static int tomoyo_path_chmod(struct path *path, umode_t mode)
  *
  * Returns 0 on success, negative value otherwise.
  */
-static int tomoyo_path_chown(struct path *path, kuid_t uid, kgid_t gid)
+static int tomoyo_path_chown(const struct path *path, kuid_t uid, kgid_t gid)
 {
 	int error = 0;
 	if (uid_valid(uid))
@@ -385,7 +402,7 @@ static int tomoyo_path_chown(struct path *path, kuid_t uid, kgid_t gid)
  *
  * Returns 0 on success, negative value otherwise.
  */
-static int tomoyo_path_chroot(struct path *path)
+static int tomoyo_path_chroot(const struct path *path)
 {
 	return tomoyo_path_perm(TOMOYO_TYPE_CHROOT, path, NULL);
 }
@@ -401,7 +418,7 @@ static int tomoyo_path_chroot(struct path *path)
  *
  * Returns 0 on success, negative value otherwise.
  */
-static int tomoyo_sb_mount(const char *dev_name, struct path *path,
+static int tomoyo_sb_mount(const char *dev_name, const struct path *path,
 			   const char *type, unsigned long flags, void *data)
 {
 	return tomoyo_mount_permission(dev_name, path, type, flags, data);
@@ -417,7 +434,7 @@ static int tomoyo_sb_mount(const char *dev_name, struct path *path,
  */
 static int tomoyo_sb_umount(struct vfsmount *mnt, int flags)
 {
-	struct path path = { mnt, mnt->mnt_root };
+	struct path path = { .mnt = mnt, .dentry = mnt->mnt_root };
 	return tomoyo_path_perm(TOMOYO_TYPE_UMOUNT, &path, NULL);
 }
 
@@ -429,7 +446,7 @@ static int tomoyo_sb_umount(struct vfsmount *mnt, int flags)
  *
  * Returns 0 on success, negative value otherwise.
  */
-static int tomoyo_sb_pivotroot(struct path *old_path, struct path *new_path)
+static int tomoyo_sb_pivotroot(const struct path *old_path, const struct path *new_path)
 {
 	return tomoyo_path2_perm(TOMOYO_TYPE_PIVOT_ROOT, new_path, old_path);
 }
@@ -492,11 +509,15 @@ static int tomoyo_socket_sendmsg(struct socket *sock, struct msghdr *msg,
 	return tomoyo_socket_sendmsg_permission(sock, msg, size);
 }
 
+struct lsm_blob_sizes tomoyo_blob_sizes = {
+	.lbs_cred = sizeof(struct tomoyo_domain_info *),
+};
+
 /*
  * tomoyo_security_ops is a "struct security_operations" which is used for
  * registering TOMOYO.
  */
-static struct security_hook_list tomoyo_hooks[] = {
+static struct security_hook_list tomoyo_hooks[] __lsm_ro_after_init = {
 	LSM_HOOK_INIT(cred_alloc_blank, tomoyo_cred_alloc_blank),
 	LSM_HOOK_INIT(cred_prepare, tomoyo_cred_prepare),
 	LSM_HOOK_INIT(cred_transfer, tomoyo_cred_transfer),
@@ -530,6 +551,8 @@ static struct security_hook_list tomoyo_hooks[] = {
 /* Lock for GC. */
 DEFINE_SRCU(tomoyo_ss);
 
+bool tomoyo_enabled;
+
 /**
  * tomoyo_init - Register TOMOYO Linux as a LSM module.
  *
@@ -537,14 +560,29 @@ DEFINE_SRCU(tomoyo_ss);
  */
 static int __init tomoyo_init(void)
 {
+	static int finish;
 	struct cred *cred = (struct cred *) current_cred();
+	struct tomoyo_domain_info **blob;
 
-	if (!security_module_enable("tomoyo"))
+	if (!security_module_enable("tomoyo",
+				IS_ENABLED(CONFIG_SECURITY_TOMOYO_STACKED))) {
+		tomoyo_enabled = false;
 		return 0;
+	}
+	tomoyo_enabled = true;
+
+	if (!finish) {
+		security_add_blobs(&tomoyo_blob_sizes);
+		finish = 1;
+		return 0;
+	}
+
 	/* register ourselves with the security framework */
-	security_add_hooks(tomoyo_hooks, ARRAY_SIZE(tomoyo_hooks));
+	security_add_hooks(tomoyo_hooks, ARRAY_SIZE(tomoyo_hooks), "tomoyo");
 	printk(KERN_INFO "TOMOYO Linux initialized\n");
-	cred->security = &tomoyo_kernel_domain;
+	lsm_early_cred(cred);
+	blob = tomoyo_cred(cred);
+	*blob = &tomoyo_kernel_domain;
 	tomoyo_mm_init();
 	return 0;
 }

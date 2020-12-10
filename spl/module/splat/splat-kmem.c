@@ -275,8 +275,13 @@ typedef struct kmem_cache_priv {
 	struct file *kcp_file;
 	kmem_cache_t *kcp_cache;
 	spinlock_t kcp_lock;
+<<<<<<< HEAD
 	wait_queue_head_t kcp_ctl_waitq;
 	wait_queue_head_t kcp_thr_waitq;
+=======
+	spl_wait_queue_head_t kcp_ctl_waitq;
+	spl_wait_queue_head_t kcp_thr_waitq;
+>>>>>>> temp
 	int kcp_flags;
 	int kcp_kct_count;
 	kmem_cache_thread_t *kcp_kct[SPLAT_KMEM_THREADS];
@@ -590,6 +595,12 @@ splat_kmem_cache_test(struct file *file, void *arg, char *name,
 	kmem_cache_data_t **kcd = NULL;
 	int i, rc = 0, objs = 0;
 
+<<<<<<< HEAD
+=======
+	/* Limit size for low memory machines (1/128 of memory) */
+	size = MIN(size, (physmem * PAGE_SIZE) >> 7);
+
+>>>>>>> temp
 	splat_vprint(file, name,
 	    "Testing size=%d, align=%d, flags=0x%04x\n",
 	    size, align, flags);
@@ -619,7 +630,11 @@ splat_kmem_cache_test(struct file *file, void *arg, char *name,
 	 * it to a single slab for the purposes of this test.
 	 */
 #ifdef _LP64
+<<<<<<< HEAD
 	objs = SPL_KMEM_CACHE_OBJ_PER_SLAB * 4;
+=======
+	objs = kcp->kcp_cache->skc_slab_objs * 4;
+>>>>>>> temp
 #else
 	objs = 1;
 #endif
@@ -1128,9 +1143,21 @@ out:
 static int
 splat_kmem_test10(struct file *file, void *arg)
 {
+<<<<<<< HEAD
 	uint64_t size, alloc, rc = 0;
 
 	for (size = 32; size <= 1024*1024; size *= 2) {
+=======
+	uint64_t size, alloc, maxsize, limit, rc = 0;
+
+#if defined(CONFIG_64BIT)
+	maxsize = (1024 * 1024);
+#else
+	maxsize = (128 * 1024);
+#endif
+
+	for (size = 32; size <= maxsize; size *= 2) {
+>>>>>>> temp
 
 		splat_vprint(file, SPLAT_KMEM_TEST10_NAME, "%-22s  %s", "name",
 			     "time (sec)\tslabs       \tobjs	\thash\n");
@@ -1139,8 +1166,15 @@ splat_kmem_test10(struct file *file, void *arg)
 
 		for (alloc = 1; alloc <= 1024; alloc *= 2) {
 
+<<<<<<< HEAD
 			/* Skip tests which exceed 1/2 of physical memory. */
 			if (size * alloc * SPLAT_KMEM_THREADS > physmem / 2)
+=======
+			/* Skip tests which exceed 1/2 of memory. */
+			limit = MIN(physmem * PAGE_SIZE,
+			    vmem_size(NULL, VMEM_ALLOC | VMEM_FREE)) / 2;
+			if (size * alloc * SPLAT_KMEM_THREADS > limit)
+>>>>>>> temp
 				continue;
 
 			rc = splat_kmem_cache_thread_test(file, arg,
@@ -1220,7 +1254,12 @@ splat_kmem_test13(struct file *file, void *arg)
 	int i, rc = 0, max_time = 10;
 
 	size = 128 * 1024;
+<<<<<<< HEAD
 	count = ((physmem * PAGE_SIZE) / 4 / size);
+=======
+	count = MIN(physmem * PAGE_SIZE, vmem_size(NULL,
+	    VMEM_ALLOC | VMEM_FREE)) / 4 / size;
+>>>>>>> temp
 
 	kcp = splat_kmem_cache_test_kcp_alloc(file, SPLAT_KMEM_TEST13_NAME,
 	                                      size, 0, 0);
@@ -1340,6 +1379,7 @@ splat_kmem_init(void)
 	spin_lock_init(&sub->test_lock);
 	sub->desc.id = SPLAT_SUBSYSTEM_KMEM;
 
+<<<<<<< HEAD
 	SPLAT_TEST_INIT(sub, SPLAT_KMEM_TEST1_NAME, SPLAT_KMEM_TEST1_DESC,
 			SPLAT_KMEM_TEST1_ID, splat_kmem_test1);
 	SPLAT_TEST_INIT(sub, SPLAT_KMEM_TEST2_NAME, SPLAT_KMEM_TEST2_DESC,
@@ -1365,6 +1405,33 @@ splat_kmem_init(void)
 			SPLAT_KMEM_TEST11_ID, splat_kmem_test11);
 #endif
 	SPLAT_TEST_INIT(sub, SPLAT_KMEM_TEST13_NAME, SPLAT_KMEM_TEST13_DESC,
+=======
+	splat_test_init(sub, SPLAT_KMEM_TEST1_NAME, SPLAT_KMEM_TEST1_DESC,
+			SPLAT_KMEM_TEST1_ID, splat_kmem_test1);
+	splat_test_init(sub, SPLAT_KMEM_TEST2_NAME, SPLAT_KMEM_TEST2_DESC,
+			SPLAT_KMEM_TEST2_ID, splat_kmem_test2);
+	splat_test_init(sub, SPLAT_KMEM_TEST3_NAME, SPLAT_KMEM_TEST3_DESC,
+			SPLAT_KMEM_TEST3_ID, splat_kmem_test3);
+	splat_test_init(sub, SPLAT_KMEM_TEST4_NAME, SPLAT_KMEM_TEST4_DESC,
+			SPLAT_KMEM_TEST4_ID, splat_kmem_test4);
+	splat_test_init(sub, SPLAT_KMEM_TEST5_NAME, SPLAT_KMEM_TEST5_DESC,
+			SPLAT_KMEM_TEST5_ID, splat_kmem_test5);
+	splat_test_init(sub, SPLAT_KMEM_TEST6_NAME, SPLAT_KMEM_TEST6_DESC,
+			SPLAT_KMEM_TEST6_ID, splat_kmem_test6);
+	splat_test_init(sub, SPLAT_KMEM_TEST7_NAME, SPLAT_KMEM_TEST7_DESC,
+			SPLAT_KMEM_TEST7_ID, splat_kmem_test7);
+	splat_test_init(sub, SPLAT_KMEM_TEST8_NAME, SPLAT_KMEM_TEST8_DESC,
+			SPLAT_KMEM_TEST8_ID, splat_kmem_test8);
+	splat_test_init(sub, SPLAT_KMEM_TEST9_NAME, SPLAT_KMEM_TEST9_DESC,
+			SPLAT_KMEM_TEST9_ID, splat_kmem_test9);
+	splat_test_init(sub, SPLAT_KMEM_TEST10_NAME, SPLAT_KMEM_TEST10_DESC,
+			SPLAT_KMEM_TEST10_ID, splat_kmem_test10);
+#if 0
+	splat_test_init(sub, SPLAT_KMEM_TEST11_NAME, SPLAT_KMEM_TEST11_DESC,
+			SPLAT_KMEM_TEST11_ID, splat_kmem_test11);
+#endif
+	splat_test_init(sub, SPLAT_KMEM_TEST13_NAME, SPLAT_KMEM_TEST13_DESC,
+>>>>>>> temp
 			SPLAT_KMEM_TEST13_ID, splat_kmem_test13);
 
 	return sub;
@@ -1374,6 +1441,7 @@ void
 splat_kmem_fini(splat_subsystem_t *sub)
 {
 	ASSERT(sub);
+<<<<<<< HEAD
 	SPLAT_TEST_FINI(sub, SPLAT_KMEM_TEST13_ID);
 #if 0
 	SPLAT_TEST_FINI(sub, SPLAT_KMEM_TEST11_ID);
@@ -1388,6 +1456,22 @@ splat_kmem_fini(splat_subsystem_t *sub)
 	SPLAT_TEST_FINI(sub, SPLAT_KMEM_TEST3_ID);
 	SPLAT_TEST_FINI(sub, SPLAT_KMEM_TEST2_ID);
 	SPLAT_TEST_FINI(sub, SPLAT_KMEM_TEST1_ID);
+=======
+	splat_test_fini(sub, SPLAT_KMEM_TEST13_ID);
+#if 0
+	splat_test_fini(sub, SPLAT_KMEM_TEST11_ID);
+#endif
+	splat_test_fini(sub, SPLAT_KMEM_TEST10_ID);
+	splat_test_fini(sub, SPLAT_KMEM_TEST9_ID);
+	splat_test_fini(sub, SPLAT_KMEM_TEST8_ID);
+	splat_test_fini(sub, SPLAT_KMEM_TEST7_ID);
+	splat_test_fini(sub, SPLAT_KMEM_TEST6_ID);
+	splat_test_fini(sub, SPLAT_KMEM_TEST5_ID);
+	splat_test_fini(sub, SPLAT_KMEM_TEST4_ID);
+	splat_test_fini(sub, SPLAT_KMEM_TEST3_ID);
+	splat_test_fini(sub, SPLAT_KMEM_TEST2_ID);
+	splat_test_fini(sub, SPLAT_KMEM_TEST1_ID);
+>>>>>>> temp
 
 	kfree(sub);
 }

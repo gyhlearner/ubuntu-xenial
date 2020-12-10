@@ -1,9 +1,6 @@
 /*
  * livepatch.c - x86-specific Kernel Live Patching Core
  *
- * Copyright (C) 2014 Seth Jennings <sjenning@redhat.com>
- * Copyright (C) 2014 SUSE
- *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
@@ -19,23 +16,21 @@
  */
 
 #include <linux/module.h>
+<<<<<<< HEAD
 #include <linux/uaccess.h>
 #include <asm/elf.h>
 #include <asm/livepatch.h>
+=======
+#include <linux/kallsyms.h>
+#include <linux/livepatch.h>
+#include <asm/text-patching.h>
+>>>>>>> temp
 
-/**
- * klp_write_module_reloc() - write a relocation in a module
- * @mod:	module in which the section to be modified is found
- * @type:	ELF relocation type (see asm/elf.h)
- * @loc:	address that the relocation should be written to
- * @value:	relocation value (sym address + addend)
- *
- * This function writes a relocation to the specified location for
- * a particular module.
- */
-int klp_write_module_reloc(struct module *mod, unsigned long type,
-			   unsigned long loc, unsigned long value)
+/* Apply per-object alternatives. Based on x86 module_finalize() */
+void arch_klp_init_object_loaded(struct klp_patch *patch,
+				 struct klp_object *obj)
 {
+<<<<<<< HEAD
 	size_t size = 4;
 	unsigned long val;
 	unsigned long core = (unsigned long)mod->core_layout.base;
@@ -67,4 +62,44 @@ int klp_write_module_reloc(struct module *mod, unsigned long type,
 		return -EINVAL;
 
 	return probe_kernel_write((void *)loc, &val, size);
+=======
+	int cnt;
+	struct klp_modinfo *info;
+	Elf_Shdr *s, *alt = NULL, *para = NULL;
+	void *aseg, *pseg;
+	const char *objname;
+	char sec_objname[MODULE_NAME_LEN];
+	char secname[KSYM_NAME_LEN];
+
+	info = patch->mod->klp_info;
+	objname = obj->name ? obj->name : "vmlinux";
+
+	/* See livepatch core code for BUILD_BUG_ON() explanation */
+	BUILD_BUG_ON(MODULE_NAME_LEN < 56 || KSYM_NAME_LEN != 128);
+
+	for (s = info->sechdrs; s < info->sechdrs + info->hdr.e_shnum; s++) {
+		/* Apply per-object .klp.arch sections */
+		cnt = sscanf(info->secstrings + s->sh_name,
+			     ".klp.arch.%55[^.].%127s",
+			     sec_objname, secname);
+		if (cnt != 2)
+			continue;
+		if (strcmp(sec_objname, objname))
+			continue;
+		if (!strcmp(".altinstructions", secname))
+			alt = s;
+		if (!strcmp(".parainstructions", secname))
+			para = s;
+	}
+
+	if (alt) {
+		aseg = (void *) alt->sh_addr;
+		apply_alternatives(aseg, aseg + alt->sh_size);
+	}
+
+	if (para) {
+		pseg = (void *) para->sh_addr;
+		apply_paravirt(pseg, pseg + para->sh_size);
+	}
+>>>>>>> temp
 }

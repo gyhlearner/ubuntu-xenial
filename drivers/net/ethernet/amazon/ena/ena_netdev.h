@@ -58,7 +58,12 @@
 #define DEVICE_NAME	"Elastic Network Adapter (ENA)"
 
 /* 1 for AENQ + ADMIN */
+<<<<<<< HEAD
 #define ENA_MAX_MSIX_VEC(io_queues)	(1 + (io_queues))
+=======
+#define ENA_ADMIN_MSIX_VEC		1
+#define ENA_MAX_MSIX_VEC(io_queues)	(ENA_ADMIN_MSIX_VEC + (io_queues))
+>>>>>>> temp
 
 /* The ENA buffer length fields is 16 bit long. So when PAGE_SIZE == 64kB the
  * driver passes 0.
@@ -71,6 +76,11 @@
 #define ENA_PAGE_SIZE PAGE_SIZE
 #endif
 
+<<<<<<< HEAD
+=======
+#define ENA_MIN_MSIX_VEC		2
+
+>>>>>>> temp
 #define ENA_REG_BAR			0
 #define ENA_MEM_BAR			2
 #define ENA_BAR_MASK (BIT(ENA_REG_BAR) | BIT(ENA_MEM_BAR))
@@ -311,7 +321,10 @@ struct ena_adapter {
 
 	int num_queues;
 
+<<<<<<< HEAD
 	struct msix_entry *msix_entries;
+=======
+>>>>>>> temp
 	int msix_vecs;
 
 	u32 missing_tx_completion_threshold;

@@ -15,9 +15,14 @@
  * Telemetry Framework provides platform related PM and performance statistics.
  * This file provides the core telemetry API implementation.
  */
+<<<<<<< HEAD
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/device.h>
+=======
+#include <linux/device.h>
+#include <linux/module.h>
+>>>>>>> temp
 
 #include <asm/intel_telemetry.h>
 
@@ -25,7 +30,11 @@
 
 struct telemetry_core_config {
 	struct telemetry_plt_config *plt_config;
+<<<<<<< HEAD
 	struct telemetry_core_ops *telem_ops;
+=======
+	const struct telemetry_core_ops *telem_ops;
+>>>>>>> temp
 };
 
 static struct telemetry_core_config telm_core_conf;
@@ -95,7 +104,11 @@ static int telemetry_def_reset_events(void)
 	return 0;
 }
 
+<<<<<<< HEAD
 static struct telemetry_core_ops telm_defpltops = {
+=======
+static const struct telemetry_core_ops telm_defpltops = {
+>>>>>>> temp
 	.set_sampling_period = telemetry_def_set_sampling_period,
 	.get_sampling_period = telemetry_def_get_sampling_period,
 	.get_trace_verbosity = telemetry_def_get_trace_verbosity,
@@ -332,7 +345,11 @@ EXPORT_SYMBOL_GPL(telemetry_set_trace_verbosity);
  *
  * Return: 0 success, < 0 for failure
  */
+<<<<<<< HEAD
 int telemetry_set_pltdata(struct telemetry_core_ops *ops,
+=======
+int telemetry_set_pltdata(const struct telemetry_core_ops *ops,
+>>>>>>> temp
 			  struct telemetry_plt_config *pltconfig)
 {
 	if (ops)

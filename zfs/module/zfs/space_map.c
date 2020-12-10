@@ -23,7 +23,11 @@
  * Use is subject to license terms.
  */
 /*
+<<<<<<< HEAD
  * Copyright (c) 2012, 2014 by Delphix. All rights reserved.
+=======
+ * Copyright (c) 2012, 2016 by Delphix. All rights reserved.
+>>>>>>> temp
  */
 
 #include <sys/zfs_context.h>
@@ -72,12 +76,21 @@ space_map_load(space_map_t *sm, range_tree_t *rt, maptype_t maptype)
 	}
 
 	bufsize = MAX(sm->sm_blksz, SPA_MINBLOCKSIZE);
+<<<<<<< HEAD
 	entry_map = zio_buf_alloc(bufsize);
 
 	mutex_exit(sm->sm_lock);
 	if (end > bufsize) {
 		dmu_prefetch(sm->sm_os, space_map_object(sm), bufsize,
 		    end - bufsize);
+=======
+	entry_map = vmem_alloc(bufsize, KM_SLEEP);
+
+	mutex_exit(sm->sm_lock);
+	if (end > bufsize) {
+		dmu_prefetch(sm->sm_os, space_map_object(sm), 0, bufsize,
+		    end - bufsize, ZIO_PRIORITY_SYNC_READ);
+>>>>>>> temp
 	}
 	mutex_enter(sm->sm_lock);
 
@@ -128,7 +141,11 @@ space_map_load(space_map_t *sm, range_tree_t *rt, maptype_t maptype)
 	else
 		range_tree_vacate(rt, NULL, NULL);
 
+<<<<<<< HEAD
 	zio_buf_free(entry_map, bufsize);
+=======
+	vmem_free(entry_map, bufsize);
+>>>>>>> temp
 	return (error);
 }
 
@@ -173,7 +190,10 @@ space_map_histogram_add(space_map_t *sm, range_tree_t *rt, dmu_tx_t *tx)
 	dmu_buf_will_dirty(sm->sm_dbuf, tx);
 
 	ASSERT(space_map_histogram_verify(sm, rt));
+<<<<<<< HEAD
 
+=======
+>>>>>>> temp
 	/*
 	 * Transfer the content of the range tree histogram to the space
 	 * map histogram. The space map histogram contains 32 buckets ranging
@@ -272,7 +292,11 @@ space_map_write(space_map_t *sm, range_tree_t *rt, maptype_t maptype,
 
 	expected_entries = space_map_entries(sm, rt);
 
+<<<<<<< HEAD
 	entry_map = zio_buf_alloc(sm->sm_blksz);
+=======
+	entry_map = vmem_alloc(sm->sm_blksz, KM_SLEEP);
+>>>>>>> temp
 	entry_map_end = entry_map + (sm->sm_blksz / sizeof (uint64_t));
 	entry = entry_map;
 
@@ -335,7 +359,11 @@ space_map_write(space_map_t *sm, range_tree_t *rt, maptype_t maptype,
 	VERIFY3U(range_tree_space(rt), ==, rt_space);
 	VERIFY3U(range_tree_space(rt), ==, total);
 
+<<<<<<< HEAD
 	zio_buf_free(entry_map, sm->sm_blksz);
+=======
+	vmem_free(entry_map, sm->sm_blksz);
+>>>>>>> temp
 }
 
 static int
@@ -412,6 +440,10 @@ space_map_truncate(space_map_t *sm, dmu_tx_t *tx)
 
 	ASSERT(dsl_pool_sync_context(dmu_objset_pool(os)));
 	ASSERT(dmu_tx_is_syncing(tx));
+<<<<<<< HEAD
+=======
+	VERIFY3U(dmu_tx_get_txg(tx), <=, spa_final_dirty_txg(spa));
+>>>>>>> temp
 
 	dmu_object_info_from_db(sm->sm_dbuf, &doi);
 
@@ -426,9 +458,16 @@ space_map_truncate(space_map_t *sm, dmu_tx_t *tx)
 	if ((spa_feature_is_enabled(spa, SPA_FEATURE_SPACEMAP_HISTOGRAM) &&
 	    doi.doi_bonus_size != sizeof (space_map_phys_t)) ||
 	    doi.doi_data_block_size != space_map_blksz) {
+<<<<<<< HEAD
 		zfs_dbgmsg("txg %llu, spa %s, reallocating: "
 		    "old bonus %llu, old blocksz %u", dmu_tx_get_txg(tx),
 		    spa_name(spa), doi.doi_bonus_size, doi.doi_data_block_size);
+=======
+		zfs_dbgmsg("txg %llu, spa %s, sm %p, reallocating "
+		    "object[%llu]: old bonus %u, old blocksz %u",
+		    dmu_tx_get_txg(tx), spa_name(spa), sm, sm->sm_object,
+		    doi.doi_bonus_size, doi.doi_data_block_size);
+>>>>>>> temp
 
 		space_map_free(sm, tx);
 		dmu_buf_rele(sm->sm_dbuf, sm);

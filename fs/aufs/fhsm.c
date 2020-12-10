@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright (C) 2011-2015 Junjiro R. Okajima
+=======
+ * Copyright (C) 2011-2017 Junjiro R. Okajima
+>>>>>>> temp
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -155,12 +159,21 @@ void au_fhsm_wrote(struct super_block *sb, aufs_bindex_t bindex, int force)
 
 void au_fhsm_wrote_all(struct super_block *sb, int force)
 {
+<<<<<<< HEAD
 	aufs_bindex_t bindex, bend;
 	struct au_branch *br;
 
 	/* exclude the bottom */
 	bend = au_fhsm_bottom(sb);
 	for (bindex = 0; bindex < bend; bindex++) {
+=======
+	aufs_bindex_t bindex, bbot;
+	struct au_branch *br;
+
+	/* exclude the bottom */
+	bbot = au_fhsm_bottom(sb);
+	for (bindex = 0; bindex < bbot; bindex++) {
+>>>>>>> temp
 		br = au_sbr(sb, bindex);
 		if (au_br_fhsm(br->br_perm))
 			au_fhsm_wrote(sb, bindex, force);
@@ -206,15 +219,24 @@ static ssize_t au_fhsm_do_read(struct super_block *sb,
 {
 	ssize_t err;
 	int nstbr;
+<<<<<<< HEAD
 	aufs_bindex_t bindex, bend;
+=======
+	aufs_bindex_t bindex, bbot;
+>>>>>>> temp
 	struct au_branch *br;
 	struct au_br_fhsm *bf;
 
 	/* except the bottom branch */
 	err = 0;
 	nstbr = 0;
+<<<<<<< HEAD
 	bend = au_fhsm_bottom(sb);
 	for (bindex = 0; !err && bindex < bend; bindex++) {
+=======
+	bbot = au_fhsm_bottom(sb);
+	for (bindex = 0; !err && bindex < bbot; bindex++) {
+>>>>>>> temp
 		br = au_sbr(sb, bindex);
 		if (!au_br_fhsm(br->br_perm))
 			continue;
@@ -245,7 +267,11 @@ static ssize_t au_fhsm_read(struct file *file, char __user *buf, size_t count,
 {
 	ssize_t err;
 	int readable;
+<<<<<<< HEAD
 	aufs_bindex_t nfhsm, bindex, bend;
+=======
+	aufs_bindex_t nfhsm, bindex, bbot;
+>>>>>>> temp
 	struct au_sbinfo *sbinfo;
 	struct au_fhsm *fhsm;
 	struct au_branch *br;
@@ -276,8 +302,13 @@ need_data:
 		AuDebugOn(!sb);
 		/* exclude the bottom branch */
 		nfhsm = 0;
+<<<<<<< HEAD
 		bend = au_fhsm_bottom(sb);
 		for (bindex = 0; bindex < bend; bindex++) {
+=======
+		bbot = au_fhsm_bottom(sb);
+		for (bindex = 0; bindex < bbot; bindex++) {
+>>>>>>> temp
 			br = au_sbr(sb, bindex);
 			if (au_br_fhsm(br->br_perm))
 				nfhsm++;

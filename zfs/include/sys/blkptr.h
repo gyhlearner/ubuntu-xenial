@@ -30,6 +30,10 @@ extern "C" {
 void encode_embedded_bp_compressed(blkptr_t *, void *,
     enum zio_compress, int, int);
 void decode_embedded_bp_compressed(const blkptr_t *, void *);
+<<<<<<< HEAD
+=======
+int decode_embedded_bp(const blkptr_t *, void *, int);
+>>>>>>> temp
 
 #ifdef	__cplusplus
 }

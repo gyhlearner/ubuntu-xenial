@@ -131,9 +131,16 @@ extern int SMB2_close(const unsigned int xid, struct cifs_tcon *tcon,
 		      u64 persistent_file_id, u64 volatile_file_id);
 extern int SMB2_flush(const unsigned int xid, struct cifs_tcon *tcon,
 		      u64 persistent_file_id, u64 volatile_file_id);
+extern int SMB2_query_eas(const unsigned int xid, struct cifs_tcon *tcon,
+			  u64 persistent_file_id, u64 volatile_file_id,
+			  int ea_buf_size,
+			  struct smb2_file_full_ea_info *data);
 extern int SMB2_query_info(const unsigned int xid, struct cifs_tcon *tcon,
 			   u64 persistent_file_id, u64 volatile_file_id,
 			   struct smb2_file_all_info *data);
+extern int SMB2_query_acl(const unsigned int xid, struct cifs_tcon *tcon,
+			   u64 persistent_file_id, u64 volatile_file_id,
+			   void **data, unsigned int *plen);
 extern int SMB2_get_srv_num(const unsigned int xid, struct cifs_tcon *tcon,
 			    u64 persistent_fid, u64 volatile_fid,
 			    __le64 *uniqueid);
@@ -162,6 +169,12 @@ extern int SMB2_set_eof(const unsigned int xid, struct cifs_tcon *tcon,
 extern int SMB2_set_info(const unsigned int xid, struct cifs_tcon *tcon,
 			 u64 persistent_fid, u64 volatile_fid,
 			 FILE_BASIC_INFO *buf);
+extern int SMB2_set_acl(const unsigned int xid, struct cifs_tcon *tcon,
+			u64 persistent_fid, u64 volatile_fid,
+			struct cifs_ntsd *pnntsd, int pacllen, int aclflag);
+extern int SMB2_set_ea(const unsigned int xid, struct cifs_tcon *tcon,
+		       u64 persistent_fid, u64 volatile_fid,
+		       struct smb2_file_full_ea_info *buf, int len);
 extern int SMB2_set_compression(const unsigned int xid, struct cifs_tcon *tcon,
 				u64 persistent_fid, u64 volatile_fid);
 extern int SMB2_oplock_break(const unsigned int xid, struct cifs_tcon *tcon,
@@ -187,4 +200,9 @@ extern int SMB2_lease_break(const unsigned int xid, struct cifs_tcon *tcon,
 			    __u8 *lease_key, const __le32 lease_state);
 extern int smb3_validate_negotiate(const unsigned int, struct cifs_tcon *);
 
+extern enum securityEnum smb2_select_sectype(struct TCP_Server_Info *,
+					enum securityEnum);
+#ifdef CONFIG_CIFS_SMB311
+extern int smb311_crypto_shash_allocate(struct TCP_Server_Info *server);
+#endif
 #endif			/* _SMB2PROTO_H */

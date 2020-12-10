@@ -31,6 +31,10 @@ struct pp_power_state;
 enum amd_dpm_forced_level;
 struct PP_TemperatureRange;
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> temp
 struct phm_fan_speed_info {
 	uint32_t min_percent;
 	uint32_t max_percent;
@@ -88,7 +92,11 @@ enum phm_platform_caps {
 	PHM_PlatformCaps_EnableSideportControl,                 /* indicates Sideport can be controlled */
 	PHM_PlatformCaps_VideoPlaybackEEUNotification,          /* indicates EEU notification of video start/stop is required */
 	PHM_PlatformCaps_TurnOffPll_ASPML1,                     /* PCIE Turn Off PLL in ASPM L1 */
+<<<<<<< HEAD
 	PHM_PlatformCaps_EnableHTLinkControl,                   /* indicates HT Link can be controlled by ACPI or CLMC overrided/automated mode. */
+=======
+	PHM_PlatformCaps_EnableHTLinkControl,                   /* indicates HT Link can be controlled by ACPI or CLMC overridden/automated mode. */
+>>>>>>> temp
 	PHM_PlatformCaps_PerformanceStateOnly,                  /* indicates only performance power state to be used on current system. */
 	PHM_PlatformCaps_ExclusiveModeAlwaysHigh,               /* In Exclusive (3D) mode always stay in High state. */
 	PHM_PlatformCaps_DisableMGClockGating,                  /* to disable Medium Grain Clock Gating or not */
@@ -163,9 +171,20 @@ enum phm_platform_caps {
 	PHM_PlatformCaps_EnablePlatformPowerManagement,         /* indicates that Platform Power Management feature is supported */
 	PHM_PlatformCaps_SurpriseRemoval,                       /* indicates that surprise removal feature is requested */
 	PHM_PlatformCaps_NewCACVoltage,                         /* indicates new CAC voltage table support */
+<<<<<<< HEAD
 	PHM_PlatformCaps_DBRamping,                             /* for dI/dT feature */
 	PHM_PlatformCaps_TDRamping,                             /* for dI/dT feature */
 	PHM_PlatformCaps_TCPRamping,                            /* for dI/dT feature */
+=======
+	PHM_PlatformCaps_DiDtSupport,                           /* for dI/dT feature */
+	PHM_PlatformCaps_DBRamping,                             /* for dI/dT feature */
+	PHM_PlatformCaps_TDRamping,                             /* for dI/dT feature */
+	PHM_PlatformCaps_TCPRamping,                            /* for dI/dT feature */
+	PHM_PlatformCaps_DBRRamping,                            /* for dI/dT feature */
+	PHM_PlatformCaps_DiDtEDCEnable,                         /* for dI/dT feature */
+	PHM_PlatformCaps_GCEDC,                                 /* for dI/dT feature */
+	PHM_PlatformCaps_PSM,                                   /* for dI/dT feature */
+>>>>>>> temp
 	PHM_PlatformCaps_EnableSMU7ThermalManagement,           /* SMC will manage thermal events */
 	PHM_PlatformCaps_FPS,                                   /* FPS support */
 	PHM_PlatformCaps_ACP,                                   /* ACP support */
@@ -181,6 +200,10 @@ enum phm_platform_caps {
 	PHM_PlatformCaps_Thermal2GPIO17,                        /* indicates thermal2GPIO17 table support */
 	PHM_PlatformCaps_ThermalOutGPIO,                        /* indicates ThermalOutGPIO support, pin number is assigned by VBIOS */
 	PHM_PlatformCaps_DisableMclkSwitchingForFrameLock,      /* Disable memory clock switch during Framelock */
+<<<<<<< HEAD
+=======
+	PHM_PlatformCaps_ForceMclkHigh,                         /* Disable memory clock switching by forcing memory clock high */
+>>>>>>> temp
 	PHM_PlatformCaps_VRHotGPIOConfigurable,                 /* indicates VR_HOT GPIO configurable */
 	PHM_PlatformCaps_TempInversion,                         /* enable Temp Inversion feature */
 	PHM_PlatformCaps_IOIC3,
@@ -210,6 +233,24 @@ enum phm_platform_caps {
 	PHM_PlatformCaps_ClockStretcher,
 	PHM_PlatformCaps_TablelessHardwareInterface,
 	PHM_PlatformCaps_EnableDriverEVV,
+<<<<<<< HEAD
+=======
+	PHM_PlatformCaps_SPLLShutdownSupport,
+	PHM_PlatformCaps_VirtualBatteryState,
+	PHM_PlatformCaps_IgnoreForceHighClockRequestsInAPUs,
+	PHM_PlatformCaps_DisableMclkSwitchForVR,
+	PHM_PlatformCaps_SMU8,
+	PHM_PlatformCaps_VRHotPolarityHigh,
+	PHM_PlatformCaps_IPS_UlpsExclusive,
+	PHM_PlatformCaps_SMCtoPPLIBAcdcGpioScheme,
+	PHM_PlatformCaps_GeminiAsymmetricPower,
+	PHM_PlatformCaps_OCLPowerOptimization,
+	PHM_PlatformCaps_MaxPCIEBandWidth,
+	PHM_PlatformCaps_PerfPerWattOptimizationSupport,
+	PHM_PlatformCaps_UVDClientMCTuning,
+	PHM_PlatformCaps_ODNinACSupport,
+	PHM_PlatformCaps_ODNinDCSupport,
+>>>>>>> temp
 	PHM_PlatformCaps_Max
 };
 
@@ -261,6 +302,11 @@ static inline bool phm_cap_enabled(const uint32_t *caps, enum phm_platform_caps 
 		  (1UL << (c & (PHM_MAX_NUM_CAPS_BITS_PER_FIELD - 1)))));
 }
 
+<<<<<<< HEAD
+=======
+#define PP_CAP(c) phm_cap_enabled(hwmgr->platform_descriptor.platformCaps, (c))
+
+>>>>>>> temp
 #define PP_PCIEGenInvalid  0xffff
 enum PP_PCIEGen {
     PP_PCIEGen1 = 0,                /* PCIE 1.0 - Transfer rate of 2.5 GT/s */
@@ -273,7 +319,11 @@ typedef enum PP_PCIEGen PP_PCIEGen;
 #define PP_Min_PCIEGen     PP_PCIEGen1
 #define PP_Max_PCIEGen     PP_PCIEGen3
 #define PP_Min_PCIELane    1
+<<<<<<< HEAD
 #define PP_Max_PCIELane    32
+=======
+#define PP_Max_PCIELane    16
+>>>>>>> temp
 
 enum phm_clock_Type {
 	PHM_DispClock = 1,
@@ -288,6 +338,20 @@ struct PP_Clocks {
 	uint32_t memoryClock;
 	uint32_t BusBandwidth;
 	uint32_t engineClockInSR;
+<<<<<<< HEAD
+=======
+	uint32_t dcefClock;
+	uint32_t dcefClockInSR;
+};
+
+struct pp_clock_info {
+	uint32_t min_mem_clk;
+	uint32_t max_mem_clk;
+	uint32_t min_eng_clk;
+	uint32_t max_eng_clk;
+	uint32_t min_bus_bandwidth;
+	uint32_t max_bus_bandwidth;
+>>>>>>> temp
 };
 
 struct phm_platform_descriptor {
@@ -323,6 +387,7 @@ struct phm_clocks {
 	uint32_t clock[MAX_NUM_CLOCKS];
 };
 
+<<<<<<< HEAD
 enum PP_DAL_POWERLEVEL {
 	PP_DAL_POWERLEVEL_INVALID = 0,
 	PP_DAL_POWERLEVEL_ULTRALOW,
@@ -348,6 +413,29 @@ extern int phm_powerdown_uvd(struct pp_hwmgr *hwmgr);
 extern int phm_setup_asic(struct pp_hwmgr *hwmgr);
 extern int phm_enable_dynamic_state_management(struct pp_hwmgr *hwmgr);
 extern void phm_init_dynamic_caps(struct pp_hwmgr *hwmgr);
+=======
+struct phm_odn_performance_level {
+	uint32_t clock;
+	uint32_t vddc;
+	bool enabled;
+};
+
+struct phm_odn_clock_levels {
+	uint32_t size;
+	uint32_t options;
+	uint32_t flags;
+	uint32_t number_of_performance_levels;
+	/* variable-sized array, specify by ulNumberOfPerformanceLevels. */
+	struct phm_odn_performance_level performance_level_entries[8];
+};
+
+extern int phm_disable_clock_power_gatings(struct pp_hwmgr *hwmgr);
+extern int phm_enable_clock_power_gatings(struct pp_hwmgr *hwmgr);
+extern int phm_powerdown_uvd(struct pp_hwmgr *hwmgr);
+extern int phm_setup_asic(struct pp_hwmgr *hwmgr);
+extern int phm_enable_dynamic_state_management(struct pp_hwmgr *hwmgr);
+extern int phm_disable_dynamic_state_management(struct pp_hwmgr *hwmgr);
+>>>>>>> temp
 extern bool phm_is_hw_access_blocked(struct pp_hwmgr *hwmgr);
 extern int phm_block_hw_access(struct pp_hwmgr *hwmgr, bool block);
 extern int phm_set_power_state(struct pp_hwmgr *hwmgr,
@@ -375,11 +463,43 @@ extern int phm_store_dal_configuration_data(struct pp_hwmgr *hwmgr,
 		const struct amd_pp_display_configuration *display_config);
 
 extern int phm_get_dal_power_level(struct pp_hwmgr *hwmgr,
+<<<<<<< HEAD
 		struct amd_pp_dal_clock_info*info);
+=======
+		struct amd_pp_simple_clock_info *info);
+>>>>>>> temp
 
 extern int phm_set_cpu_power_state(struct pp_hwmgr *hwmgr);
 
 extern int phm_power_down_asic(struct pp_hwmgr *hwmgr);
 
+<<<<<<< HEAD
+=======
+extern int phm_get_performance_level(struct pp_hwmgr *hwmgr, const struct pp_hw_power_state *state,
+				PHM_PerformanceLevelDesignation designation, uint32_t index,
+				PHM_PerformanceLevel *level);
+
+extern int phm_get_clock_info(struct pp_hwmgr *hwmgr, const struct pp_hw_power_state *state,
+			struct pp_clock_info *pclock_info,
+			PHM_PerformanceLevelDesignation designation);
+
+extern int phm_get_current_shallow_sleep_clocks(struct pp_hwmgr *hwmgr, const struct pp_hw_power_state *state, struct pp_clock_info *clock_info);
+
+extern int phm_get_clock_by_type(struct pp_hwmgr *hwmgr, enum amd_pp_clock_type type, struct amd_pp_clocks *clocks);
+
+extern int phm_get_clock_by_type_with_latency(struct pp_hwmgr *hwmgr,
+		enum amd_pp_clock_type type,
+		struct pp_clock_levels_with_latency *clocks);
+extern int phm_get_clock_by_type_with_voltage(struct pp_hwmgr *hwmgr,
+		enum amd_pp_clock_type type,
+		struct pp_clock_levels_with_voltage *clocks);
+extern int phm_set_watermarks_for_clocks_ranges(struct pp_hwmgr *hwmgr,
+		struct pp_wm_sets_with_clock_ranges_soc15 *wm_with_clock_ranges);
+extern int phm_display_clock_voltage_request(struct pp_hwmgr *hwmgr,
+		struct pp_display_clock_request *clock);
+
+extern int phm_get_max_high_clocks(struct pp_hwmgr *hwmgr, struct amd_pp_simple_clock_info *clocks);
+extern int phm_disable_smc_firmware_ctf(struct pp_hwmgr *hwmgr);
+>>>>>>> temp
 #endif /* _HARDWARE_MANAGER_H_ */
 

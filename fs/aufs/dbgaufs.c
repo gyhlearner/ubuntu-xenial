@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright (C) 2005-2015 Junjiro R. Okajima
+=======
+ * Copyright (C) 2005-2017 Junjiro R. Okajima
+>>>>>>> temp
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -62,6 +66,7 @@ static int dbgaufs_xi_open(struct file *xf, struct file *file, int do_fcnt)
 	if (!xf)
 		goto out;
 
+<<<<<<< HEAD
 	err = vfs_getattr(&xf->f_path, &st);
 	if (!err) {
 		if (do_fcnt)
@@ -71,6 +76,17 @@ static int dbgaufs_xi_open(struct file *xf, struct file *file, int do_fcnt)
 				 (long long)st.size);
 		else
 			p->n = snprintf(p->a, sizeof(p->a), "%llux%lu %lld\n",
+=======
+	err = vfsub_getattr(&xf->f_path, &st);
+	if (!err) {
+		if (do_fcnt)
+			p->n = snprintf
+				(p->a, sizeof(p->a), "%ld, %llux%u %lld\n",
+				 (long)file_count(xf), st.blocks, st.blksize,
+				 (long long)st.size);
+		else
+			p->n = snprintf(p->a, sizeof(p->a), "%llux%u %lld\n",
+>>>>>>> temp
 					st.blocks, st.blksize,
 					(long long)st.size);
 		AuDebugOn(p->n >= sizeof(p->a));
@@ -114,7 +130,11 @@ static int dbgaufs_plink_open(struct inode *inode, struct file *file)
 	struct dbgaufs_plink_arg *p;
 	struct au_sbinfo *sbinfo;
 	struct super_block *sb;
+<<<<<<< HEAD
 	struct au_sphlhead *sphl;
+=======
+	struct hlist_bl_head *hbl;
+>>>>>>> temp
 
 	err = -ENOMEM;
 	p = (void *)get_zeroed_page(GFP_NOFS);
@@ -134,10 +154,16 @@ static int dbgaufs_plink_open(struct inode *inode, struct file *file)
 		limit -= n;
 
 		sum = 0;
+<<<<<<< HEAD
 		for (i = 0, sphl = sbinfo->si_plink;
 		     i < AuPlink_NHASH;
 		     i++, sphl++) {
 			n = au_sphl_count(sphl);
+=======
+		for (i = 0, hbl = sbinfo->si_plink; i < AuPlink_NHASH;
+		     i++, hbl++) {
+			n = au_hbl_count(hbl);
+>>>>>>> temp
 			sum += n;
 
 			n = snprintf(p->a + p->n, limit, "%lu ", n);
@@ -238,7 +264,11 @@ static int dbgaufs_xino_open(struct inode *inode, struct file *file)
 	sbinfo = inode->i_private;
 	sb = sbinfo->si_sb;
 	si_noflush_read_lock(sb);
+<<<<<<< HEAD
 	if (l <= au_sbend(sb)) {
+=======
+	if (l <= au_sbbot(sb)) {
+>>>>>>> temp
 		xf = au_sbr(sb, (aufs_bindex_t)l)->br_xino.xi_file;
 		err = dbgaufs_xi_open(xf, file, /*do_fcnt*/1);
 	} else
@@ -258,18 +288,33 @@ static const struct file_operations dbgaufs_xino_fop = {
 
 void dbgaufs_brs_del(struct super_block *sb, aufs_bindex_t bindex)
 {
+<<<<<<< HEAD
 	aufs_bindex_t bend;
+=======
+	aufs_bindex_t bbot;
+>>>>>>> temp
 	struct au_branch *br;
 	struct au_xino_file *xi;
 
 	if (!au_sbi(sb)->si_dbgaufs)
 		return;
 
+<<<<<<< HEAD
 	bend = au_sbend(sb);
 	for (; bindex <= bend; bindex++) {
 		br = au_sbr(sb, bindex);
 		xi = &br->br_xino;
 		debugfs_remove(xi->xi_dbgaufs);
+=======
+	bbot = au_sbbot(sb);
+	for (; bindex <= bbot; bindex++) {
+		br = au_sbr(sb, bindex);
+		xi = &br->br_xino;
+		/* debugfs acquires the parent i_mutex */
+		lockdep_off();
+		debugfs_remove(xi->xi_dbgaufs);
+		lockdep_on();
+>>>>>>> temp
 		xi->xi_dbgaufs = NULL;
 	}
 }
@@ -280,7 +325,11 @@ void dbgaufs_brs_add(struct super_block *sb, aufs_bindex_t bindex)
 	struct dentry *parent;
 	struct au_branch *br;
 	struct au_xino_file *xi;
+<<<<<<< HEAD
 	aufs_bindex_t bend;
+=======
+	aufs_bindex_t bbot;
+>>>>>>> temp
 	char name[sizeof(DbgaufsXi_PREFIX) + 5]; /* "xi" bindex NULL */
 
 	sbinfo = au_sbi(sb);
@@ -288,14 +337,27 @@ void dbgaufs_brs_add(struct super_block *sb, aufs_bindex_t bindex)
 	if (!parent)
 		return;
 
+<<<<<<< HEAD
 	bend = au_sbend(sb);
 	for (; bindex <= bend; bindex++) {
+=======
+	bbot = au_sbbot(sb);
+	for (; bindex <= bbot; bindex++) {
+>>>>>>> temp
 		snprintf(name, sizeof(name), DbgaufsXi_PREFIX "%d", bindex);
 		br = au_sbr(sb, bindex);
 		xi = &br->br_xino;
 		AuDebugOn(xi->xi_dbgaufs);
+<<<<<<< HEAD
 		xi->xi_dbgaufs = debugfs_create_file(name, dbgaufs_mode, parent,
 						     sbinfo, &dbgaufs_xino_fop);
+=======
+		/* debugfs acquires the parent i_mutex */
+		lockdep_off();
+		xi->xi_dbgaufs = debugfs_create_file(name, dbgaufs_mode, parent,
+						     sbinfo, &dbgaufs_xino_fop);
+		lockdep_on();
+>>>>>>> temp
 		/* ignore an error */
 		if (unlikely(!xi->xi_dbgaufs))
 			AuWarn1("failed %s under debugfs\n", name);

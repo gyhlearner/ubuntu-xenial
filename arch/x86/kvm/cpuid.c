@@ -13,9 +13,15 @@
  */
 
 #include <linux/kvm_host.h>
-#include <linux/module.h>
+#include <linux/export.h>
 #include <linux/vmalloc.h>
 #include <linux/uaccess.h>
+<<<<<<< HEAD
+=======
+#include <linux/sched/stat.h>
+
+#include <asm/processor.h>
+>>>>>>> temp
 #include <asm/user.h>
 #include <asm/fpu/xstate.h>
 #include "cpuid.h"
@@ -64,6 +70,9 @@ u64 kvm_supported_xcr0(void)
 
 #define F(x) bit(X86_FEATURE_##x)
 
+/* For scattered features from cpufeatures.h; we currently expose none */
+#define KF(x) bit(KVM_CPUID_BIT_##x)
+
 int kvm_update_cpuid(struct kvm_vcpu *vcpu)
 {
 	struct kvm_cpuid_entry2 *best;
@@ -74,17 +83,31 @@ int kvm_update_cpuid(struct kvm_vcpu *vcpu)
 		return 0;
 
 	/* Update OSXSAVE bit */
-	if (cpu_has_xsave && best->function == 0x1) {
+	if (boot_cpu_has(X86_FEATURE_XSAVE) && best->function == 0x1) {
 		best->ecx &= ~F(OSXSAVE);
 		if (kvm_read_cr4_bits(vcpu, X86_CR4_OSXSAVE))
 			best->ecx |= F(OSXSAVE);
 	}
+
+	best->edx &= ~F(APIC);
+	if (vcpu->arch.apic_base & MSR_IA32_APICBASE_ENABLE)
+		best->edx |= F(APIC);
 
 	if (apic) {
 		if (best->ecx & F(TSC_DEADLINE_TIMER))
 			apic->lapic_timer.timer_mode_mask = 3 << 17;
 		else
 			apic->lapic_timer.timer_mode_mask = 1 << 17;
+	}
+
+	best = kvm_find_cpuid_entry(vcpu, 7, 0);
+	if (best) {
+		/* Update OSPKE bit */
+		if (boot_cpu_has(X86_FEATURE_PKU) && best->function == 0x7) {
+			best->ecx &= ~F(OSPKE);
+			if (kvm_read_cr4_bits(vcpu, X86_CR4_PKE))
+				best->ecx |= F(OSPKE);
+		}
 	}
 
 	best = kvm_find_cpuid_entry(vcpu, 0xD, 0);
@@ -103,19 +126,26 @@ int kvm_update_cpuid(struct kvm_vcpu *vcpu)
 	if (best && (best->eax & (F(XSAVES) | F(XSAVEC))))
 		best->ebx = xstate_required_size(vcpu->arch.xcr0, true);
 
+<<<<<<< HEAD
 	kvm_x86_ops->fpu_activate(vcpu);
 
+=======
+>>>>>>> temp
 	/*
-	 * The existing code assumes virtual address is 48-bit in the canonical
-	 * address checks; exit if it is ever changed.
+	 * The existing code assumes virtual address is 48-bit or 57-bit in the
+	 * canonical address checks; exit if it is ever changed.
 	 */
 	best = kvm_find_cpuid_entry(vcpu, 0x80000008, 0);
-	if (best && ((best->eax & 0xff00) >> 8) != 48 &&
-		((best->eax & 0xff00) >> 8) != 0)
-		return -EINVAL;
+	if (best) {
+		int vaddr_bits = (best->eax & 0xff00) >> 8;
+
+		if (vaddr_bits != 48 && vaddr_bits != 57 && vaddr_bits != 0)
+			return -EINVAL;
+	}
 
 	/* Update physical-address width */
 	vcpu->arch.maxphyaddr = cpuid_query_maxphyaddr(vcpu);
+	kvm_mmu_reset_context(vcpu);
 
 	kvm_pmu_refresh(vcpu);
 	return 0;
@@ -169,19 +199,22 @@ int kvm_vcpu_ioctl_set_cpuid(struct kvm_vcpu *vcpu,
 			     struct kvm_cpuid_entry __user *entries)
 {
 	int r, i;
-	struct kvm_cpuid_entry *cpuid_entries;
+	struct kvm_cpuid_entry *cpuid_entries = NULL;
 
 	r = -E2BIG;
 	if (cpuid->nent > KVM_MAX_CPUID_ENTRIES)
 		goto out;
 	r = -ENOMEM;
-	cpuid_entries = vmalloc(sizeof(struct kvm_cpuid_entry) * cpuid->nent);
-	if (!cpuid_entries)
-		goto out;
-	r = -EFAULT;
-	if (copy_from_user(cpuid_entries, entries,
-			   cpuid->nent * sizeof(struct kvm_cpuid_entry)))
-		goto out_free;
+	if (cpuid->nent) {
+		cpuid_entries = vmalloc(sizeof(struct kvm_cpuid_entry) *
+					cpuid->nent);
+		if (!cpuid_entries)
+			goto out;
+		r = -EFAULT;
+		if (copy_from_user(cpuid_entries, entries,
+				   cpuid->nent * sizeof(struct kvm_cpuid_entry)))
+			goto out;
+	}
 	for (i = 0; i < cpuid->nent; i++) {
 		vcpu->arch.cpuid_entries[i].function = cpuid_entries[i].function;
 		vcpu->arch.cpuid_entries[i].eax = cpuid_entries[i].eax;
@@ -200,9 +233,8 @@ int kvm_vcpu_ioctl_set_cpuid(struct kvm_vcpu *vcpu,
 	kvm_x86_ops->cpuid_update(vcpu);
 	r = kvm_update_cpuid(vcpu);
 
-out_free:
-	vfree(cpuid_entries);
 out:
+	vfree(cpuid_entries);
 	return r;
 }
 
@@ -341,6 +373,10 @@ static inline int __do_cpuid_ent(struct kvm_cpuid_entry2 *entry, u32 function,
 		F(3DNOWPREFETCH) | F(OSVW) | 0 /* IBS */ | F(XOP) |
 		0 /* SKINIT, WDT, LWP */ | F(FMA4) | F(TBM);
 
+	/* cpuid 0x80000008.ebx */
+	const u32 kvm_cpuid_8000_0008_ebx_x86_features =
+		F(AMD_IBPB) | F(AMD_IBRS) | F(VIRT_SSBD);
+
 	/* cpuid 0xC0000001.edx */
 	const u32 kvm_cpuid_C000_0001_edx_x86_features =
 		F(XSTORE) | F(XSTORE_EN) | F(XCRYPT) | F(XCRYPT_EN) |
@@ -351,8 +387,9 @@ static inline int __do_cpuid_ent(struct kvm_cpuid_entry2 *entry, u32 function,
 	const u32 kvm_cpuid_7_0_ebx_x86_features =
 		F(FSGSBASE) | F(BMI1) | F(HLE) | F(AVX2) | F(SMEP) |
 		F(BMI2) | F(ERMS) | f_invpcid | F(RTM) | f_mpx | F(RDSEED) |
-		F(ADX) | F(SMAP) | F(AVX512F) | F(AVX512PF) | F(AVX512ER) |
-		F(AVX512CD) | F(CLFLUSHOPT) | F(CLWB) | F(PCOMMIT);
+		F(ADX) | F(SMAP) | F(AVX512IFMA) | F(AVX512F) | F(AVX512PF) |
+		F(AVX512ER) | F(AVX512CD) | F(CLFLUSHOPT) | F(CLWB) | F(AVX512DQ) |
+		F(SHA_NI) | F(AVX512BW) | F(AVX512VL);
 
 	/* cpuid 7.0.edx */
 	const u32 kvm_supported_7_0_edx_x86_features =
@@ -362,9 +399,22 @@ static inline int __do_cpuid_ent(struct kvm_cpuid_entry2 *entry, u32 function,
 	const u32 kvm_cpuid_D_1_eax_x86_features =
 		F(XSAVEOPT) | F(XSAVEC) | F(XGETBV1) | f_xsaves;
 
+<<<<<<< HEAD
 	/* cpuid 0x80000008.0.ebx */
 	const u32 kvm_cpuid_80000008_0_ebx_x86_features =
 		F(AMD_IBPB) | F(AMD_IBRS) | F(VIRT_SSBD);
+=======
+	/* cpuid 7.0.ecx*/
+	const u32 kvm_cpuid_7_0_ecx_x86_features =
+		F(AVX512VBMI) | F(LA57) | F(PKU) | 0 /*OSPKE*/ |
+		F(AVX512_VPOPCNTDQ) | F(UMIP) | F(AVX512_VBMI2) | F(GFNI) |
+		F(VAES) | F(VPCLMULQDQ) | F(AVX512_VNNI) | F(AVX512_BITALG);
+
+	/* cpuid 7.0.edx*/
+	const u32 kvm_cpuid_7_0_edx_x86_features =
+		F(AVX512_4VNNIW) | F(AVX512_4FMAPS) | F(SPEC_CTRL) |
+		F(SPEC_CTRL_SSBD) | F(ARCH_CAPABILITIES);
+>>>>>>> temp
 
 	/* all calls to cpuid_count() should be made on the same cpu */
 	get_cpu();
@@ -443,6 +493,7 @@ static inline int __do_cpuid_ent(struct kvm_cpuid_entry2 *entry, u32 function,
 			cpuid_mask(&entry->ebx, CPUID_7_0_EBX);
 			// TSC_ADJUST is emulated
 			entry->ebx |= F(TSC_ADJUST);
+<<<<<<< HEAD
 			entry->edx &= kvm_supported_7_0_edx_x86_features;
 			cpuid_mask(&entry->edx, CPUID_7_EDX);
 		} else {
@@ -451,6 +502,26 @@ static inline int __do_cpuid_ent(struct kvm_cpuid_entry2 *entry, u32 function,
 		}
 		entry->eax = 0;
 		entry->ecx = 0;
+=======
+			entry->ecx &= kvm_cpuid_7_0_ecx_x86_features;
+			cpuid_mask(&entry->ecx, CPUID_7_ECX);
+			/* PKU is not yet implemented for shadow paging. */
+			if (!tdp_enabled || !boot_cpu_has(X86_FEATURE_OSPKE))
+				entry->ecx &= ~F(PKU);
+			entry->edx &= kvm_cpuid_7_0_edx_x86_features;
+			cpuid_mask(&entry->edx, CPUID_7_EDX);
+			/*
+			 * We emulate ARCH_CAPABILITIES in software even
+			 * if the host doesn't support it.
+			 */
+			entry->edx |= F(ARCH_CAPABILITIES);
+		} else {
+			entry->ebx = 0;
+			entry->ecx = 0;
+			entry->edx = 0;
+		}
+		entry->eax = 0;
+>>>>>>> temp
 		break;
 	}
 	case 9:
@@ -561,7 +632,8 @@ static inline int __do_cpuid_ent(struct kvm_cpuid_entry2 *entry, u32 function,
 			     (1 << KVM_FEATURE_ASYNC_PF) |
 			     (1 << KVM_FEATURE_PV_EOI) |
 			     (1 << KVM_FEATURE_CLOCKSOURCE_STABLE_BIT) |
-			     (1 << KVM_FEATURE_PV_UNHALT);
+			     (1 << KVM_FEATURE_PV_UNHALT) |
+			     (1 << KVM_FEATURE_ASYNC_PF_VMEXIT);
 
 		if (sched_info_on())
 			entry->eax |= (1 << KVM_FEATURE_STEAL_TIME);
@@ -594,6 +666,10 @@ static inline int __do_cpuid_ent(struct kvm_cpuid_entry2 *entry, u32 function,
 		if (!g_phys_as)
 			g_phys_as = phys_as;
 		entry->eax = g_phys_as | (virt_as << 8);
+<<<<<<< HEAD
+=======
+		entry->edx = 0;
+>>>>>>> temp
 		/*
 		 * IBRS, IBPB and VIRT_SSBD aren't necessarily present in
 		 * hardware cpuid
@@ -604,11 +680,18 @@ static inline int __do_cpuid_ent(struct kvm_cpuid_entry2 *entry, u32 function,
 			entry->ebx |= F(AMD_IBRS);
 		if (boot_cpu_has(X86_FEATURE_VIRT_SSBD))
 			entry->ebx |= F(VIRT_SSBD);
+<<<<<<< HEAD
 		entry->ebx &= kvm_cpuid_80000008_0_ebx_x86_features;
 		cpuid_mask(&entry->ebx, CPUID_8000_0008_EBX);
 		if (boot_cpu_has(X86_FEATURE_LS_CFG_SSBD))
 			entry->ebx |= F(VIRT_SSBD);
 		entry->edx = 0;
+=======
+		entry->ebx &= kvm_cpuid_8000_0008_ebx_x86_features;
+		cpuid_mask(&entry->ebx, CPUID_8000_0008_EBX);
+		if (boot_cpu_has(X86_FEATURE_LS_CFG_SSBD))
+			entry->ebx |= F(VIRT_SSBD);
+>>>>>>> temp
 		break;
 	}
 	case 0x80000019:
@@ -839,16 +922,27 @@ static struct kvm_cpuid_entry2* check_cpuid_limit(struct kvm_vcpu *vcpu,
 	return kvm_find_cpuid_entry(vcpu, maxlevel->eax, index);
 }
 
-void kvm_cpuid(struct kvm_vcpu *vcpu, u32 *eax, u32 *ebx, u32 *ecx, u32 *edx)
+bool kvm_cpuid(struct kvm_vcpu *vcpu, u32 *eax, u32 *ebx,
+	       u32 *ecx, u32 *edx, bool check_limit)
 {
 	u32 function = *eax, index = *ecx;
 	struct kvm_cpuid_entry2 *best;
+	bool entry_found = true;
 
 	best = kvm_find_cpuid_entry(vcpu, function, index);
 
-	if (!best)
-		best = check_cpuid_limit(vcpu, function, index);
+	if (!best) {
+		entry_found = false;
+		if (!check_limit)
+			goto out;
 
+<<<<<<< HEAD
+=======
+		best = check_cpuid_limit(vcpu, function, index);
+	}
+
+out:
+>>>>>>> temp
 	if (best) {
 		*eax = best->eax;
 		*ebx = best->ebx;
@@ -856,21 +950,25 @@ void kvm_cpuid(struct kvm_vcpu *vcpu, u32 *eax, u32 *ebx, u32 *ecx, u32 *edx)
 		*edx = best->edx;
 	} else
 		*eax = *ebx = *ecx = *edx = 0;
-	trace_kvm_cpuid(function, *eax, *ebx, *ecx, *edx);
+	trace_kvm_cpuid(function, *eax, *ebx, *ecx, *edx, entry_found);
+	return entry_found;
 }
 EXPORT_SYMBOL_GPL(kvm_cpuid);
 
-void kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
+int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 {
-	u32 function, eax, ebx, ecx, edx;
+	u32 eax, ebx, ecx, edx;
 
-	function = eax = kvm_register_read(vcpu, VCPU_REGS_RAX);
+	if (cpuid_fault_enabled(vcpu) && !kvm_require_cpl(vcpu, 0))
+		return 1;
+
+	eax = kvm_register_read(vcpu, VCPU_REGS_RAX);
 	ecx = kvm_register_read(vcpu, VCPU_REGS_RCX);
-	kvm_cpuid(vcpu, &eax, &ebx, &ecx, &edx);
+	kvm_cpuid(vcpu, &eax, &ebx, &ecx, &edx, true);
 	kvm_register_write(vcpu, VCPU_REGS_RAX, eax);
 	kvm_register_write(vcpu, VCPU_REGS_RBX, ebx);
 	kvm_register_write(vcpu, VCPU_REGS_RCX, ecx);
 	kvm_register_write(vcpu, VCPU_REGS_RDX, edx);
-	kvm_x86_ops->skip_emulated_instruction(vcpu);
+	return kvm_skip_emulated_instruction(vcpu);
 }
 EXPORT_SYMBOL_GPL(kvm_emulate_cpuid);

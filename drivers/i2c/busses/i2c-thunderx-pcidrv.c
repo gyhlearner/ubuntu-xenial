@@ -75,7 +75,11 @@ static const struct i2c_algorithm thunderx_i2c_algo = {
 	.functionality = thunderx_i2c_functionality,
 };
 
+<<<<<<< HEAD
 static struct i2c_adapter thunderx_i2c_ops = {
+=======
+static const struct i2c_adapter thunderx_i2c_ops = {
+>>>>>>> temp
 	.owner	= THIS_MODULE,
 	.name	= "ThunderX adapter",
 	.algo	= &thunderx_i2c_algo,
@@ -85,6 +89,7 @@ static void thunder_i2c_clock_enable(struct device *dev, struct octeon_i2c *i2c)
 {
 	int ret;
 
+<<<<<<< HEAD
 	i2c->clk = clk_get(dev, NULL);
 	if (IS_ERR(i2c->clk)) {
 		i2c->clk = NULL;
@@ -96,6 +101,25 @@ static void thunder_i2c_clock_enable(struct device *dev, struct octeon_i2c *i2c)
 		goto skip;
 	i2c->sys_freq = clk_get_rate(i2c->clk);
 
+=======
+	if (acpi_disabled) {
+		/* DT */
+		i2c->clk = clk_get(dev, NULL);
+		if (IS_ERR(i2c->clk)) {
+			i2c->clk = NULL;
+			goto skip;
+		}
+
+		ret = clk_prepare_enable(i2c->clk);
+		if (ret)
+			goto skip;
+		i2c->sys_freq = clk_get_rate(i2c->clk);
+	} else {
+		/* ACPI */
+		device_property_read_u32(dev, "sclk", &i2c->sys_freq);
+	}
+
+>>>>>>> temp
 skip:
 	if (!i2c->sys_freq)
 		i2c->sys_freq = SYS_FREQ_DEFAULT;
@@ -112,8 +136,11 @@ static void thunder_i2c_clock_disable(struct device *dev, struct clk *clk)
 static int thunder_i2c_smbus_setup_of(struct octeon_i2c *i2c,
 				      struct device_node *node)
 {
+<<<<<<< HEAD
 	u32 type;
 
+=======
+>>>>>>> temp
 	if (!node)
 		return -EINVAL;
 
@@ -121,10 +148,13 @@ static int thunder_i2c_smbus_setup_of(struct octeon_i2c *i2c,
 	if (!i2c->alert_data.irq)
 		return -EINVAL;
 
+<<<<<<< HEAD
 	type = irqd_get_trigger_type(irq_get_irq_data(i2c->alert_data.irq));
 	i2c->alert_data.alert_edge_triggered =
 		(type & IRQ_TYPE_LEVEL_MASK) ? 1 : 0;
 
+=======
+>>>>>>> temp
 	i2c->ara = i2c_setup_smbus_alert(&i2c->adap, &i2c->alert_data);
 	if (!i2c->ara)
 		return -ENODEV;
@@ -143,8 +173,12 @@ static int thunder_i2c_smbus_setup(struct octeon_i2c *i2c,
 
 static void thunder_i2c_smbus_remove(struct octeon_i2c *i2c)
 {
+<<<<<<< HEAD
 	if (i2c->ara)
 		i2c_unregister_device(i2c->ara);
+=======
+	i2c_unregister_device(i2c->ara);
+>>>>>>> temp
 }
 
 static int thunder_i2c_probe_pci(struct pci_dev *pdev,
@@ -188,11 +222,19 @@ static int thunder_i2c_probe_pci(struct pci_dev *pdev,
 	i2c->hlc_int_enable = thunder_i2c_hlc_int_enable;
 	i2c->hlc_int_disable = thunder_i2c_hlc_int_disable;
 
+<<<<<<< HEAD
 	ret = pci_enable_msix(pdev, &i2c->i2c_msix, 1);
 	if (ret)
 		goto error;
 
 	ret = devm_request_irq(dev, i2c->i2c_msix.vector, octeon_i2c_isr, 0,
+=======
+	ret = pci_alloc_irq_vectors(pdev, 1, 1, PCI_IRQ_MSIX);
+	if (ret < 0)
+		goto error;
+
+	ret = devm_request_irq(dev, pci_irq_vector(pdev, 0), octeon_i2c_isr, 0,
+>>>>>>> temp
 			       DRV_NAME, i2c);
 	if (ret)
 		goto error;

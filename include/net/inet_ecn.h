@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 #ifndef _INET_ECN_H_
 #define _INET_ECN_H_
 
@@ -123,6 +124,7 @@ static inline int IP6_ECN_set_ce(struct sk_buff *skb, struct ipv6hdr *iph)
 
 	if (INET_ECN_is_not_ect(ipv6_get_dsfield(iph)))
 		return 0;
+<<<<<<< HEAD
 
 	from = *(__be32 *)iph;
 	to = from | htonl(INET_ECN_CE << 20);
@@ -132,10 +134,16 @@ static inline int IP6_ECN_set_ce(struct sk_buff *skb, struct ipv6hdr *iph)
 				     (__force __wsum)to);
 	return 1;
 }
+=======
+>>>>>>> temp
 
-static inline void IP6_ECN_clear(struct ipv6hdr *iph)
-{
-	*(__be32*)iph &= ~htonl(INET_ECN_MASK << 20);
+	from = *(__be32 *)iph;
+	to = from | htonl(INET_ECN_CE << 20);
+	*(__be32 *)iph = to;
+	if (skb->ip_summed == CHECKSUM_COMPLETE)
+		skb->csum = csum_add(csum_sub(skb->csum, (__force __wsum)from),
+				     (__force __wsum)to);
+	return 1;
 }
 
 static inline void ipv6_copy_dscp(unsigned int dscp, struct ipv6hdr *inner)

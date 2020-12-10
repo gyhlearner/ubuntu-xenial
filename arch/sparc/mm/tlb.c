@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0
 /* arch/sparc64/mm/tlb.c
  *
  * Copyright (C) 2004 David S. Miller <davem@redhat.com>
@@ -67,7 +68,11 @@ void arch_leave_lazy_mmu_mode(void)
 }
 
 static void tlb_batch_add_one(struct mm_struct *mm, unsigned long vaddr,
+<<<<<<< HEAD
 			      bool exec, bool huge)
+=======
+			      bool exec, unsigned int hugepage_shift)
+>>>>>>> temp
 {
 	struct tlb_batch *tb = &get_cpu_var(tlb_batch);
 	unsigned long nr;
@@ -84,19 +89,32 @@ static void tlb_batch_add_one(struct mm_struct *mm, unsigned long vaddr,
 	}
 
 	if (!tb->active) {
+<<<<<<< HEAD
 		flush_tsb_user_page(mm, vaddr, huge);
+=======
+		flush_tsb_user_page(mm, vaddr, hugepage_shift);
+>>>>>>> temp
 		global_flush_tlb_page(mm, vaddr);
 		goto out;
 	}
 
 	if (nr == 0) {
 		tb->mm = mm;
+<<<<<<< HEAD
 		tb->huge = huge;
 	}
 
 	if (tb->huge != huge) {
 		flush_tlb_pending();
 		tb->huge = huge;
+=======
+		tb->hugepage_shift = hugepage_shift;
+	}
+
+	if (tb->hugepage_shift != hugepage_shift) {
+		flush_tlb_pending();
+		tb->hugepage_shift = hugepage_shift;
+>>>>>>> temp
 		nr = 0;
 	}
 
@@ -110,7 +128,8 @@ out:
 }
 
 void tlb_batch_add(struct mm_struct *mm, unsigned long vaddr,
-		   pte_t *ptep, pte_t orig, int fullmm)
+		   pte_t *ptep, pte_t orig, int fullmm,
+		   unsigned int hugepage_shift)
 {
 	bool huge = is_hugetlb_pte(orig);
 
@@ -139,7 +158,11 @@ void tlb_batch_add(struct mm_struct *mm, unsigned long vaddr,
 
 no_cache_flush:
 	if (!fullmm)
+<<<<<<< HEAD
 		tlb_batch_add_one(mm, vaddr, pte_exec(orig), huge);
+=======
+		tlb_batch_add_one(mm, vaddr, pte_exec(orig), hugepage_shift);
+>>>>>>> temp
 }
 
 #ifdef CONFIG_TRANSPARENT_HUGEPAGE
@@ -155,7 +178,11 @@ static void tlb_batch_pmd_scan(struct mm_struct *mm, unsigned long vaddr,
 		if (pte_val(*pte) & _PAGE_VALID) {
 			bool exec = pte_exec(*pte);
 
+<<<<<<< HEAD
 			tlb_batch_add_one(mm, vaddr, exec, false);
+=======
+			tlb_batch_add_one(mm, vaddr, exec, PAGE_SHIFT);
+>>>>>>> temp
 		}
 		pte++;
 		vaddr += PAGE_SIZE;
@@ -210,26 +237,51 @@ void set_pmd_at(struct mm_struct *mm, unsigned long addr,
 			pte_t orig_pte = __pte(pmd_val(orig));
 			bool exec = pte_exec(orig_pte);
 
+<<<<<<< HEAD
 			tlb_batch_add_one(mm, addr, exec, true);
 			tlb_batch_add_one(mm, addr + REAL_HPAGE_SIZE, exec,
 					true);
+=======
+			tlb_batch_add_one(mm, addr, exec, REAL_HPAGE_SHIFT);
+			tlb_batch_add_one(mm, addr + REAL_HPAGE_SIZE, exec,
+					  REAL_HPAGE_SHIFT);
+>>>>>>> temp
 		} else {
 			tlb_batch_pmd_scan(mm, addr, orig);
 		}
 	}
 }
 
+<<<<<<< HEAD
 /*
  * This routine is only called when splitting a THP
  */
 void pmdp_invalidate(struct vm_area_struct *vma, unsigned long address,
 		     pmd_t *pmdp)
+=======
+static inline pmd_t pmdp_establish(struct vm_area_struct *vma,
+		unsigned long address, pmd_t *pmdp, pmd_t pmd)
+>>>>>>> temp
 {
-	pmd_t entry = *pmdp;
+	pmd_t old;
 
-	pmd_val(entry) &= ~_PAGE_VALID;
+	do {
+		old = *pmdp;
+	} while (cmpxchg64(&pmdp->pmd, old.pmd, pmd.pmd) != old.pmd);
 
-	set_pmd_at(vma->vm_mm, address, pmdp, entry);
+	return old;
+}
+
+/*
+ * This routine is only called when splitting a THP
+ */
+pmd_t pmdp_invalidate(struct vm_area_struct *vma, unsigned long address,
+		     pmd_t *pmdp)
+{
+	pmd_t old, entry;
+
+	entry = __pmd(pmd_val(*pmdp) & ~_PAGE_VALID);
+	old = pmdp_establish(vma, address, pmdp, entry);
 	flush_tlb_range(vma, address, address + HPAGE_PMD_SIZE);
 
 	/*
@@ -240,6 +292,11 @@ void pmdp_invalidate(struct vm_area_struct *vma, unsigned long address,
 	if ((pmd_val(entry) & _PAGE_PMD_HUGE) &&
 	    !is_huge_zero_page(pmd_page(entry)))
 		(vma->vm_mm)->context.thp_pte_count--;
+<<<<<<< HEAD
+=======
+
+	return old;
+>>>>>>> temp
 }
 
 void pgtable_trans_huge_deposit(struct mm_struct *mm, pmd_t *pmdp,

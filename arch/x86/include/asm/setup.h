@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 #ifndef _ASM_X86_SETUP_H
 #define _ASM_X86_SETUP_H
 
@@ -7,6 +8,11 @@
 
 #include <linux/linkage.h>
 #include <asm/page_types.h>
+<<<<<<< HEAD
+=======
+
+#define LOCKDOWN_LIFT_KEY 'x'
+>>>>>>> temp
 
 #ifdef __i386__
 
@@ -39,12 +45,12 @@ static inline void vsmp_init(void) { }
 #endif
 
 void setup_bios_corruption_check(void);
+void early_platform_quirks(void);
 
 extern unsigned long saved_video_mode;
 
 extern void reserve_standard_io_resources(void);
 extern void i386_reserve_resources(void);
-extern void setup_default_timer_irq(void);
 
 #ifdef CONFIG_X86_INTEL_MID
 extern void x86_intel_mid_early_setup(void);

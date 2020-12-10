@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 /*
  * Copyright 2000-2015 Avago Technologies.  All rights reserved.
  *
@@ -8,7 +9,11 @@
  *                 scatter/gather formats.
  * Creation Date:  June 21, 2006
  *
+<<<<<<< HEAD
  * mpi2.h Version:  02.00.39
+=======
+ * mpi2.h Version:  02.00.48
+>>>>>>> temp
  *
  * NOTE: Names (typedefs, defines, etc.) beginning with an MPI25 or Mpi25
  *       prefix are for use only on MPI v2.5 products, and must not be used
@@ -100,6 +105,22 @@
  *                     Added MPI2_DIAG_SBR_RELOAD.
  * 03-19-15  02.00.38  Bumped MPI2_HEADER_VERSION_UNIT.
  * 05-25-15  02.00.39  Bumped MPI2_HEADER_VERSION_UNIT.
+<<<<<<< HEAD
+=======
+ * 08-25-15  02.00.40  Bumped MPI2_HEADER_VERSION_UNIT.
+ * 12-15-15  02.00.41  Bumped MPI_HEADER_VERSION_UNIT
+ * 01-01-16  02.00.42  Bumped MPI_HEADER_VERSION_UNIT
+ * 04-05-16  02.00.43  Modified  MPI26_DIAG_BOOT_DEVICE_SELECT defines
+ *                     to be unique within first 32 characters.
+ *                     Removed AHCI support.
+ *                     Removed SOP support.
+ *                     Bumped MPI2_HEADER_VERSION_UNIT.
+ * 04-10-16  02.00.44  Bumped MPI2_HEADER_VERSION_UNIT.
+ * 07-06-16  02.00.45  Bumped MPI2_HEADER_VERSION_UNIT.
+ * 09-02-16  02.00.46  Bumped MPI2_HEADER_VERSION_UNIT.
+ * 11-23-16  02.00.47  Bumped MPI2_HEADER_VERSION_UNIT.
+ * 02-03-17  02.00.48  Bumped MPI2_HEADER_VERSION_UNIT.
+>>>>>>> temp
  * --------------------------------------------------------------------------
  */
 
@@ -139,7 +160,11 @@
 #define MPI2_VERSION_02_06		    (0x0206)
 
 /*Unit and Dev versioning for this MPI header set */
+<<<<<<< HEAD
 #define MPI2_HEADER_VERSION_UNIT            (0x27)
+=======
+#define MPI2_HEADER_VERSION_UNIT            (0x30)
+>>>>>>> temp
 #define MPI2_HEADER_VERSION_DEV             (0x00)
 #define MPI2_HEADER_VERSION_UNIT_MASK       (0xFF00)
 #define MPI2_HEADER_VERSION_UNIT_SHIFT      (8)
@@ -245,6 +270,12 @@ typedef volatile struct _MPI2_SYSTEM_INTERFACE_REGS {
 #define MPI2_DIAG_BOOT_DEVICE_SELECT_MASK       (0x00001800)
 #define MPI2_DIAG_BOOT_DEVICE_SELECT_DEFAULT    (0x00000000)
 #define MPI2_DIAG_BOOT_DEVICE_SELECT_HCDW       (0x00000800)
+
+/* Defines for V7A/V7R HostDiagnostic Register */
+#define MPI26_DIAG_BOOT_DEVICE_SEL_64FLASH      (0x00000000)
+#define MPI26_DIAG_BOOT_DEVICE_SEL_64HCDW       (0x00000800)
+#define MPI26_DIAG_BOOT_DEVICE_SEL_32FLASH      (0x00001000)
+#define MPI26_DIAG_BOOT_DEVICE_SEL_32HCDW       (0x00001800)
 
 #define MPI2_DIAG_CLEAR_FLASH_BAD_SIG           (0x00000400)
 #define MPI2_DIAG_FORCE_HCB_ON_RESET            (0x00000200)
@@ -364,6 +395,7 @@ typedef struct _MPI2_DEFAULT_REQUEST_DESCRIPTOR {
 #define MPI2_REQ_DESCRIPT_FLAGS_DEFAULT_TYPE            (0x08)
 #define MPI2_REQ_DESCRIPT_FLAGS_RAID_ACCELERATOR        (0x0A)
 #define MPI25_REQ_DESCRIPT_FLAGS_FAST_PATH_SCSI_IO      (0x0C)
+#define MPI26_REQ_DESCRIPT_FLAGS_PCIE_ENCAPSULATED      (0x10)
 
 #define MPI2_REQ_DESCRIPT_FLAGS_IOC_FIFO_MARKER         (0x01)
 
@@ -422,6 +454,13 @@ typedef MPI2_SCSI_IO_REQUEST_DESCRIPTOR
 	Mpi25FastPathSCSIIORequestDescriptor_t,
 	*pMpi25FastPathSCSIIORequestDescriptor_t;
 
+/*PCIe Encapsulated Request Descriptor */
+typedef MPI2_SCSI_IO_REQUEST_DESCRIPTOR
+	MPI26_PCIE_ENCAPSULATED_REQUEST_DESCRIPTOR,
+	*PTR_MPI26_PCIE_ENCAPSULATED_REQUEST_DESCRIPTOR,
+	Mpi26PCIeEncapsulatedRequestDescriptor_t,
+	*pMpi26PCIeEncapsulatedRequestDescriptor_t;
+
 /*union of Request Descriptors */
 typedef union _MPI2_REQUEST_DESCRIPTOR_UNION {
 	MPI2_DEFAULT_REQUEST_DESCRIPTOR Default;
@@ -430,6 +469,7 @@ typedef union _MPI2_REQUEST_DESCRIPTOR_UNION {
 	MPI2_SCSI_TARGET_REQUEST_DESCRIPTOR SCSITarget;
 	MPI2_RAID_ACCEL_REQUEST_DESCRIPTOR RAIDAccelerator;
 	MPI25_FP_SCSI_IO_REQUEST_DESCRIPTOR FastPathSCSIIO;
+	MPI26_PCIE_ENCAPSULATED_REQUEST_DESCRIPTOR PCIeEncapsulated;
 	U64 Words;
 } MPI2_REQUEST_DESCRIPTOR_UNION,
 	*PTR_MPI2_REQUEST_DESCRIPTOR_UNION,
@@ -447,6 +487,10 @@ typedef union _MPI2_REQUEST_DESCRIPTOR_UNION {
  *      Atomic SCSI Target Request Descriptor
  *      Atomic RAID Accelerator Request Descriptor
  *      Atomic Fast Path SCSI IO Request Descriptor
+<<<<<<< HEAD
+=======
+ *      Atomic PCIe Encapsulated Request Descriptor
+>>>>>>> temp
  */
 
 /*Atomic Request Descriptor */
@@ -484,6 +528,7 @@ typedef struct _MPI2_DEFAULT_REPLY_DESCRIPTOR {
 #define MPI2_RPY_DESCRIPT_FLAGS_TARGET_COMMAND_BUFFER       (0x03)
 #define MPI2_RPY_DESCRIPT_FLAGS_RAID_ACCELERATOR_SUCCESS    (0x05)
 #define MPI25_RPY_DESCRIPT_FLAGS_FAST_PATH_SCSI_IO_SUCCESS  (0x06)
+#define MPI26_RPY_DESCRIPT_FLAGS_PCIE_ENCAPSULATED_SUCCESS  (0x08)
 #define MPI2_RPY_DESCRIPT_FLAGS_UNUSED                      (0x0F)
 
 /*values for marking a reply descriptor as unused */
@@ -562,6 +607,13 @@ typedef MPI2_SCSI_IO_SUCCESS_REPLY_DESCRIPTOR
 	Mpi25FastPathSCSIIOSuccessReplyDescriptor_t,
 	*pMpi25FastPathSCSIIOSuccessReplyDescriptor_t;
 
+/*PCIe Encapsulated Success Reply Descriptor */
+typedef MPI2_RAID_ACCELERATOR_SUCCESS_REPLY_DESCRIPTOR
+	MPI26_PCIE_ENCAPSULATED_SUCCESS_REPLY_DESCRIPTOR,
+	*PTR_MPI26_PCIE_ENCAPSULATED_SUCCESS_REPLY_DESCRIPTOR,
+	Mpi26PCIeEncapsulatedSuccessReplyDescriptor_t,
+	*pMpi26PCIeEncapsulatedSuccessReplyDescriptor_t;
+
 /*union of Reply Descriptors */
 typedef union _MPI2_REPLY_DESCRIPTORS_UNION {
 	MPI2_DEFAULT_REPLY_DESCRIPTOR Default;
@@ -571,6 +623,8 @@ typedef union _MPI2_REPLY_DESCRIPTORS_UNION {
 	MPI2_TARGET_COMMAND_BUFFER_REPLY_DESCRIPTOR TargetCommandBuffer;
 	MPI2_RAID_ACCELERATOR_SUCCESS_REPLY_DESCRIPTOR RAIDAcceleratorSuccess;
 	MPI25_FP_SCSI_IO_SUCCESS_REPLY_DESCRIPTOR FastPathSCSIIOSuccess;
+	MPI26_PCIE_ENCAPSULATED_SUCCESS_REPLY_DESCRIPTOR
+						PCIeEncapsulatedSuccess;
 	U64 Words;
 } MPI2_REPLY_DESCRIPTORS_UNION,
 	*PTR_MPI2_REPLY_DESCRIPTORS_UNION,
@@ -613,6 +667,7 @@ typedef union _MPI2_REPLY_DESCRIPTORS_UNION {
 #define MPI2_FUNCTION_HOST_BASED_DISCOVERY_ACTION   (0x2F)
 #define MPI2_FUNCTION_PWR_MGMT_CONTROL              (0x30)
 #define MPI2_FUNCTION_SEND_HOST_MESSAGE             (0x31)
+#define MPI2_FUNCTION_NVME_ENCAPSULATED             (0x33)
 #define MPI2_FUNCTION_MIN_PRODUCT_SPECIFIC          (0xF0)
 #define MPI2_FUNCTION_MAX_PRODUCT_SPECIFIC          (0xFF)
 
@@ -1159,6 +1214,11 @@ typedef union _MPI25_SGE_IO_UNION {
 
 #define MPI26_IEEE_SGE_FLAGS_NSF_MASK           (0x1C)
 #define MPI26_IEEE_SGE_FLAGS_NSF_MPI_IEEE       (0x00)
+<<<<<<< HEAD
+=======
+#define MPI26_IEEE_SGE_FLAGS_NSF_NVME_PRP       (0x08)
+#define MPI26_IEEE_SGE_FLAGS_NSF_NVME_SGL       (0x10)
+>>>>>>> temp
 
 /*Data Location Address Space */
 

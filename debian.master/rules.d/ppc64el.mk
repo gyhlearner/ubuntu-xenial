@@ -10,7 +10,11 @@ no_dumpfile	= true
 vdso		= vdso_install
 loader		= grub
 do_extras_package = true
+<<<<<<< HEAD
 
+=======
+opal_signed       = true
+>>>>>>> temp
 do_tools_usbip    = true
 do_tools_cpupower = true
 do_tools_perf	  = true

@@ -42,6 +42,7 @@ struct input_value {
  * @phys: physical path to the device in the system hierarchy
  * @uniq: unique identification code for the device (if device has it)
  * @id: id of the device (struct input_id)
+ * @flags: input device flags (SYNTHETIC, etc.)
  * @propbit: bitmap of device properties and quirks
  * @evbit: bitmap of types of events supported by the device (EV_KEY,
  *	EV_REL, etc.)
@@ -95,7 +96,7 @@ struct input_value {
  * @grab: input handle that currently has the device grabbed (via
  *	EVIOCGRAB ioctl). When a handle grabs a device it becomes sole
  *	recipient for all input events coming from the device
- * @event_lock: this spinlock is is taken when input core receives
+ * @event_lock: this spinlock is taken when input core receives
  *	and processes a new event for the device (in input_event()).
  *	Code that accesses and/or modifies parameters of a device
  *	(such as keymap or absmin, absmax, absfuzz, etc.) after device
@@ -123,6 +124,8 @@ struct input_dev {
 	const char *phys;
 	const char *uniq;
 	struct input_id id;
+
+	unsigned int flags;
 
 	unsigned long propbit[BITS_TO_LONGS(INPUT_PROP_CNT)];
 
@@ -190,6 +193,8 @@ struct input_dev {
 };
 #define to_input_dev(d) container_of(d, struct input_dev, dev)
 
+#define	INPUTDEV_FLAGS_SYNTHETIC	0x000000001
+
 /*
  * Verify that we are in sync with input_device_id mod_devicetable.h #defines
  */
@@ -232,6 +237,10 @@ struct input_dev {
 
 #if SW_MAX != INPUT_DEVICE_ID_SW_MAX
 #error "SW_MAX and INPUT_DEVICE_ID_SW_MAX do not match"
+#endif
+
+#if INPUT_PROP_MAX != INPUT_DEVICE_ID_PROP_MAX
+#error "INPUT_PROP_MAX and INPUT_DEVICE_ID_PROP_MAX do not match"
 #endif
 
 #define INPUT_DEVICE_ID_MATCH_DEVICE \
@@ -469,6 +478,9 @@ int input_get_keycode(struct input_dev *dev, struct input_keymap_entry *ke);
 int input_set_keycode(struct input_dev *dev,
 		      const struct input_keymap_entry *ke);
 
+bool input_match_device_id(const struct input_dev *dev,
+			   const struct input_device_id *id);
+
 void input_enable_softrepeat(struct input_dev *dev, int delay, int period);
 
 extern struct class input_class;
@@ -529,6 +541,7 @@ int input_ff_event(struct input_dev *dev, unsigned int type, unsigned int code, 
 
 int input_ff_upload(struct input_dev *dev, struct ff_effect *effect, struct file *file);
 int input_ff_erase(struct input_dev *dev, int effect_id, struct file *file);
+int input_ff_flush(struct input_dev *dev, struct file *file);
 
 int input_ff_create_memless(struct input_dev *dev, void *data,
 		int (*play_effect)(struct input_dev *, void *, struct ff_effect *));

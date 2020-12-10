@@ -1,6 +1,10 @@
 ast ?
 gpio-pca953x ?
 gpio-regulator ?
+<<<<<<< HEAD
+=======
+hibmc-drm ?
+>>>>>>> temp
 i2c-mux ?
 i2c-mux-pinctrl ?
 i2c-tegra ?

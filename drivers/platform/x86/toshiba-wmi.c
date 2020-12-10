@@ -64,7 +64,11 @@ static void toshiba_wmi_notify(u32 value, void *context)
 	kfree(response.pointer);
 }
 
+<<<<<<< HEAD
 static struct dmi_system_id toshiba_wmi_dmi_table[] __initdata = {
+=======
+static const struct dmi_system_id toshiba_wmi_dmi_table[] __initconst = {
+>>>>>>> temp
 	{
 		.ident = "Toshiba laptop",
 		.matches = {
@@ -96,7 +100,7 @@ static int __init toshiba_wmi_input_setup(void)
 					    toshiba_wmi_notify, NULL);
 	if (ACPI_FAILURE(status)) {
 		err = -EIO;
-		goto err_free_keymap;
+		goto err_free_dev;
 	}
 
 	err = input_register_device(toshiba_wmi_input_dev);
@@ -107,8 +111,11 @@ static int __init toshiba_wmi_input_setup(void)
 
  err_remove_notifier:
 	wmi_remove_notify_handler(WMI_EVENT_GUID);
+<<<<<<< HEAD
  err_free_keymap:
 	sparse_keymap_free(toshiba_wmi_input_dev);
+=======
+>>>>>>> temp
  err_free_dev:
 	input_free_device(toshiba_wmi_input_dev);
 	return err;
@@ -117,7 +124,10 @@ static int __init toshiba_wmi_input_setup(void)
 static void toshiba_wmi_input_destroy(void)
 {
 	wmi_remove_notify_handler(WMI_EVENT_GUID);
+<<<<<<< HEAD
 	sparse_keymap_free(toshiba_wmi_input_dev);
+=======
+>>>>>>> temp
 	input_unregister_device(toshiba_wmi_input_dev);
 }
 

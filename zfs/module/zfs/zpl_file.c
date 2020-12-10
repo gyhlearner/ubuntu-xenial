@@ -78,14 +78,21 @@ zpl_release(struct inode *ip, struct file *filp)
 static int
 zpl_iterate(struct file *filp, struct dir_context *ctx)
 {
+<<<<<<< HEAD
 	struct dentry *dentry = filp->f_path.dentry;
+=======
+>>>>>>> temp
 	cred_t *cr = CRED();
 	int error;
 	fstrans_cookie_t cookie;
 
 	crhold(cr);
 	cookie = spl_fstrans_mark();
+<<<<<<< HEAD
 	error = -zfs_readdir(dentry->d_inode, ctx, cr);
+=======
+	error = -zfs_readdir(file_inode(filp), ctx, cr);
+>>>>>>> temp
 	spl_fstrans_unmark(cookie);
 	crfree(cr);
 	ASSERT3S(error, <=, 0);
@@ -93,7 +100,11 @@ zpl_iterate(struct file *filp, struct dir_context *ctx)
 	return (error);
 }
 
+<<<<<<< HEAD
 #if !defined(HAVE_VFS_ITERATE)
+=======
+#if !defined(HAVE_VFS_ITERATE) && !defined(HAVE_VFS_ITERATE_SHARED)
+>>>>>>> temp
 static int
 zpl_readdir(struct file *filp, void *dirent, filldir_t filldir)
 {
@@ -131,12 +142,23 @@ zpl_fsync(struct file *filp, struct dentry *dentry, int datasync)
 	return (error);
 }
 
+<<<<<<< HEAD
+=======
+#ifdef HAVE_FILE_AIO_FSYNC
+>>>>>>> temp
 static int
 zpl_aio_fsync(struct kiocb *kiocb, int datasync)
 {
 	struct file *filp = kiocb->ki_filp;
+<<<<<<< HEAD
 	return (zpl_fsync(filp, filp->f_path.dentry, datasync));
 }
+=======
+	return (zpl_fsync(filp, file_dentry(filp), datasync));
+}
+#endif
+
+>>>>>>> temp
 #elif defined(HAVE_FSYNC_WITHOUT_DENTRY)
 /*
  * Linux 2.6.35 - 3.0 API,
@@ -162,11 +184,20 @@ zpl_fsync(struct file *filp, int datasync)
 	return (error);
 }
 
+<<<<<<< HEAD
+=======
+#ifdef HAVE_FILE_AIO_FSYNC
+>>>>>>> temp
 static int
 zpl_aio_fsync(struct kiocb *kiocb, int datasync)
 {
 	return (zpl_fsync(kiocb->ki_filp, datasync));
 }
+<<<<<<< HEAD
+=======
+#endif
+
+>>>>>>> temp
 #elif defined(HAVE_FSYNC_RANGE)
 /*
  * Linux 3.1 - 3.x API,
@@ -197,11 +228,20 @@ zpl_fsync(struct file *filp, loff_t start, loff_t end, int datasync)
 	return (error);
 }
 
+<<<<<<< HEAD
+=======
+#ifdef HAVE_FILE_AIO_FSYNC
+>>>>>>> temp
 static int
 zpl_aio_fsync(struct kiocb *kiocb, int datasync)
 {
 	return (zpl_fsync(kiocb->ki_filp, kiocb->ki_pos, -1, datasync));
 }
+<<<<<<< HEAD
+=======
+#endif
+
+>>>>>>> temp
 #else
 #error "Unsupported fops->fsync() implementation"
 #endif
@@ -263,6 +303,10 @@ zpl_iter_read_common(struct kiocb *kiocb, const struct iovec *iovp,
 	    nr_segs, &kiocb->ki_pos, seg, filp->f_flags, cr, skip);
 	crfree(cr);
 
+<<<<<<< HEAD
+=======
+	file_accessed(filp);
+>>>>>>> temp
 	return (read);
 }
 
@@ -287,6 +331,16 @@ static ssize_t
 zpl_aio_read(struct kiocb *kiocb, const struct iovec *iovp,
     unsigned long nr_segs, loff_t pos)
 {
+<<<<<<< HEAD
+=======
+	ssize_t ret;
+	size_t count;
+
+	ret = generic_segment_checks(iovp, &nr_segs, &count, VERIFY_WRITE);
+	if (ret)
+		return (ret);
+
+>>>>>>> temp
 	return (zpl_iter_read_common(kiocb, iovp, nr_segs, count,
 	    UIO_USERSPACE, 0));
 }
@@ -325,6 +379,10 @@ zpl_write_common_iovec(struct inode *ip, const struct iovec *iovp, size_t count,
 
 	return (wrote);
 }
+<<<<<<< HEAD
+=======
+
+>>>>>>> temp
 inline ssize_t
 zpl_write_common(struct inode *ip, const char *buf, size_t len, loff_t *ppos,
     uio_seg_t segment, int flags, cred_t *cr)
@@ -370,6 +428,11 @@ zpl_iter_write(struct kiocb *kiocb, struct iov_iter *from)
 
 	count = iov_iter_count(from);
 	ret = generic_write_checks(file, &kiocb->ki_pos, &count, isblk);
+<<<<<<< HEAD
+=======
+	if (ret)
+		return (ret);
+>>>>>>> temp
 #else
 	/*
 	 * XXX - ideally this check should be in the same lock region with
@@ -377,10 +440,17 @@ zpl_iter_write(struct kiocb *kiocb, struct iov_iter *from)
 	 * append and someone else grow the file.
 	 */
 	ret = generic_write_checks(kiocb, from);
+<<<<<<< HEAD
 	count = ret;
 #endif
 	if (ret <= 0)
 		return (ret);
+=======
+	if (ret <= 0)
+		return (ret);
+	count = ret;
+#endif
+>>>>>>> temp
 
 	if (from->type & ITER_KVEC)
 		seg = UIO_SYSSPACE;
@@ -388,7 +458,11 @@ zpl_iter_write(struct kiocb *kiocb, struct iov_iter *from)
 		seg = UIO_BVEC;
 
 	ret = zpl_iter_write_common(kiocb, from->iov, from->nr_segs,
+<<<<<<< HEAD
 		count, seg, from->iov_offset);
+=======
+	    count, seg, from->iov_offset);
+>>>>>>> temp
 	if (ret > 0)
 		iov_iter_advance(from, ret);
 
@@ -430,13 +504,21 @@ zpl_llseek(struct file *filp, loff_t offset, int whence)
 		loff_t maxbytes = ip->i_sb->s_maxbytes;
 		loff_t error;
 
+<<<<<<< HEAD
 		spl_inode_lock(ip);
+=======
+		spl_inode_lock_shared(ip);
+>>>>>>> temp
 		cookie = spl_fstrans_mark();
 		error = -zfs_holey(ip, whence, &offset);
 		spl_fstrans_unmark(cookie);
 		if (error == 0)
 			error = lseek_execute(filp, ip, offset, maxbytes);
+<<<<<<< HEAD
 		spl_inode_unlock(ip);
+=======
+		spl_inode_unlock_shared(ip);
+>>>>>>> temp
 
 		return (error);
 	}
@@ -560,7 +642,11 @@ zpl_readpage(struct file *filp, struct page *pp)
  */
 static int
 zpl_readpages(struct file *filp, struct address_space *mapping,
+<<<<<<< HEAD
 	struct list_head *pages, unsigned nr_pages)
+=======
+    struct list_head *pages, unsigned nr_pages)
+>>>>>>> temp
 {
 	return (read_cache_pages(mapping, pages,
 	    (filler_t *)zpl_readpage, filp));
@@ -586,6 +672,7 @@ static int
 zpl_writepages(struct address_space *mapping, struct writeback_control *wbc)
 {
 	znode_t		*zp = ITOZ(mapping->host);
+<<<<<<< HEAD
 	zfs_sb_t	*zsb = ITOZSB(mapping->host);
 	enum writeback_sync_modes sync_mode;
 	int result;
@@ -594,6 +681,16 @@ zpl_writepages(struct address_space *mapping, struct writeback_control *wbc)
 	if (zsb->z_os->os_sync == ZFS_SYNC_ALWAYS)
 		wbc->sync_mode = WB_SYNC_ALL;
 	ZFS_EXIT(zsb);
+=======
+	zfsvfs_t	*zfsvfs = ITOZSB(mapping->host);
+	enum writeback_sync_modes sync_mode;
+	int result;
+
+	ZFS_ENTER(zfsvfs);
+	if (zfsvfs->z_os->os_sync == ZFS_SYNC_ALWAYS)
+		wbc->sync_mode = WB_SYNC_ALL;
+	ZFS_EXIT(zfsvfs);
+>>>>>>> temp
 	sync_mode = wbc->sync_mode;
 
 	/*
@@ -606,11 +703,19 @@ zpl_writepages(struct address_space *mapping, struct writeback_control *wbc)
 	wbc->sync_mode = WB_SYNC_NONE;
 	result = write_cache_pages(mapping, wbc, zpl_putpage, mapping);
 	if (sync_mode != wbc->sync_mode) {
+<<<<<<< HEAD
 		ZFS_ENTER(zsb);
 		ZFS_VERIFY_ZP(zp);
 		if (zsb->z_log != NULL)
 			zil_commit(zsb->z_log, zp->z_id);
 		ZFS_EXIT(zsb);
+=======
+		ZFS_ENTER(zfsvfs);
+		ZFS_VERIFY_ZP(zp);
+		if (zfsvfs->z_log != NULL)
+			zil_commit(zfsvfs->z_log, zp->z_id);
+		ZFS_EXIT(zfsvfs);
+>>>>>>> temp
 
 		/*
 		 * We need to call write_cache_pages() again (we can't just
@@ -660,8 +765,11 @@ zpl_fallocate_common(struct inode *ip, int mode, loff_t offset, loff_t len)
 	if (mode != (FALLOC_FL_KEEP_SIZE | FALLOC_FL_PUNCH_HOLE))
 		return (error);
 
+<<<<<<< HEAD
 	crhold(cr);
 
+=======
+>>>>>>> temp
 	if (offset < 0 || len <= 0)
 		return (-EINVAL);
 
@@ -680,6 +788,10 @@ zpl_fallocate_common(struct inode *ip, int mode, loff_t offset, loff_t len)
 	bf.l_len = len;
 	bf.l_pid = 0;
 
+<<<<<<< HEAD
+=======
+	crhold(cr);
+>>>>>>> temp
 	cookie = spl_fstrans_mark();
 	error = -zfs_space(ip, F_FREESP, &bf, FWRITE, offset, cr);
 	spl_fstrans_unmark(cookie);
@@ -697,7 +809,11 @@ zpl_fallocate_common(struct inode *ip, int mode, loff_t offset, loff_t len)
 static long
 zpl_fallocate(struct file *filp, int mode, loff_t offset, loff_t len)
 {
+<<<<<<< HEAD
 	return zpl_fallocate_common(filp->f_path.dentry->d_inode,
+=======
+	return zpl_fallocate_common(file_inode(filp),
+>>>>>>> temp
 	    mode, offset, len);
 }
 #endif /* HAVE_FILE_FALLOCATE */
@@ -739,8 +855,12 @@ zpl_ioctl_getflags(struct file *filp, void __user *arg)
  * is outside of our jurisdiction.
  */
 
+<<<<<<< HEAD
 #define	fchange(f0, f1, b0, b1) ((((f0) & (b0)) == (b0)) != \
 	(((b1) & (f1)) == (f1)))
+=======
+#define	fchange(f0, f1, b0, b1) (!((f0) & (b0)) != !((f1) & (b1)))
+>>>>>>> temp
 
 static int
 zpl_ioctl_setflags(struct file *filp, void __user *arg)
@@ -839,15 +959,33 @@ const struct file_operations zpl_file_operations = {
 	.release	= zpl_release,
 	.llseek		= zpl_llseek,
 #ifdef HAVE_VFS_RW_ITERATE
+<<<<<<< HEAD
 	.read_iter	= zpl_iter_read,
 	.write_iter	= zpl_iter_write,
 #else
+=======
+#ifdef HAVE_NEW_SYNC_READ
+	.read		= new_sync_read,
+	.write		= new_sync_write,
+#endif
+	.read_iter	= zpl_iter_read,
+	.write_iter	= zpl_iter_write,
+#else
+	.read		= do_sync_read,
+	.write		= do_sync_write,
+>>>>>>> temp
 	.aio_read	= zpl_aio_read,
 	.aio_write	= zpl_aio_write,
 #endif
 	.mmap		= zpl_mmap,
 	.fsync		= zpl_fsync,
+<<<<<<< HEAD
 	.aio_fsync	= zpl_aio_fsync,
+=======
+#ifdef HAVE_FILE_AIO_FSYNC
+	.aio_fsync	= zpl_aio_fsync,
+#endif
+>>>>>>> temp
 #ifdef HAVE_FILE_FALLOCATE
 	.fallocate	= zpl_fallocate,
 #endif /* HAVE_FILE_FALLOCATE */
@@ -860,7 +998,13 @@ const struct file_operations zpl_file_operations = {
 const struct file_operations zpl_dir_file_operations = {
 	.llseek		= generic_file_llseek,
 	.read		= generic_read_dir,
+<<<<<<< HEAD
 #ifdef HAVE_VFS_ITERATE
+=======
+#ifdef HAVE_VFS_ITERATE_SHARED
+	.iterate_shared	= zpl_iterate,
+#elif defined(HAVE_VFS_ITERATE)
+>>>>>>> temp
 	.iterate	= zpl_iterate,
 #else
 	.readdir	= zpl_readdir,

@@ -3,7 +3,11 @@
  *
  * This file contains AppArmor label definitions
  *
+<<<<<<< HEAD
  * Copyright 2013 Canonical Ltd.
+=======
+ * Copyright 2017 Canonical Ltd.
+>>>>>>> temp
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -46,7 +50,11 @@ do {									\
 	int i;								\
 	for (i = 0; i < (N); i++) {					\
 		if (!IS_ERR_OR_NULL((V)[i]))				\
+<<<<<<< HEAD
 			aa_put_ ## T ((V)[i]);				\
+=======
+			aa_put_ ## T((V)[i]);				\
+>>>>>>> temp
 	}								\
 	if ((V) != _ ## V ## _localtmp)					\
 		kfree(V);						\
@@ -65,6 +73,7 @@ struct aa_label *aa_vec_find_or_create_label(struct aa_profile **vec, int len,
 #define aa_sort_and_merge_vec(N, V) \
 	aa_sort_and_merge_profiles((N), (struct aa_profile **)(V))
 
+<<<<<<< HEAD
 struct labelset_stats {
 	atomic_t sread;
 	atomic_t fread;
@@ -115,6 +124,8 @@ struct label_stats {
 #define labelsetstats_dec(LS, X)
 #endif
 #define labelstats_init(X)
+=======
+>>>>>>> temp
 
 /* struct aa_labelset - set of labels for a namespace
  *
@@ -126,6 +137,7 @@ struct aa_labelset {
 	rwlock_t lock;
 
 	struct rb_root root;
+<<<<<<< HEAD
 
 	/* stats */
 #ifdef APPARMOR_LABEL_STATS
@@ -136,6 +148,12 @@ struct aa_labelset {
 
 #define __labelset_for_each(LS, N) \
 	for((N) = rb_first(&(LS)->root); (N); (N) = rb_next(N))
+=======
+};
+
+#define __labelset_for_each(LS, N) \
+	for ((N) = rb_first(&(LS)->root); (N); (N) = rb_next(N))
+>>>>>>> temp
 
 void aa_labelset_destroy(struct aa_labelset *ls);
 void aa_labelset_init(struct aa_labelset *ls);
@@ -143,8 +161,12 @@ void aa_labelset_init(struct aa_labelset *ls);
 
 enum label_flags {
 	FLAG_HAT = 1,			/* profile is a hat */
+<<<<<<< HEAD
 	FLAG_UNCONFINED = 2,		/* label unconfined only if all
 					 * constituant profiles unconfined */
+=======
+	FLAG_UNCONFINED = 2,		/* label unconfined only if all */
+>>>>>>> temp
 	FLAG_NULL = 4,			/* profile is null learning profile */
 	FLAG_IX_ON_NAME_ERROR = 8,	/* fallback to ix on name lookup fail */
 	FLAG_IMMUTIBLE = 0x10,		/* don't allow changes/replacement */
@@ -153,7 +175,11 @@ enum label_flags {
 	FLAG_NS_COUNT = 0x80,		/* carries NS ref count */
 	FLAG_IN_TREE = 0x100,		/* label is in tree */
 	FLAG_PROFILE = 0x200,		/* label is a profile */
+<<<<<<< HEAD
 	FLAG_EXPLICIT = 0x400,		/* explict static label */
+=======
+	FLAG_EXPLICIT = 0x400,		/* explicit static label */
+>>>>>>> temp
 	FLAG_STALE = 0x800,		/* replaced/removed */
 	FLAG_RENAMED = 0x1000,		/* label has renaming in it */
 	FLAG_REVOKED = 0x2000,		/* label has revocation in it */
@@ -179,7 +205,11 @@ struct label_it {
  * @proxy: is set to the label that replaced this label
  * @hname: text representation of the label (MAYBE_NULL)
  * @flags: stale and other flags - values may change under label set lock
+<<<<<<< HEAD
  * @sid: sid that references this label
+=======
+ * @secid: secid that references this label
+>>>>>>> temp
  * @size: number of entries in @ent[]
  * @ent: set of profiles for label, actual size determined by @size
  */
@@ -190,7 +220,11 @@ struct aa_label {
 	struct aa_proxy *proxy;
 	__counted char *hname;
 	long flags;
+<<<<<<< HEAD
 	u32 sid;
+=======
+	u32 secid;
+>>>>>>> temp
 	int size;
 	struct aa_profile *vec[];
 };
@@ -206,10 +240,14 @@ do {							\
 #define label_unconfined(X) ((X)->flags & FLAG_UNCONFINED)
 #define unconfined(X) label_unconfined(X)
 #define label_is_stale(X) ((X)->flags & FLAG_STALE)
+<<<<<<< HEAD
 #define __label_make_stale(X) do {	   \
 	labelsetstats_inc(labels_set(X), stale); \
 	((X)->flags |= FLAG_STALE);	   \
 } while (0)
+=======
+#define __label_make_stale(X) ((X)->flags |= FLAG_STALE)
+>>>>>>> temp
 #define labels_ns(X) (vec_ns(&((X)->vec[0]), (X)->size))
 #define labels_set(X) (&labels_ns(X)->labels)
 #define labels_profile(X) ((X)->vec[(X)->size - 1])
@@ -218,15 +256,22 @@ do {							\
 int aa_label_next_confined(struct aa_label *l, int i);
 
 /* for each profile in a label */
+<<<<<<< HEAD
 #define label_for_each_init(I) ((I).i = 0);
 #define label_for_each_next(I) (++((I).i))
 #define label_for_each_curr(I, L) ({ (L)->vec[(I).i] ; })
+=======
+>>>>>>> temp
 #define label_for_each(I, L, P)						\
 	for ((I).i = 0; ((P) = (L)->vec[(I).i]); ++((I).i))
 
 /* assumes break/goto ended label_for_each */
 #define label_for_each_cont(I, L, P)					\
+<<<<<<< HEAD
   for (++((I).i); ((P) = (L)->vec[(I).i]);	++((I).i))
+=======
+	for (++((I).i); ((P) = (L)->vec[(I).i]); ++((I).i))
+>>>>>>> temp
 
 #define next_comb(I, L1, L2)						\
 do {									\
@@ -237,13 +282,21 @@ do {									\
 	}								\
 } while (0)
 
+<<<<<<< HEAD
 /* TODO: label_for_each_ns_comb */
+=======
+>>>>>>> temp
 
 /* for each combination of P1 in L1, and P2 in L2 */
 #define label_for_each_comb(I, L1, L2, P1, P2)				\
 for ((I).i = (I).j = 0;							\
+<<<<<<< HEAD
      ((P1) = (L1)->vec[(I).i]) && ((P2) = (L2)->vec[(I).j]);		\
      (I) = next_comb(I, L1, L2))
+=======
+	((P1) = (L1)->vec[(I).i]) && ((P2) = (L2)->vec[(I).j]);		\
+	(I) = next_comb(I, L1, L2))
+>>>>>>> temp
 
 #define fn_for_each_comb(L1, L2, P1, P2, FN)				\
 ({									\
@@ -255,6 +308,7 @@ for ((I).i = (I).j = 0;							\
 	__E;								\
 })
 
+<<<<<<< HEAD
 /* internal cross check */
 //fn_for_each_comb(L1, L2, P1, P2, xcheck(...));
 
@@ -262,6 +316,8 @@ for ((I).i = (I).j = 0;							\
 // xcheck(fn_for_each_comb(L1, L2, ...),
 //        fn_for_each_comb(L2, L1, ...));
 
+=======
+>>>>>>> temp
 /* for each profile that is enforcing confinement in a label */
 #define label_for_each_confined(I, L, P)				\
 	for ((I).i = aa_label_next_confined((L), 0);			\
@@ -307,7 +363,11 @@ for ((I).i = (I).j = 0;							\
 ({									\
 	struct label_it i;						\
 	int __E = 0;							\
+<<<<<<< HEAD
 	label_for_each ## __VA_ARGS__ (i, (L), (P)) {			\
+=======
+	label_for_each ## __VA_ARGS__(i, (L), (P)) {			\
+>>>>>>> temp
 		last_error(__E, (FN));					\
 	}								\
 	__E;								\
@@ -381,9 +441,14 @@ bool aa_update_label_name(struct aa_ns *ns, struct aa_label *label, gfp_t gfp);
 #define FLAG_SHOW_MODE 1
 #define FLAG_VIEW_SUBNS 2
 #define FLAG_HIDDEN_UNCONFINED 4
+<<<<<<< HEAD
 int aa_profile_snxprint(char *str, size_t size, struct aa_ns *ns,
 			struct aa_profile *profile, int flags);
 int aa_label_snxprint(char *str, size_t size, struct aa_ns *ns,
+=======
+#define FLAG_ABS_ROOT 8
+int aa_label_snxprint(char *str, size_t size, struct aa_ns *view,
+>>>>>>> temp
 		      struct aa_label *label, int flags);
 int aa_label_asxprint(char **strp, struct aa_ns *ns, struct aa_label *label,
 		      int flags, gfp_t gfp);
@@ -409,6 +474,25 @@ int aa_label_match(struct aa_profile *profile, struct aa_label *label,
 		   struct aa_perms *perms);
 
 
+<<<<<<< HEAD
+=======
+/**
+ * __aa_get_label - get a reference count to uncounted label reference
+ * @l: reference to get a count on
+ *
+ * Returns: pointer to reference OR NULL if race is lost and reference is
+ *          being repeated.
+ * Requires: lock held, and the return code MUST be checked
+ */
+static inline struct aa_label *__aa_get_label(struct aa_label *l)
+{
+	if (l && kref_get_unless_zero(&l->count))
+		return l;
+
+	return NULL;
+}
+
+>>>>>>> temp
 static inline struct aa_label *aa_get_label(struct aa_label *l)
 {
 	if (l)
@@ -417,6 +501,7 @@ static inline struct aa_label *aa_get_label(struct aa_label *l)
 	return l;
 }
 
+<<<<<<< HEAD
 static inline struct aa_label *aa_get_label_not0(struct aa_label *l)
 {
 	if (l && kref_get_not0(&l->count))
@@ -424,6 +509,8 @@ static inline struct aa_label *aa_get_label_not0(struct aa_label *l)
 
 	return NULL;
 }
+=======
+>>>>>>> temp
 
 /**
  * aa_get_label_rcu - increment refcount on a label that can be replaced
@@ -439,7 +526,11 @@ static inline struct aa_label *aa_get_label_rcu(struct aa_label __rcu **l)
 	rcu_read_lock();
 	do {
 		c = rcu_dereference(*l);
+<<<<<<< HEAD
 	} while (c && !kref_get_not0(&c->count));
+=======
+	} while (c && !kref_get_unless_zero(&c->count));
+>>>>>>> temp
 	rcu_read_unlock();
 
 	return c;
@@ -460,13 +551,23 @@ static inline struct aa_label *aa_get_newest_label(struct aa_label *l)
 
 	if (label_is_stale(l)) {
 		struct aa_label *tmp;
+<<<<<<< HEAD
+=======
+
+>>>>>>> temp
 		AA_BUG(!l->proxy);
 		AA_BUG(!l->proxy->label);
 		/* BUG: only way this can happen is @l ref count and its
 		 * replacement count have gone to 0 and are on their way
 		 * to destruction. ie. we have a refcounting error
 		 */
+<<<<<<< HEAD
 		AA_BUG(!(tmp = aa_get_label_rcu(&l->proxy->label)));
+=======
+		tmp = aa_get_label_rcu(&l->proxy->label);
+		AA_BUG(!tmp);
+
+>>>>>>> temp
 		return tmp;
 	}
 

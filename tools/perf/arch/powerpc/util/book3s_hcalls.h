@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+/* SPDX-License-Identifier: GPL-2.0 */
+>>>>>>> temp
 #ifndef ARCH_PERF_BOOK3S_HV_HCALLS_H
 #define ARCH_PERF_BOOK3S_HV_HCALLS_H
 

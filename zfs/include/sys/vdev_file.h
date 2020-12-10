@@ -37,6 +37,12 @@ typedef struct vdev_file {
 	vnode_t		*vf_vnode;
 } vdev_file_t;
 
+<<<<<<< HEAD
+=======
+extern void vdev_file_init(void);
+extern void vdev_file_fini(void);
+
+>>>>>>> temp
 #ifdef	__cplusplus
 }
 #endif

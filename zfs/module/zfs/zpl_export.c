@@ -37,6 +37,10 @@ zpl_encode_fh(struct inode *ip, __u32 *fh, int *max_len, struct inode *parent)
 #else
 zpl_encode_fh(struct dentry *dentry, __u32 *fh, int *max_len, int connectable)
 {
+<<<<<<< HEAD
+=======
+	/* CSTYLED */
+>>>>>>> temp
 	struct inode *ip = dentry->d_inode;
 #endif /* HAVE_ENCODE_FH_WITH_INODE */
 	fstrans_cookie_t cookie;

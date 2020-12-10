@@ -233,8 +233,11 @@ static const struct xpad_device {
 	{ 0x0e6f, 0x021f, "Rock Candy Gamepad for Xbox 360", 0, XTYPE_XBOX360 },
 	{ 0x0e6f, 0x0246, "Rock Candy Gamepad for Xbox One 2015", 0, XTYPE_XBOXONE },
 	{ 0x0e6f, 0x02ab, "PDP Controller for Xbox One", 0, XTYPE_XBOXONE },
+<<<<<<< HEAD
 	{ 0x0e6f, 0x02a4, "PDP Wired Controller for Xbox One - Stealth Series", 0, XTYPE_XBOXONE },
 	{ 0x0e6f, 0x02a6, "PDP Wired Controller for Xbox One - Camo Series", 0, XTYPE_XBOXONE },
+=======
+>>>>>>> temp
 	{ 0x0e6f, 0x0301, "Logic3 Controller", 0, XTYPE_XBOX360 },
 	{ 0x0e6f, 0x0346, "Rock Candy Gamepad for Xbox One 2016", 0, XTYPE_XBOXONE },
 	{ 0x0e6f, 0x0401, "Logic3 Controller", 0, XTYPE_XBOX360 },
@@ -483,18 +486,28 @@ static const u8 xboxone_hori_init[] = {
 };
 
 /*
+<<<<<<< HEAD
  * This packet is required for most (all?) of the PDP pads to start
  * sending input reports. These pads include: (0x0e6f:0x02ab),
  * (0x0e6f:0x02a4), (0x0e6f:0x02a6).
+=======
+ * This packet is required for some of the PDP pads to start
+ * sending input reports. One of those pads is (0x0e6f:0x02ab).
+>>>>>>> temp
  */
 static const u8 xboxone_pdp_init1[] = {
 	0x0a, 0x20, 0x00, 0x03, 0x00, 0x01, 0x14
 };
 
 /*
+<<<<<<< HEAD
  * This packet is required for most (all?) of the PDP pads to start
  * sending input reports. These pads include: (0x0e6f:0x02ab),
  * (0x0e6f:0x02a4), (0x0e6f:0x02a6).
+=======
+ * This packet is required for some of the PDP pads to start
+ * sending input reports. One of those pads is (0x0e6f:0x02ab).
+>>>>>>> temp
  */
 static const u8 xboxone_pdp_init2[] = {
 	0x06, 0x20, 0x00, 0x02, 0x01, 0x00
@@ -530,8 +543,13 @@ static const struct xboxone_init_packet xboxone_init_packets[] = {
 	XBOXONE_INIT_PKT(0x0e6f, 0x0165, xboxone_hori_init),
 	XBOXONE_INIT_PKT(0x0f0d, 0x0067, xboxone_hori_init),
 	XBOXONE_INIT_PKT(0x0000, 0x0000, xboxone_fw2015_init),
+<<<<<<< HEAD
 	XBOXONE_INIT_PKT(0x0e6f, 0x0000, xboxone_pdp_init1),
 	XBOXONE_INIT_PKT(0x0e6f, 0x0000, xboxone_pdp_init2),
+=======
+	XBOXONE_INIT_PKT(0x0e6f, 0x02ab, xboxone_pdp_init1),
+	XBOXONE_INIT_PKT(0x0e6f, 0x02ab, xboxone_pdp_init2),
+>>>>>>> temp
 	XBOXONE_INIT_PKT(0x24c6, 0x541a, xboxone_rumblebegin_init),
 	XBOXONE_INIT_PKT(0x24c6, 0x542a, xboxone_rumblebegin_init),
 	XBOXONE_INIT_PKT(0x24c6, 0x543a, xboxone_rumblebegin_init),
@@ -814,10 +832,17 @@ static void xpad360w_process_packet(struct usb_xpad *xpad, u16 cmd, unsigned cha
 
 /*
  *	xpadone_process_packet
+<<<<<<< HEAD
  *
  *	Completes a request by converting the data into events for the
  *	input subsystem. This version is for the Xbox One controller.
  *
+=======
+ *
+ *	Completes a request by converting the data into events for the
+ *	input subsystem. This version is for the Xbox One controller.
+ *
+>>>>>>> temp
  *	The report format was gleaned from
  *	https://github.com/kylelemons/xbox/blob/master/xbox.go
  */
@@ -1172,6 +1197,7 @@ static int xpad_inquiry_pad_presence(struct usb_xpad *xpad)
 	retval = xpad_try_sending_next_out_packet(xpad);
 
 	spin_unlock_irqrestore(&xpad->odata_lock, flags);
+<<<<<<< HEAD
 
 	return retval;
 }
@@ -1191,6 +1217,27 @@ static int xpad_start_xbox_one(struct usb_xpad *xpad)
 	xpad->init_seq = 0;
 	retval = xpad_try_sending_next_out_packet(xpad);
 
+=======
+
+	return retval;
+}
+
+static int xpad_start_xbox_one(struct usb_xpad *xpad)
+{
+	unsigned long flags;
+	int retval;
+
+	spin_lock_irqsave(&xpad->odata_lock, flags);
+
+	/*
+	 * Begin the init sequence by attempting to send a packet.
+	 * We will cycle through the init packet sequence before
+	 * sending any packets from the output ring.
+	 */
+	xpad->init_seq = 0;
+	retval = xpad_try_sending_next_out_packet(xpad);
+
+>>>>>>> temp
 	spin_unlock_irqrestore(&xpad->odata_lock, flags);
 
 	return retval;
@@ -1640,6 +1687,11 @@ static int xpad_init_input(struct usb_xpad *xpad)
 		input_dev->open = xpad_open;
 		input_dev->close = xpad_close;
 	}
+<<<<<<< HEAD
+=======
+
+	__set_bit(EV_KEY, input_dev->evbit);
+>>>>>>> temp
 
 	if (!(xpad->mapping & MAP_STICKS_TO_NULL)) {
 		/* set up axes */
@@ -1783,6 +1835,7 @@ static int xpad_probe(struct usb_interface *intf, const struct usb_device_id *id
 		 * interface number.
 		 */
 		error = -ENODEV;
+<<<<<<< HEAD
 		goto err_free_in_urb;
 	}
 
@@ -1805,6 +1858,30 @@ static int xpad_probe(struct usb_interface *intf, const struct usb_device_id *id
 		goto err_free_in_urb;
 	}
 
+=======
+		goto err_free_in_urb;
+	}
+
+	ep_irq_in = ep_irq_out = NULL;
+
+	for (i = 0; i < 2; i++) {
+		struct usb_endpoint_descriptor *ep =
+				&intf->cur_altsetting->endpoint[i].desc;
+
+		if (usb_endpoint_xfer_int(ep)) {
+			if (usb_endpoint_dir_in(ep))
+				ep_irq_in = ep;
+			else
+				ep_irq_out = ep;
+		}
+	}
+
+	if (!ep_irq_in || !ep_irq_out) {
+		error = -ENODEV;
+		goto err_free_in_urb;
+	}
+
+>>>>>>> temp
 	error = xpad_init_output(intf, xpad, ep_irq_out);
 	if (error)
 		goto err_free_in_urb;

@@ -49,6 +49,10 @@ const struct raid6_calls * const raid6_algos[] = {
 	&raid6_avx2x1,
 	&raid6_avx2x2,
 #endif
+#ifdef CONFIG_AS_AVX512
+	&raid6_avx512x1,
+	&raid6_avx512x2,
+#endif
 #endif
 #if defined(__x86_64__) && !defined(__arch_um__)
 	&raid6_sse2x1,
@@ -59,6 +63,11 @@ const struct raid6_calls * const raid6_algos[] = {
 	&raid6_avx2x2,
 	&raid6_avx2x4,
 #endif
+#ifdef CONFIG_AS_AVX512
+	&raid6_avx512x1,
+	&raid6_avx512x2,
+	&raid6_avx512x4,
+#endif
 #endif
 #ifdef CONFIG_ALTIVEC
 	&raid6_altivec1,
@@ -68,6 +77,9 @@ const struct raid6_calls * const raid6_algos[] = {
 #endif
 #if defined(CONFIG_TILEGX)
 	&raid6_tilegx8,
+#endif
+#if defined(CONFIG_S390)
+	&raid6_s390vx8,
 #endif
 	&raid6_intx1,
 	&raid6_intx2,
@@ -89,11 +101,20 @@ void (*raid6_datap_recov)(int, size_t, int, void **);
 EXPORT_SYMBOL_GPL(raid6_datap_recov);
 
 const struct raid6_recov_calls *const raid6_recov_algos[] = {
+#ifdef CONFIG_AS_AVX512
+	&raid6_recov_avx512,
+#endif
 #ifdef CONFIG_AS_AVX2
 	&raid6_recov_avx2,
 #endif
 #ifdef CONFIG_AS_SSSE3
 	&raid6_recov_ssse3,
+#endif
+#ifdef CONFIG_S390
+	&raid6_recov_s390xc,
+#endif
+#if defined(CONFIG_KERNEL_MODE_NEON)
+	&raid6_recov_neon,
 #endif
 	&raid6_recov_intx1,
 	NULL
@@ -138,6 +159,10 @@ static inline const struct raid6_calls *raid6_choose_gen(
 
 	for (bestgenperf = 0, bestxorperf = 0, best = NULL, algo = raid6_algos; *algo; algo++) {
 		if (!best || (*algo)->prefer >= best->prefer) {
+			/* 2 ^ (RAID6_TIME_JIFFIES_LG2 - 0.5) */
+			const unsigned long raid6_time_jiffies =
+				((1 << RAID6_TIME_JIFFIES_LG2) * 181) >> 8;
+
 			if ((*algo)->valid && !(*algo)->valid())
 				continue;
 
@@ -148,7 +173,7 @@ static inline const struct raid6_calls *raid6_choose_gen(
 			while ((j1 = jiffies) == j0)
 				cpu_relax();
 			while (time_before(jiffies,
-					    j1 + (1<<RAID6_TIME_JIFFIES_LG2))) {
+					    j1 + raid6_time_jiffies)) {
 				(*algo)->gen_syndrome(disks, PAGE_SIZE, *dptrs);
 				perf++;
 			}
@@ -159,7 +184,8 @@ static inline const struct raid6_calls *raid6_choose_gen(
 				best = *algo;
 			}
 			pr_info("raid6: %-8s gen() %5ld MB/s\n", (*algo)->name,
-			       (perf*HZ) >> (20-16+RAID6_TIME_JIFFIES_LG2));
+			       (((perf*HZ) >>
+				(20-16+RAID6_TIME_JIFFIES_LG2)) * 1448) >> 10);
 
 			if (!(*algo)->xor_syndrome)
 				continue;
@@ -171,7 +197,7 @@ static inline const struct raid6_calls *raid6_choose_gen(
 			while ((j1 = jiffies) == j0)
 				cpu_relax();
 			while (time_before(jiffies,
-					    j1 + (1<<RAID6_TIME_JIFFIES_LG2))) {
+					    j1 + raid6_time_jiffies)) {
 				(*algo)->xor_syndrome(disks, start, stop,
 						      PAGE_SIZE, *dptrs);
 				perf++;
@@ -182,17 +208,20 @@ static inline const struct raid6_calls *raid6_choose_gen(
 				bestxorperf = perf;
 
 			pr_info("raid6: %-8s xor() %5ld MB/s\n", (*algo)->name,
-				(perf*HZ) >> (20-16+RAID6_TIME_JIFFIES_LG2+1));
+				(((perf*HZ) >>
+				 (20-16+RAID6_TIME_JIFFIES_LG2+1)) * 1448) >> 10);
 		}
 	}
 
 	if (best) {
 		pr_info("raid6: using algorithm %s gen() %ld MB/s\n",
 		       best->name,
-		       (bestgenperf*HZ) >> (20-16+RAID6_TIME_JIFFIES_LG2));
+		       (((bestgenperf*HZ) >>
+			(20-16+RAID6_TIME_JIFFIES_LG2)) * 1448) >> 10);
 		if (best->xor_syndrome)
 			pr_info("raid6: .... xor() %ld MB/s, rmw enabled\n",
-			       (bestxorperf*HZ) >> (20-16+RAID6_TIME_JIFFIES_LG2+1));
+			       (((bestxorperf*HZ) >>
+				(20-16+RAID6_TIME_JIFFIES_LG2+1)) * 1448) >> 10);
 		raid6_call = *best;
 	} else
 		pr_err("raid6: Yikes!  No algorithm found!\n");

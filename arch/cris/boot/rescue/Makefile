@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-2.0
 #
 # Makefile for rescue (bootstrap) code
 #
@@ -8,9 +9,12 @@
 # asflags-y += -I $(srctree)/include/asm/arch/mach/ -I $(srctree)/include/asm/arch
 # LD = gcc-cris -mlinux -march=v32 -nostdlib
 
+<<<<<<< HEAD
 asflags-y += $(LINUXINCLUDE)
 ccflags-y += -O2 $(LINUXINCLUDE)
 
+=======
+>>>>>>> temp
 ifdef CONFIG_ETRAX_AXISFLASHMAP
 
 arch-$(CONFIG_ETRAX_ARCH_V10) = v10

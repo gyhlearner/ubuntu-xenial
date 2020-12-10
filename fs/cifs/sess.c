@@ -398,12 +398,15 @@ int build_ntlmssp_auth_blob(unsigned char **pbuffer,
 		goto setup_ntlmv2_ret;
 	}
 	*pbuffer = kmalloc(size_of_ntlmssp_blob(ses), GFP_KERNEL);
+<<<<<<< HEAD
 	if (!*pbuffer) {
 		rc = -ENOMEM;
 		cifs_dbg(VFS, "Error %d during NTLMSSP allocation\n", rc);
 		*buflen = 0;
 		goto setup_ntlmv2_ret;
 	}
+=======
+>>>>>>> temp
 	sec_blob = (AUTHENTICATE_MESSAGE *)*pbuffer;
 
 	memcpy(sec_blob->Signature, NTLMSSP_SIGNATURE, 8);
@@ -454,7 +457,7 @@ int build_ntlmssp_auth_blob(unsigned char **pbuffer,
 	} else {
 		int len;
 		len = cifs_strtoUTF16((__le16 *)tmp, ses->domainName,
-				      CIFS_MAX_USERNAME_LEN, nls_cp);
+				      CIFS_MAX_DOMAINNAME_LEN, nls_cp);
 		len *= 2; /* unicode is 2 bytes each */
 		sec_blob->DomainName.BufferOffset = cpu_to_le32(tmp - *pbuffer);
 		sec_blob->DomainName.Length = cpu_to_le16(len);
@@ -504,7 +507,7 @@ setup_ntlmv2_ret:
 }
 
 enum securityEnum
-select_sectype(struct TCP_Server_Info *server, enum securityEnum requested)
+cifs_select_sectype(struct TCP_Server_Info *server, enum securityEnum requested)
 {
 	switch (server->negflavor) {
 	case CIFS_NEGFLAVOR_EXTENDED:
@@ -717,6 +720,11 @@ sess_auth_lanman(struct sess_data *sess_data)
 		rc = calc_lanman_hash(ses->password, ses->server->cryptkey,
 				      ses->server->sec_mode & SECMODE_PW_ENCRYPT ?
 				      true : false, lnm_session_key);
+<<<<<<< HEAD
+=======
+		if (rc)
+			goto out;
+>>>>>>> temp
 
 		memcpy(bcc_ptr, (char *)lnm_session_key, CIFS_AUTH_RESP_SIZE);
 		bcc_ptr += CIFS_AUTH_RESP_SIZE;
@@ -1395,7 +1403,7 @@ static int select_sec(struct cifs_ses *ses, struct sess_data *sess_data)
 {
 	int type;
 
-	type = select_sectype(ses->server, ses->sectype);
+	type = cifs_select_sectype(ses->server, ses->sectype);
 	cifs_dbg(FYI, "sess setup type %d\n", type);
 	if (type == Unspecified) {
 		cifs_dbg(VFS,

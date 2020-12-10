@@ -5,7 +5,11 @@
  */
 
 /*
+<<<<<<< HEAD
  * Copyright (C) 2010-2011 Oracle Corporation
+=======
+ * Copyright (C) 2010-2017 Oracle Corporation
+>>>>>>> temp
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -90,7 +94,13 @@ static const char *sf_get_link(struct dentry *dentry, struct inode *inode,
 
 struct inode_operations sf_lnk_iops =
 {
+<<<<<<< HEAD
     .readlink       = generic_readlink,
+=======
+# if LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0)
+    .readlink       = generic_readlink,
+# endif
+>>>>>>> temp
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
     .get_link       = sf_get_link
 # elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0)

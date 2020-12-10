@@ -72,8 +72,12 @@ __dbuf_stats_hash_table_data(char *buf, size_t size, dmu_buf_impl_t *db)
 	if (db->db_buf)
 		arc_buf_info(db->db_buf, &abi, zfs_dbuf_state_index);
 
+<<<<<<< HEAD
 	if (dn)
 		__dmu_object_info_from_dnode(dn, &doi);
+=======
+	__dmu_object_info_from_dnode(dn, &doi);
+>>>>>>> temp
 
 	nwritten = snprintf(buf, size,
 	    "%-16s %-8llu %-8lld %-8lld %-8lld %-8llu %-8llu %-5d %-5d %-5lu | "
@@ -95,7 +99,11 @@ __dbuf_stats_hash_table_data(char *buf, size_t size, dmu_buf_impl_t *db)
 	    abi.abi_state_type,
 	    abi.abi_state_contents,
 	    abi.abi_flags,
+<<<<<<< HEAD
 	    (ulong_t)abi.abi_datacnt,
+=======
+	    (ulong_t)abi.abi_bufcnt,
+>>>>>>> temp
 	    (u_longlong_t)abi.abi_size,
 	    (u_longlong_t)abi.abi_access,
 	    (ulong_t)abi.abi_mru_hits,
@@ -148,7 +156,10 @@ dbuf_stats_hash_table_data(char *buf, size_t size, void *data)
 		}
 
 		mutex_enter(&db->db_mtx);
+<<<<<<< HEAD
 		mutex_exit(DBUF_HASH_MUTEX(h, dsh->idx));
+=======
+>>>>>>> temp
 
 		if (db->db_state != DB_EVICTING) {
 			length = __dbuf_stats_hash_table_data(buf, size, db);
@@ -157,7 +168,10 @@ dbuf_stats_hash_table_data(char *buf, size_t size, void *data)
 		}
 
 		mutex_exit(&db->db_mtx);
+<<<<<<< HEAD
 		mutex_enter(DBUF_HASH_MUTEX(h, dsh->idx));
+=======
+>>>>>>> temp
 	}
 	mutex_exit(DBUF_HASH_MUTEX(h, dsh->idx));
 

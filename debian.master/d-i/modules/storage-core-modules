@@ -2,9 +2,20 @@
 usb-storage ?
 
 # Block level
+<<<<<<< HEAD
+=======
+ata_piix ?
+ata_generic ?
+>>>>>>> temp
 
 # Loop modules
 cryptoloop ?
 
 # Needs to be here for better cdrom initrd layout
 isofs ?
+<<<<<<< HEAD
+=======
+
+# Needed for NVMe disks under VMD PCIe domains
+vmd ?
+>>>>>>> temp

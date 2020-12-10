@@ -25,10 +25,14 @@ int ip_route_me_harder(struct net *net, struct sk_buff *skb, unsigned int addr_t
 	__be32 saddr = iph->saddr;
 	const struct sock *sk = skb_to_full_sk(skb);
 	__u8 flags = sk ? inet_sk_flowi_flags(sk) : 0;
+<<<<<<< HEAD
+=======
+	struct net_device *dev = skb_dst(skb)->dev;
+>>>>>>> temp
 	unsigned int hh_len;
 
 	if (addr_type == RTN_UNSPEC)
-		addr_type = inet_addr_type(net, saddr);
+		addr_type = inet_addr_type_dev_table(net, dev, saddr);
 	if (addr_type == RTN_LOCAL || addr_type == RTN_UNICAST)
 		flags |= FLOWI_FLAG_ANYSRC;
 	else
@@ -41,6 +45,11 @@ int ip_route_me_harder(struct net *net, struct sk_buff *skb, unsigned int addr_t
 	fl4.saddr = saddr;
 	fl4.flowi4_tos = RT_TOS(iph->tos);
 	fl4.flowi4_oif = sk ? sk->sk_bound_dev_if : 0;
+<<<<<<< HEAD
+=======
+	if (!fl4.flowi4_oif)
+		fl4.flowi4_oif = l3mdev_master_ifindex(dev);
+>>>>>>> temp
 	fl4.flowi4_mark = skb->mark;
 	fl4.flowi4_flags = flags;
 	rt = ip_route_output_key(net, &fl4);

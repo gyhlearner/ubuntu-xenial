@@ -10,6 +10,7 @@
  * 2 of the Licence, or (at your option) any later version.
  */
 #include <linux/uaccess.h>
+<<<<<<< HEAD
 
 unsigned long
 __generic_copy_to_user(void *to, const void *from, unsigned long n)
@@ -28,6 +29,8 @@ __generic_copy_from_user(void *to, const void *from, unsigned long n)
 		memset(to, 0, n);
 	return n;
 }
+=======
+>>>>>>> temp
 
 /*
  * Copy a null terminated string from userspace.
@@ -66,14 +69,6 @@ do {								\
 		:"i"(-EFAULT), "1"(count), "a"(src), "a"(dst)	\
 		: "memory", "cc");					\
 } while (0)
-
-long
-__strncpy_from_user(char *dst, const char *src, long count)
-{
-	long res;
-	__do_strncpy_from_user(dst, src, count, res);
-	return res;
-}
 
 long
 strncpy_from_user(char *dst, const char *src, long count)

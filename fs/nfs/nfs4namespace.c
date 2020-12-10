@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * linux/fs/nfs/nfs4namespace.c
  *
@@ -208,7 +209,7 @@ static struct rpc_clnt *nfs_find_best_sec(struct rpc_clnt *clnt,
  */
 struct rpc_clnt *
 nfs4_negotiate_security(struct rpc_clnt *clnt, struct inode *inode,
-					struct qstr *name)
+					const struct qstr *name)
 {
 	struct page *page;
 	struct nfs4_secinfo_flavors *flavors;
@@ -340,7 +341,6 @@ static struct vfsmount *nfs_follow_referral(struct dentry *dentry,
 out:
 	free_page((unsigned long) page);
 	free_page((unsigned long) page2);
-	dprintk("%s: done\n", __func__);
 	return mnt;
 }
 
@@ -358,11 +358,9 @@ static struct vfsmount *nfs_do_refmount(struct rpc_clnt *client, struct dentry *
 	int err;
 
 	/* BUG_ON(IS_ROOT(dentry)); */
-	dprintk("%s: enter\n", __func__);
-
 	page = alloc_page(GFP_KERNEL);
 	if (page == NULL)
-		goto out;
+		return mnt;
 
 	fs_locations = kmalloc(sizeof(struct nfs4_fs_locations), GFP_KERNEL);
 	if (fs_locations == NULL)
@@ -386,8 +384,6 @@ static struct vfsmount *nfs_do_refmount(struct rpc_clnt *client, struct dentry *
 out_free:
 	__free_page(page);
 	kfree(fs_locations);
-out:
-	dprintk("%s: done\n", __func__);
 	return mnt;
 }
 
@@ -397,7 +393,7 @@ struct vfsmount *nfs4_submount(struct nfs_server *server, struct dentry *dentry,
 	rpc_authflavor_t flavor = server->client->cl_auth->au_flavor;
 	struct dentry *parent = dget_parent(dentry);
 	struct inode *dir = d_inode(parent);
-	struct qstr *name = &dentry->d_name;
+	const struct qstr *name = &dentry->d_name;
 	struct rpc_clnt *client;
 	struct vfsmount *mnt;
 

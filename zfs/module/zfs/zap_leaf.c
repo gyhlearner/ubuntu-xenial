@@ -18,9 +18,17 @@
  *
  * CDDL HEADER END
  */
+<<<<<<< HEAD
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2014 by Delphix. All rights reserved.
+=======
+
+/*
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015 by Delphix. All rights reserved.
+ * Copyright 2017 Nexenta Systems, Inc.
+>>>>>>> temp
  */
 
 /*
@@ -364,7 +372,11 @@ zap_leaf_array_match(zap_leaf_t *l, zap_name_t *zn,
 	}
 
 	ASSERT(zn->zn_key_intlen == 1);
+<<<<<<< HEAD
 	if (zn->zn_matchtype == MT_FIRST) {
+=======
+	if (zn->zn_matchtype & MT_NORMALIZE) {
+>>>>>>> temp
 		char *thisname = kmem_alloc(array_numints, KM_SLEEP);
 		boolean_t match;
 
@@ -406,7 +418,10 @@ zap_leaf_lookup(zap_leaf_t *l, zap_name_t *zn, zap_entry_handle_t *zeh)
 
 	ASSERT3U(zap_leaf_phys(l)->l_hdr.lh_magic, ==, ZAP_LEAF_MAGIC);
 
+<<<<<<< HEAD
 again:
+=======
+>>>>>>> temp
 	for (chunkp = LEAF_HASH_ENTPTR(l, zn->zn_hash);
 	    *chunkp != CHAIN_END; chunkp = &le->le_next) {
 		uint16_t chunk = *chunkp;
@@ -421,9 +436,15 @@ again:
 		/*
 		 * NB: the entry chain is always sorted by cd on
 		 * normalized zap objects, so this will find the
+<<<<<<< HEAD
 		 * lowest-cd match for MT_FIRST.
 		 */
 		ASSERT(zn->zn_matchtype == MT_EXACT ||
+=======
+		 * lowest-cd match for MT_NORMALIZE.
+		 */
+		ASSERT((zn->zn_matchtype == 0) ||
+>>>>>>> temp
 		    (zap_leaf_phys(l)->l_hdr.lh_flags & ZLF_ENTRIES_CDSORTED));
 		if (zap_leaf_array_match(l, zn, le->le_name_chunk,
 		    le->le_name_numints)) {
@@ -437,6 +458,7 @@ again:
 		}
 	}
 
+<<<<<<< HEAD
 	/*
 	 * NB: we could of course do this in one pass, but that would be
 	 * a pain.  We'll see if MT_BEST is even used much.
@@ -446,6 +468,8 @@ again:
 		goto again;
 	}
 
+=======
+>>>>>>> temp
 	return (SET_ERROR(ENOENT));
 }
 
@@ -538,7 +562,11 @@ zap_entry_read_name(zap_t *zap, const zap_entry_handle_t *zeh, uint16_t buflen,
 
 int
 zap_entry_update(zap_entry_handle_t *zeh,
+<<<<<<< HEAD
 	uint8_t integer_size, uint64_t num_integers, const void *buf)
+=======
+    uint8_t integer_size, uint64_t num_integers, const void *buf)
+>>>>>>> temp
 {
 	int delta_chunks;
 	zap_leaf_t *l = zeh->zeh_leaf;
@@ -700,7 +728,11 @@ zap_entry_normalization_conflict(zap_entry_handle_t *zeh, zap_name_t *zn,
 			continue;
 
 		if (zn == NULL) {
+<<<<<<< HEAD
 			zn = zap_name_alloc(zap, name, MT_FIRST);
+=======
+			zn = zap_name_alloc(zap, name, MT_NORMALIZE);
+>>>>>>> temp
 			allocdzn = B_TRUE;
 		}
 		if (zap_leaf_array_match(zeh->zeh_leaf, zn,

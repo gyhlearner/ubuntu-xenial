@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+/* SPDX-License-Identifier: GPL-2.0 */
+>>>>>>> temp
 #include <linux/atomic.h>
 #include <linux/clk.h>
 #include <linux/delay.h>
@@ -6,7 +10,10 @@
 #include <linux/i2c-smbus.h>
 #include <linux/io.h>
 #include <linux/kernel.h>
+<<<<<<< HEAD
 #include <linux/pci.h>
+=======
+>>>>>>> temp
 
 /* Controller command patterns */
 #define SW_TWSI_V		BIT_ULL(63)	/* Valid bit */
@@ -118,9 +125,12 @@ struct octeon_i2c {
 	void (*hlc_int_disable)(struct octeon_i2c *);
 	atomic_t int_enable_cnt;
 	atomic_t hlc_int_enable_cnt;
+<<<<<<< HEAD
 #if IS_ENABLED(CONFIG_I2C_THUNDERX)
 	struct msix_entry i2c_msix;
 #endif
+=======
+>>>>>>> temp
 	struct i2c_smbus_alert_setup alert_data;
 	struct i2c_client *ara;
 };

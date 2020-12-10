@@ -164,7 +164,11 @@ uio_prefaultpages(ssize_t n, struct uio *uio)
 	caddr_t p;
 	uint8_t tmp;
 	int iovcnt;
+<<<<<<< HEAD
 	size_t skip = uio->uio_skip;
+=======
+	size_t skip;
+>>>>>>> temp
 
 	/* no need to fault in kernel pages */
 	switch (uio->uio_segflg) {
@@ -180,16 +184,30 @@ uio_prefaultpages(ssize_t n, struct uio *uio)
 
 	iov = uio->uio_iov;
 	iovcnt = uio->uio_iovcnt;
+<<<<<<< HEAD
 
 	while ((n > 0) && (iovcnt > 0)) {
 		cnt = MIN(iov->iov_len - skip, n);
+=======
+	skip = uio->uio_skip;
+
+	for (; n > 0 && iovcnt > 0; iov++, iovcnt--, skip = 0) {
+		cnt = MIN(iov->iov_len - skip, n);
+		/* empty iov */
+		if (cnt == 0)
+			continue;
+>>>>>>> temp
 		n -= cnt;
 		/*
 		 * touch each page in this segment.
 		 */
 		p = iov->iov_base + skip;
 		while (cnt) {
+<<<<<<< HEAD
 			if (fuword8((uint8_t *) p, &tmp))
+=======
+			if (fuword8((uint8_t *)p, &tmp))
+>>>>>>> temp
 				return;
 			incr = MIN(cnt, PAGESIZE);
 			p += incr;
@@ -199,11 +217,16 @@ uio_prefaultpages(ssize_t n, struct uio *uio)
 		 * touch the last byte in case it straddles a page.
 		 */
 		p--;
+<<<<<<< HEAD
 		if (fuword8((uint8_t *) p, &tmp))
 			return;
 		iov++;
 		iovcnt--;
 		skip = 0;
+=======
+		if (fuword8((uint8_t *)p, &tmp))
+			return;
+>>>>>>> temp
 	}
 }
 EXPORT_SYMBOL(uio_prefaultpages);

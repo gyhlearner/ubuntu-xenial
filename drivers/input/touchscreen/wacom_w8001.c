@@ -339,6 +339,15 @@ static irqreturn_t w8001_interrupt(struct serio *serio,
 		w8001->idx = 0;
 		parse_multi_touch(w8001);
 		break;
+
+	default:
+		/*
+		 * ThinkPad X60 Tablet PC (pen only device) sometimes
+		 * sends invalid data packets that are larger than
+		 * W8001_PKTLEN_TPCPEN. Let's start over again.
+		 */
+		if (!w8001->touch_dev && w8001->idx > W8001_PKTLEN_TPCPEN - 1)
+			w8001->idx = 0;
 	}
 
 	return IRQ_HANDLED;
@@ -367,6 +376,7 @@ static int w8001_open(struct input_dev *dev)
 {
 	struct w8001 *w8001 = input_get_drvdata(dev);
 	int err;
+<<<<<<< HEAD
 
 	err = mutex_lock_interruptible(&w8001->mutex);
 	if (err)
@@ -378,6 +388,19 @@ static int w8001_open(struct input_dev *dev)
 			w8001->open_count--;
 	}
 
+=======
+
+	err = mutex_lock_interruptible(&w8001->mutex);
+	if (err)
+		return err;
+
+	if (w8001->open_count++ == 0) {
+		err = w8001_command(w8001, W8001_CMD_START, false);
+		if (err)
+			w8001->open_count--;
+	}
+
+>>>>>>> temp
 	mutex_unlock(&w8001->mutex);
 	return err;
 }
@@ -508,11 +531,28 @@ static int w8001_setup_touch(struct w8001 *w8001, char *basename,
 		w8001->pktlen = W8001_PKTLEN_TOUCH2FG;
 
 		__set_bit(BTN_TOOL_DOUBLETAP, dev->keybit);
+<<<<<<< HEAD
 		input_mt_init_slots(dev, 2, 0);
+=======
+		error = input_mt_init_slots(dev, 2, 0);
+		if (error) {
+			dev_err(&w8001->serio->dev,
+				"failed to initialize MT slots: %d\n", error);
+			return error;
+		}
+
+>>>>>>> temp
 		input_set_abs_params(dev, ABS_MT_POSITION_X,
 					0, touch.x, 0, 0);
 		input_set_abs_params(dev, ABS_MT_POSITION_Y,
 					0, touch.y, 0, 0);
+<<<<<<< HEAD
+=======
+		input_set_abs_params(dev, ABS_MT_TOOL_TYPE,
+					0, MT_TOOL_MAX, 0, 0);
+		input_abs_set_res(dev, ABS_MT_POSITION_X, touch.panel_res);
+		input_abs_set_res(dev, ABS_MT_POSITION_Y, touch.panel_res);
+>>>>>>> temp
 
 		strlcat(basename, " 2FG", basename_sz);
 		if (w8001->max_pen_x && w8001->max_pen_y)
@@ -604,6 +644,7 @@ static int w8001_connect(struct serio *serio, struct serio_driver *drv)
 	 * capabilities and then just append the tool type
 	 */
 	strlcpy(basename, "Wacom Serial", sizeof(basename));
+<<<<<<< HEAD
 
 	err_pen = w8001_setup_pen(w8001, basename, sizeof(basename));
 	err_touch = w8001_setup_touch(w8001, basename, sizeof(basename));
@@ -628,6 +669,32 @@ static int w8001_connect(struct serio *serio, struct serio_driver *drv)
 		w8001->pen_dev = NULL;
 	}
 
+=======
+
+	err_pen = w8001_setup_pen(w8001, basename, sizeof(basename));
+	err_touch = w8001_setup_touch(w8001, basename, sizeof(basename));
+	if (err_pen && err_touch) {
+		err = -ENXIO;
+		goto fail3;
+	}
+
+	if (!err_pen) {
+		strlcpy(w8001->pen_name, basename, sizeof(w8001->pen_name));
+		strlcat(w8001->pen_name, " Pen", sizeof(w8001->pen_name));
+		input_dev_pen->name = w8001->pen_name;
+
+		w8001_set_devdata(input_dev_pen, w8001, serio);
+
+		err = input_register_device(w8001->pen_dev);
+		if (err)
+			goto fail3;
+	} else {
+		input_free_device(input_dev_pen);
+		input_dev_pen = NULL;
+		w8001->pen_dev = NULL;
+	}
+
+>>>>>>> temp
 	if (!err_touch) {
 		strlcpy(w8001->touch_name, basename, sizeof(w8001->touch_name));
 		strlcat(w8001->touch_name, " Finger",
@@ -661,7 +728,7 @@ fail1:
 	return err;
 }
 
-static struct serio_device_id w8001_serio_ids[] = {
+static const struct serio_device_id w8001_serio_ids[] = {
 	{
 		.type	= SERIO_RS232,
 		.proto	= SERIO_W8001,

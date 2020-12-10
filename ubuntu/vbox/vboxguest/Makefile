@@ -1,11 +1,19 @@
 KBUILD_EXTMOD=${srctree}/ubuntu/vbox
+<<<<<<< HEAD
 # $Revision: 98752 $
+=======
+# $Revision: 119168 $
+>>>>>>> temp
 ## @file
 # VirtualBox Guest Additions Module Makefile.
 #
 
 #
+<<<<<<< HEAD
 # Copyright (C) 2006-2015 Oracle Corporation
+=======
+# Copyright (C) 2006-2017 Oracle Corporation
+>>>>>>> temp
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -15,6 +23,18 @@ KBUILD_EXTMOD=${srctree}/ubuntu/vbox
 # VirtualBox OSE distribution. VirtualBox OSE is distributed in the
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
+<<<<<<< HEAD
+=======
+# The contents of this file may alternatively be used under the terms
+# of the Common Development and Distribution License Version 1.0
+# (CDDL) only, as it comes in the "COPYING.CDDL" file of the
+# VirtualBox OSE distribution, in which case the provisions of the
+# CDDL are applicable instead of those of the GPL.
+#
+# You may elect to license modified versions of this file under the
+# terms and conditions of either the GPL or the CDDL or both.
+#
+>>>>>>> temp
 
 # Linux kbuild sets this to our source directory if we are called from there
 obj ?= $(CURDIR)
@@ -25,12 +45,20 @@ MOD_NAME = vboxguest
 MOD_OBJS   = \
 	VBoxGuest-linux.o \
 	VBoxGuest.o \
+<<<<<<< HEAD
 	GenericRequest.o \
 	HGCMInternal.o \
 	Init.o \
 	PhysHeap.o \
 	SysHlp.o \
 	VMMDev.o \
+=======
+	VBoxGuestR0LibGenericRequest.o \
+	VBoxGuestR0LibHGCMInternal.o \
+	VBoxGuestR0LibInit.o \
+	VBoxGuestR0LibPhysHeap.o \
+	VBoxGuestR0LibVMMDev.o \
+>>>>>>> temp
 	r0drv/alloc-r0drv.o \
 	r0drv/initterm-r0drv.o \
 	r0drv/memobj-r0drv.o \
@@ -58,11 +86,20 @@ MOD_OBJS   = \
 	common/alloc/alloc.o \
 	common/err/RTErrConvertFromErrno.o \
 	common/err/RTErrConvertToErrno.o \
+<<<<<<< HEAD
 	common/log/log.o \
         common/log/logellipsis.o \
         common/log/logrel.o \
         common/log/logrelellipsis.o \
         common/log/logcom.o \
+=======
+	common/err/errinfo.o \
+	common/log/log.o \
+	common/log/logellipsis.o \
+	common/log/logrel.o \
+	common/log/logrelellipsis.o \
+	common/log/logcom.o \
+>>>>>>> temp
 	common/log/logformat.o \
 	common/misc/RTAssertMsg1Weak.o \
 	common/misc/RTAssertMsg2.o \
@@ -73,6 +110,10 @@ MOD_OBJS   = \
 	common/misc/RTAssertMsg2WeakV.o \
 	common/misc/assert.o \
 	common/misc/thread.o \
+<<<<<<< HEAD
+=======
+	common/string/RTStrCat.o \
+>>>>>>> temp
 	common/string/RTStrCopy.o \
 	common/string/RTStrCopyEx.o \
 	common/string/RTStrCopyP.o \
@@ -84,13 +125,22 @@ MOD_OBJS   = \
 	common/table/avlpv.o \
 	common/time/time.o \
 	generic/RTAssertShouldPanic-generic.o \
+<<<<<<< HEAD
         generic/RTLogWriteStdErr-stub-generic.o \
         generic/RTLogWriteStdOut-stub-generic.o \
+=======
+	generic/RTLogWriteStdErr-stub-generic.o \
+	generic/RTLogWriteStdOut-stub-generic.o \
+>>>>>>> temp
 	generic/RTMpGetCoreCount-generic.o \
 	generic/RTSemEventWait-2-ex-generic.o \
 	generic/RTSemEventWaitNoResume-2-ex-generic.o \
 	generic/RTSemEventMultiWait-2-ex-generic.o \
 	generic/RTSemEventMultiWaitNoResume-2-ex-generic.o \
+<<<<<<< HEAD
+=======
+	generic/rtStrFormatKernelAddress-generic.o \
+>>>>>>> temp
 	generic/errvars-generic.o \
 	generic/mppresent-generic.o \
 	VBox/log-vbox.o \
@@ -100,6 +150,10 @@ MOD_OBJS += \
 	common/math/gcc/divdi3.o \
 	common/math/gcc/moddi3.o \
 	common/math/gcc/udivdi3.o \
+<<<<<<< HEAD
+=======
+	common/math/gcc/udivmoddi4.o \
+>>>>>>> temp
 	common/math/gcc/umoddi3.o \
 	common/math/gcc/qdivrem.o
 endif
@@ -130,12 +184,20 @@ ifeq ($(KERN_VERSION),24)
  ## @todo move to MOD_DEFS when we have finished refactoring
  MOD_CFLAGS = -DEXPORT_SYMTAB
 else
+<<<<<<< HEAD
  MOD_CFLAGS = -Wno-declaration-after-statement -include $(MANGLING)
+=======
+ MOD_CFLAGS = -Wno-declaration-after-statement -include $(MANGLING) -fno-pie
+>>>>>>> temp
 endif
 
 MOD_CLEAN = . linux r0drv generic r0drv/linux r0drv/generic VBox \
 		common/alloc common/err common/log common/math/gcc common/misc \
+<<<<<<< HEAD
 		common/string common/time
+=======
+		common/string common/table common/time
+>>>>>>> temp
 
 include $(obj)/Makefile.include.footer
 
@@ -146,3 +208,7 @@ check: $(MOD_NAME)
 	    echo "error: Some exported IPRT symbols was not properly renamed! See above." >&2; \
 	    false; \
 	 fi
+<<<<<<< HEAD
+=======
+
+>>>>>>> temp

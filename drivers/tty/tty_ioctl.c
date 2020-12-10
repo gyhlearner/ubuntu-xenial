@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  *  Copyright (C) 1991, 1992, 1993, 1994  Linus Torvalds
  *
@@ -9,7 +10,7 @@
 #include <linux/types.h>
 #include <linux/termios.h>
 #include <linux/errno.h>
-#include <linux/sched.h>
+#include <linux/sched/signal.h>
 #include <linux/kernel.h>
 #include <linux/major.h>
 #include <linux/tty.h>
@@ -22,7 +23,7 @@
 #include <linux/compat.h>
 
 #include <asm/io.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 
 #undef TTY_DEBUG_WAIT_UNTIL_SENT
 
@@ -158,7 +159,7 @@ int tty_throttle_safe(struct tty_struct *tty)
 	int ret = 0;
 
 	mutex_lock(&tty->throttle_mutex);
-	if (!test_bit(TTY_THROTTLED, &tty->flags)) {
+	if (!tty_throttled(tty)) {
 		if (tty->flow_change != TTY_THROTTLE_SAFE)
 			ret = 1;
 		else {
@@ -189,7 +190,7 @@ int tty_unthrottle_safe(struct tty_struct *tty)
 	int ret = 0;
 
 	mutex_lock(&tty->throttle_mutex);
-	if (test_bit(TTY_THROTTLED, &tty->flags)) {
+	if (tty_throttled(tty)) {
 		if (tty->flow_change != TTY_UNTHROTTLE_SAFE)
 			ret = 1;
 		else {
@@ -216,7 +217,7 @@ int tty_unthrottle_safe(struct tty_struct *tty)
 
 void tty_wait_until_sent(struct tty_struct *tty, long timeout)
 {
-	tty_debug_wait_until_sent(tty, "\n");
+	tty_debug_wait_until_sent(tty, "wait until sent, timeout=%ld\n", timeout);
 
 	if (!timeout)
 		timeout = MAX_SCHEDULE_TIMEOUT;
@@ -239,18 +240,13 @@ EXPORT_SYMBOL(tty_wait_until_sent);
  *		Termios Helper Methods
  */
 
-static void unset_locked_termios(struct ktermios *termios,
-				 struct ktermios *old,
-				 struct ktermios *locked)
+static void unset_locked_termios(struct tty_struct *tty, struct ktermios *old)
 {
+	struct ktermios *termios = &tty->termios;
+	struct ktermios *locked  = &tty->termios_locked;
 	int	i;
 
 #define NOSET_MASK(x, y, z) (x = ((x) & ~(z)) | ((y) & (z)))
-
-	if (!locked) {
-		printk(KERN_WARNING "Warning?!? termios_locked is NULL.\n");
-		return;
-	}
 
 	NOSET_MASK(termios->c_iflag, old->c_iflag, locked->c_iflag);
 	NOSET_MASK(termios->c_oflag, old->c_oflag, locked->c_oflag);
@@ -263,6 +259,7 @@ static void unset_locked_termios(struct ktermios *termios,
 	/* FIXME: What should we do for i/ospeed */
 }
 
+<<<<<<< HEAD
 /*
  * Routine which returns the baud rate of the tty
  *
@@ -487,6 +484,8 @@ void tty_encode_baud_rate(struct tty_struct *tty, speed_t ibaud, speed_t obaud)
 }
 EXPORT_SYMBOL_GPL(tty_encode_baud_rate);
 
+=======
+>>>>>>> temp
 /**
  *	tty_termios_copy_hw	-	copy hardware settings
  *	@new: New termios
@@ -556,7 +555,7 @@ int tty_set_termios(struct tty_struct *tty, struct ktermios *new_termios)
 	down_write(&tty->termios_rwsem);
 	old_termios = tty->termios;
 	tty->termios = *new_termios;
-	unset_locked_termios(&tty->termios, &old_termios, &tty->termios_locked);
+	unset_locked_termios(tty, &old_termios);
 
 	if (tty->ops->set_termios)
 		tty->ops->set_termios(tty, &old_termios);
@@ -726,16 +725,16 @@ static int get_sgflags(struct tty_struct *tty)
 {
 	int flags = 0;
 
-	if (!(tty->termios.c_lflag & ICANON)) {
-		if (tty->termios.c_lflag & ISIG)
+	if (!L_ICANON(tty)) {
+		if (L_ISIG(tty))
 			flags |= 0x02;		/* cbreak */
 		else
 			flags |= 0x20;		/* raw */
 	}
-	if (tty->termios.c_lflag & ECHO)
+	if (L_ECHO(tty))
 		flags |= 0x08;			/* echo */
-	if (tty->termios.c_oflag & OPOST)
-		if (tty->termios.c_oflag & ONLCR)
+	if (O_OPOST(tty))
+		if (O_ONLCR(tty))
 			flags |= 0x10;		/* crmod */
 	return flags;
 }
@@ -915,7 +914,7 @@ static int tty_change_softcar(struct tty_struct *tty, int arg)
 	tty->termios.c_cflag |= bit;
 	if (tty->ops->set_termios)
 		tty->ops->set_termios(tty, &old);
-	if ((tty->termios.c_cflag & CLOCAL) != bit)
+	if (C_CLOCAL(tty) != bit)
 		ret = -EINVAL;
 	up_write(&tty->termios_rwsem);
 	return ret;

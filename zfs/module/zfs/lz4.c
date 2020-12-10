@@ -63,7 +63,11 @@ lz4_compress_zfs(void *s_start, void *d_start, size_t s_len,
 		return (s_len);
 
 	/*
+<<<<<<< HEAD
 	 * Encode the compresed buffer size at the start. We'll need this in
+=======
+	 * Encode the compressed buffer size at the start. We'll need this in
+>>>>>>> temp
 	 * decompression to counter the effects of padding which might be
 	 * added to the compressed buffer and which, if unhandled, would
 	 * confuse the hell out of our decompression function.
@@ -87,7 +91,11 @@ lz4_decompress_zfs(void *s_start, void *d_start, size_t s_len,
 
 	/*
 	 * Returns 0 on success (decompression function returned non-negative)
+<<<<<<< HEAD
 	 * and non-zero on failure (decompression function returned negative.
+=======
+	 * and non-zero on failure (decompression function returned negative).
+>>>>>>> temp
 	 */
 	return (LZ4_uncompress_unknownOutputSize(&src[sizeof (bufsiz)],
 	    d_start, bufsiz, d_len) < 0);
@@ -205,7 +213,11 @@ lz4_decompress_zfs(void *s_start, void *d_start, size_t s_len,
 
 /*
  * Little Endian or Big Endian?
+<<<<<<< HEAD
  * Note: overwrite the below #define if you know your architecture endianess.
+=======
+ * Note: overwrite the below #define if you know your architecture endianness.
+>>>>>>> temp
  */
 #if defined(_BIG_ENDIAN)
 #define	LZ4_BIG_ENDIAN 1
@@ -873,6 +885,14 @@ real_LZ4_compress(const char *source, char *dest, int isize, int osize)
  *	its code is not present here.
  */
 
+<<<<<<< HEAD
+=======
+static const int dec32table[] = {0, 3, 2, 3, 0, 0, 0, 0};
+#if LZ4_ARCH64
+static const int dec64table[] = {0, 0, 0, -1, 0, 1, 2, 3};
+#endif
+
+>>>>>>> temp
 static int
 LZ4_uncompress_unknownOutputSize(const char *source, char *dest, int isize,
     int maxOutputSize)
@@ -886,11 +906,14 @@ LZ4_uncompress_unknownOutputSize(const char *source, char *dest, int isize,
 	BYTE *const oend = op + maxOutputSize;
 	BYTE *cpy;
 
+<<<<<<< HEAD
 	size_t dec32table[] = {0, 3, 2, 3, 0, 0, 0, 0};
 #if LZ4_ARCH64
 	size_t dec64table[] = {0, 0, 0, (size_t)-1, 0, 1, 2, 3};
 #endif
 
+=======
+>>>>>>> temp
 	/* Main Loop */
 	while (ip < iend) {
 		unsigned token;
@@ -902,6 +925,11 @@ LZ4_uncompress_unknownOutputSize(const char *source, char *dest, int isize,
 			int s = 255;
 			while ((ip < iend) && (s == 255)) {
 				s = *ip++;
+<<<<<<< HEAD
+=======
+				if (unlikely(length > (size_t)(length + s)))
+					goto _output_error;
+>>>>>>> temp
 				length += s;
 			}
 		}
@@ -944,6 +972,11 @@ LZ4_uncompress_unknownOutputSize(const char *source, char *dest, int isize,
 		if ((length = (token & ML_MASK)) == ML_MASK) {
 			while (ip < iend) {
 				int s = *ip++;
+<<<<<<< HEAD
+=======
+				if (unlikely(length > (size_t)(length + s)))
+					goto _output_error;
+>>>>>>> temp
 				length += s;
 				if (s == 255)
 					continue;
@@ -953,7 +986,11 @@ LZ4_uncompress_unknownOutputSize(const char *source, char *dest, int isize,
 		/* copy repeated sequence */
 		if (unlikely(op - ref < STEPSIZE)) {
 #if LZ4_ARCH64
+<<<<<<< HEAD
 			size_t dec64 = dec64table[op-ref];
+=======
+			int dec64 = dec64table[op - ref];
+>>>>>>> temp
 #else
 			const int dec64 = 0;
 #endif
@@ -963,7 +1000,11 @@ LZ4_uncompress_unknownOutputSize(const char *source, char *dest, int isize,
 			op[3] = ref[3];
 			op += 4;
 			ref += 4;
+<<<<<<< HEAD
 			ref -= dec32table[op-ref];
+=======
+			ref -= dec32table[op - ref];
+>>>>>>> temp
 			A32(op) = A32(ref);
 			op += STEPSIZE - 4;
 			ref -= dec64;
@@ -978,6 +1019,16 @@ LZ4_uncompress_unknownOutputSize(const char *source, char *dest, int isize,
 				 * destination buffer
 				 */
 				goto _output_error;
+<<<<<<< HEAD
+=======
+#if LZ4_ARCH64
+			if ((ref + COPYLENGTH) > oend)
+#else
+			if ((ref + COPYLENGTH) > oend ||
+			    (op + COPYLENGTH) > oend)
+#endif
+				goto _output_error;
+>>>>>>> temp
 			LZ4_SECURECOPY(ref, op, (oend - COPYLENGTH));
 			while (op < cpy)
 				*op++ = *ref++;
@@ -999,14 +1050,22 @@ LZ4_uncompress_unknownOutputSize(const char *source, char *dest, int isize,
 
 	/* write overflow error detected */
 	_output_error:
+<<<<<<< HEAD
 	return (int)(-(((char *)ip) - source));
+=======
+	return (-1);
+>>>>>>> temp
 }
 
 void
 lz4_init(void)
 {
 	lz4_cache = kmem_cache_create("lz4_cache",
+<<<<<<< HEAD
 		sizeof (struct refTables), 0, NULL, NULL, NULL, NULL, NULL, 0);
+=======
+	    sizeof (struct refTables), 0, NULL, NULL, NULL, NULL, NULL, 0);
+>>>>>>> temp
 }
 
 void

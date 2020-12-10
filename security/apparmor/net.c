@@ -4,7 +4,11 @@
  * This file contains AppArmor network mediation
  *
  * Copyright (C) 1998-2008 Novell/SUSE
+<<<<<<< HEAD
  * Copyright 2009-2014 Canonical Ltd.
+=======
+ * Copyright 2009-2017 Canonical Ltd.
+>>>>>>> temp
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -23,6 +27,7 @@
 #include "net_names.h"
 
 
+<<<<<<< HEAD
 struct aa_fs_entry aa_fs_entry_network[] = {
 	AA_FS_FILE_STRING("af_mask",	AA_FS_AF_MASK),
 	AA_FS_FILE_BOOLEAN("af_unix",	1),
@@ -30,6 +35,15 @@ struct aa_fs_entry aa_fs_entry_network[] = {
 };
 
 static const char *net_mask_names[] = {
+=======
+struct aa_sfs_entry aa_sfs_entry_network[] = {
+	AA_SFS_FILE_STRING("af_mask",	AA_SFS_AF_MASK),
+	AA_SFS_FILE_BOOLEAN("af_unix",	1),
+	{ }
+};
+
+static const char * const net_mask_names[] = {
+>>>>>>> temp
 	"unknown",
 	"send",
 	"receive",
@@ -108,6 +122,7 @@ void audit_net_cb(struct audit_buffer *ab, void *va)
 	struct common_audit_data *sa = va;
 
 	audit_log_format(ab, " family=");
+<<<<<<< HEAD
 	if (address_family_names[sa->u.net->family]) {
 		audit_log_string(ab, address_family_names[sa->u.net->family]);
 	} else {
@@ -119,6 +134,17 @@ void audit_net_cb(struct audit_buffer *ab, void *va)
 	} else {
 		audit_log_format(ab, "\"unknown(%d)\"", aad(sa)->net.type);
 	}
+=======
+	if (address_family_names[sa->u.net->family])
+		audit_log_string(ab, address_family_names[sa->u.net->family]);
+	else
+		audit_log_format(ab, "\"unknown(%d)\"", sa->u.net->family);
+	audit_log_format(ab, " sock_type=");
+	if (sock_type_names[aad(sa)->net.type])
+		audit_log_string(ab, sock_type_names[aad(sa)->net.type]);
+	else
+		audit_log_format(ab, "\"unknown(%d)\"", aad(sa)->net.type);
+>>>>>>> temp
 	audit_log_format(ab, " protocol=%d", aad(sa)->net.protocol);
 
 	if (aad(sa)->request & NET_PERMS_MASK) {
@@ -164,7 +190,11 @@ int aa_profile_af_perm(struct aa_profile *profile, struct common_audit_data *sa,
 	struct aa_perms perms = { };
 
 	AA_BUG(family >= AF_MAX);
+<<<<<<< HEAD
 	AA_BUG(type < 0 && type >= SOCK_MAX);
+=======
+	AA_BUG(type < 0 || type >= SOCK_MAX);
+>>>>>>> temp
 
 	if (profile_unconfined(profile))
 		return 0;
@@ -180,14 +210,24 @@ int aa_profile_af_perm(struct aa_profile *profile, struct common_audit_data *sa,
 	return aa_check_perms(profile, &perms, request, sa, audit_net_cb);
 }
 
+<<<<<<< HEAD
 static int aa_af_perm(struct aa_label *label, const char *op, u32 request,
 		      u16 family, int type, int protocol)
+=======
+int aa_af_perm(struct aa_label *label, const char *op, u32 request, u16 family,
+	       int type, int protocol)
+>>>>>>> temp
 {
 	struct aa_profile *profile;
 	DEFINE_AUDIT_NET(sa, op, NULL, family, type, protocol);
 
 	return fn_for_each_confined(label, profile,
+<<<<<<< HEAD
 			aa_profile_af_perm(profile, &sa, request, family, type));
+=======
+			aa_profile_af_perm(profile, &sa, request, family,
+					   type));
+>>>>>>> temp
 }
 
 static int aa_label_sk_perm(struct aa_label *label, const char *op, u32 request,
@@ -206,7 +246,11 @@ static int aa_label_sk_perm(struct aa_label *label, const char *op, u32 request,
 			aa_profile_af_sk_perm(profile, &sa, request, sk));
 }
 
+<<<<<<< HEAD
 static int aa_sk_perm(const char *op, u32 request, struct sock *sk)
+=======
+int aa_sk_perm(const char *op, u32 request, struct sock *sk)
+>>>>>>> temp
 {
 	struct aa_label *label;
 	int error;
@@ -215,9 +259,15 @@ static int aa_sk_perm(const char *op, u32 request, struct sock *sk)
 	AA_BUG(in_interrupt());
 
 	/* TODO: switch to begin_current_label ???? */
+<<<<<<< HEAD
 	label = aa_begin_current_label(DO_UPDATE);
 	error = aa_label_sk_perm(label, op, request, sk);
 	aa_end_current_label(label);
+=======
+	label = begin_current_label_crit_section();
+	error = aa_label_sk_perm(label, op, request, sk);
+	end_current_label_crit_section(label);
+>>>>>>> temp
 
 	return error;
 }

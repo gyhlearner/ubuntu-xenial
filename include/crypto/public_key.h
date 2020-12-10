@@ -14,6 +14,7 @@
 #ifndef _LINUX_PUBLIC_KEY_H
 #define _LINUX_PUBLIC_KEY_H
 
+<<<<<<< HEAD
 #include <linux/mpi.h>
 #include <crypto/hash_info.h>
 
@@ -51,6 +52,8 @@ enum key_being_used_for {
 };
 extern const char *const key_being_used_for[NR__KEY_BEING_USED_FOR];
 
+=======
+>>>>>>> temp
 /*
  * Cryptographic data for the public-key subtype of the asymmetric key type.
  *
@@ -60,45 +63,65 @@ extern const char *const key_being_used_for[NR__KEY_BEING_USED_FOR];
 struct public_key {
 	void *key;
 	u32 keylen;
+<<<<<<< HEAD
 	enum pkey_algo pkey_algo : 8;
 	enum pkey_id_type id_type : 8;
+=======
+	const char *id_type;
+	const char *pkey_algo;
+>>>>>>> temp
 };
 
-extern void public_key_destroy(void *payload);
+extern void public_key_free(struct public_key *key);
 
 /*
  * Public key cryptography signature data
  */
 struct public_key_signature {
+<<<<<<< HEAD
+=======
+	struct asymmetric_key_id *auth_ids[2];
+>>>>>>> temp
 	u8 *s;			/* Signature */
 	u32 s_size;		/* Number of bytes in signature */
 	u8 *digest;
-	u8 digest_size;			/* Number of bytes in digest */
-	u8 nr_mpi;			/* Occupancy of mpi[] */
-	enum pkey_algo pkey_algo : 8;
-	enum hash_algo pkey_hash_algo : 8;
-	union {
-		MPI mpi[2];
-		struct {
-			MPI s;		/* m^d mod n */
-		} rsa;
-		struct {
-			MPI r;
-			MPI s;
-		} dsa;
-	};
+	u8 digest_size;		/* Number of bytes in digest */
+	const char *pkey_algo;
+	const char *hash_algo;
 };
 
+<<<<<<< HEAD
 extern struct asymmetric_key_subtype public_key_subtype;
+=======
+extern void public_key_signature_free(struct public_key_signature *sig);
+
+extern struct asymmetric_key_subtype public_key_subtype;
+
+>>>>>>> temp
 struct key;
+struct key_type;
+union key_payload;
+
+extern int restrict_link_by_signature(struct key *dest_keyring,
+				      const struct key_type *type,
+				      const union key_payload *payload,
+				      struct key *trust_keyring);
+
+extern int restrict_link_by_key_or_keyring(struct key *dest_keyring,
+					   const struct key_type *type,
+					   const union key_payload *payload,
+					   struct key *trusted);
+
+extern int restrict_link_by_key_or_keyring_chain(struct key *trust_keyring,
+						 const struct key_type *type,
+						 const union key_payload *payload,
+						 struct key *trusted);
+
 extern int verify_signature(const struct key *key,
 			    const struct public_key_signature *sig);
 
-struct asymmetric_key_id;
-extern struct key *x509_request_asymmetric_key(struct key *keyring,
-					       const struct asymmetric_key_id *id,
-					       const struct asymmetric_key_id *skid,
-					       bool partial);
+int public_key_verify_signature(const struct public_key *pkey,
+				const struct public_key_signature *sig);
 
 int public_key_verify_signature(const struct public_key *pkey,
 				const struct public_key_signature *sig);

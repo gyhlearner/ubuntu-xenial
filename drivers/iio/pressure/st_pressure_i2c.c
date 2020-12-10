@@ -37,6 +37,17 @@ static const struct of_device_id st_press_of_match[] = {
 		.compatible = "st,lps22hb-press",
 		.data = LPS22HB_PRESS_DEV_NAME,
 	},
+<<<<<<< HEAD
+=======
+	{
+		.compatible = "st,lps33hw",
+		.data = LPS33HW_PRESS_DEV_NAME,
+	},
+	{
+		.compatible = "st,lps35hw",
+		.data = LPS35HW_PRESS_DEV_NAME,
+	},
+>>>>>>> temp
 	{},
 };
 MODULE_DEVICE_TABLE(of, st_press_of_match);
@@ -59,6 +70,11 @@ static const struct i2c_device_id st_press_id_table[] = {
 	{ LPS25H_PRESS_DEV_NAME,  LPS25H },
 	{ LPS331AP_PRESS_DEV_NAME, LPS331AP },
 	{ LPS22HB_PRESS_DEV_NAME, LPS22HB },
+<<<<<<< HEAD
+=======
+	{ LPS33HW_PRESS_DEV_NAME, LPS33HW },
+	{ LPS35HW_PRESS_DEV_NAME, LPS35HW },
+>>>>>>> temp
 	{},
 };
 MODULE_DEVICE_TABLE(i2c, st_press_id_table);
@@ -77,7 +93,12 @@ static int st_press_i2c_probe(struct i2c_client *client,
 	press_data = iio_priv(indio_dev);
 
 	if (client->dev.of_node) {
+<<<<<<< HEAD
 		st_sensors_of_i2c_probe(client, st_press_of_match);
+=======
+		st_sensors_of_name_probe(&client->dev, st_press_of_match,
+					 client->name, sizeof(client->name));
+>>>>>>> temp
 	} else if (ACPI_HANDLE(&client->dev)) {
 		ret = st_sensors_match_acpi_device(&client->dev);
 		if ((ret < 0) || (ret >= ST_PRESS_MAX))

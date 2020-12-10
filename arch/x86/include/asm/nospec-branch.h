@@ -55,6 +55,22 @@
 #ifdef __ASSEMBLY__
 
 /*
+<<<<<<< HEAD
+=======
+ * This should be used immediately before a retpoline alternative.  It tells
+ * objtool where the retpolines are so that it can make sense of the control
+ * flow by just reading the original instruction(s) and ignoring the
+ * alternatives.
+ */
+.macro ANNOTATE_NOSPEC_ALTERNATIVE
+	.Lannotate_\@:
+	.pushsection .discard.nospec
+	.long .Lannotate_\@ - .
+	.popsection
+.endm
+
+/*
+>>>>>>> temp
  * This should be used immediately before an indirect jump/call. It tells
  * objtool the subsequent indirect jump/call is vouched safe for retpoline
  * builds.
@@ -101,6 +117,10 @@
  */
 .macro JMP_NOSPEC reg:req
 #ifdef CONFIG_RETPOLINE
+<<<<<<< HEAD
+=======
+	ANNOTATE_NOSPEC_ALTERNATIVE
+>>>>>>> temp
 	ALTERNATIVE_2 __stringify(ANNOTATE_RETPOLINE_SAFE; jmp *\reg),	\
 		__stringify(RETPOLINE_JMP \reg), X86_FEATURE_RETPOLINE,	\
 		__stringify(lfence; ANNOTATE_RETPOLINE_SAFE; jmp *\reg), X86_FEATURE_RETPOLINE_AMD
@@ -111,6 +131,10 @@
 
 .macro CALL_NOSPEC reg:req
 #ifdef CONFIG_RETPOLINE
+<<<<<<< HEAD
+=======
+	ANNOTATE_NOSPEC_ALTERNATIVE
+>>>>>>> temp
 	ALTERNATIVE_2 __stringify(ANNOTATE_RETPOLINE_SAFE; call *\reg),	\
 		__stringify(RETPOLINE_CALL \reg), X86_FEATURE_RETPOLINE,\
 		__stringify(lfence; ANNOTATE_RETPOLINE_SAFE; call *\reg), X86_FEATURE_RETPOLINE_AMD
@@ -125,6 +149,10 @@
   */
 .macro FILL_RETURN_BUFFER reg:req nr:req ftr:req
 #ifdef CONFIG_RETPOLINE
+<<<<<<< HEAD
+=======
+	ANNOTATE_NOSPEC_ALTERNATIVE
+>>>>>>> temp
 	ALTERNATIVE "jmp .Lskip_rsb_\@",				\
 		__stringify(__FILL_RETURN_BUFFER(\reg,\nr,%_ASM_SP))	\
 		\ftr
@@ -134,6 +162,15 @@
 
 #else /* __ASSEMBLY__ */
 
+<<<<<<< HEAD
+=======
+#define ANNOTATE_NOSPEC_ALTERNATIVE				\
+	"999:\n\t"						\
+	".pushsection .discard.nospec\n\t"			\
+	".long 999b - .\n\t"					\
+	".popsection\n\t"
+
+>>>>>>> temp
 #define ANNOTATE_RETPOLINE_SAFE					\
 	"999:\n\t"						\
 	".pushsection .discard.retpoline_safe\n\t"		\
@@ -147,6 +184,10 @@
  * the 64-bit one is dependent on RETPOLINE not CONFIG_RETPOLINE.
  */
 # define CALL_NOSPEC						\
+<<<<<<< HEAD
+=======
+	ANNOTATE_NOSPEC_ALTERNATIVE				\
+>>>>>>> temp
 	ALTERNATIVE(						\
 	ANNOTATE_RETPOLINE_SAFE					\
 	"call *%[thunk_target]\n",				\
@@ -160,7 +201,11 @@
  * otherwise we'll run out of registers. We don't care about CET
  * here, anyway.
  */
+<<<<<<< HEAD
 # define CALL_NOSPEC 						\
+=======
+# define CALL_NOSPEC						\
+>>>>>>> temp
 	ALTERNATIVE(						\
 	ANNOTATE_RETPOLINE_SAFE					\
 	"call *%[thunk_target]\n",				\
@@ -184,6 +229,7 @@
 # define THUNK_TARGET(addr) [thunk_target] "rm" (addr)
 #endif
 
+<<<<<<< HEAD
 /* The IBPB runtime control knob */
 extern unsigned int ibpb_enabled;
 int set_ibpb_enabled(unsigned int);
@@ -192,6 +238,8 @@ int set_ibpb_enabled(unsigned int);
 extern unsigned int ibrs_enabled;
 int set_ibrs_enabled(unsigned int);
 
+=======
+>>>>>>> temp
 /* The Spectre V2 mitigation variants */
 enum spectre_v2_mitigation {
 	SPECTRE_V2_NONE,
@@ -202,9 +250,12 @@ enum spectre_v2_mitigation {
 	SPECTRE_V2_IBRS_ENHANCED,
 };
 
+<<<<<<< HEAD
 /* The Intel SPEC CTRL MSR base value cache */
 extern u64 x86_spec_ctrl_base;
 
+=======
+>>>>>>> temp
 /* The Speculative Store Bypass disable variants */
 enum ssb_mitigation {
 	SPEC_STORE_BYPASS_NONE,
@@ -227,7 +278,12 @@ static inline void vmexit_fill_RSB(void)
 #ifdef CONFIG_RETPOLINE
 	unsigned long loops;
 
+<<<<<<< HEAD
 	asm volatile (ALTERNATIVE("jmp 910f",
+=======
+	asm volatile (ANNOTATE_NOSPEC_ALTERNATIVE
+		      ALTERNATIVE("jmp 910f",
+>>>>>>> temp
 				  __stringify(__FILL_RETURN_BUFFER(%0, RSB_CLEAR_LOOPS, %1)),
 				  X86_FEATURE_RETPOLINE)
 		      "910:"
@@ -251,11 +307,20 @@ static inline void indirect_branch_prediction_barrier(void)
 {
 	u64 val = PRED_CMD_IBPB;
 
+<<<<<<< HEAD
 	if (ibpb_enabled)
 		alternative_msr_write(MSR_IA32_PRED_CMD, val,
 				      X86_FEATURE_USE_IBPB);
 }
 
+=======
+	alternative_msr_write(MSR_IA32_PRED_CMD, val, X86_FEATURE_USE_IBPB);
+}
+
+/* The Intel SPEC CTRL MSR base value cache */
+extern u64 x86_spec_ctrl_base;
+
+>>>>>>> temp
 /*
  * With retpoline, we must use IBRS to restrict branch prediction
  * before calling into firmware.
@@ -265,6 +330,10 @@ static inline void indirect_branch_prediction_barrier(void)
 #define firmware_restrict_branch_speculation_start()			\
 do {									\
 	u64 val = x86_spec_ctrl_base | SPEC_CTRL_IBRS;			\
+<<<<<<< HEAD
+=======
+									\
+>>>>>>> temp
 	preempt_disable();						\
 	alternative_msr_write(MSR_IA32_SPEC_CTRL, val,			\
 			      X86_FEATURE_USE_IBRS_FW);			\
@@ -279,6 +348,7 @@ do {									\
 	preempt_enable();						\
 } while (0)
 
+<<<<<<< HEAD
 #define ubuntu_restrict_branch_speculation_start()			\
 do {									\
 	u64 val = x86_spec_ctrl_base | SPEC_CTRL_IBRS;			\
@@ -295,6 +365,8 @@ do {									\
 		native_wrmsrl(MSR_IA32_SPEC_CTRL, val);			\
  } while (0)
 
+=======
+>>>>>>> temp
 #endif /* __ASSEMBLY__ */
 
 /*

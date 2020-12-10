@@ -1,3 +1,11 @@
+<<<<<<< HEAD
+=======
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Helper routines for building identity mapping page tables. This is
+ * included by both the compressed kernel and the regular kernel.
+ */
+>>>>>>> temp
 
 static void ident_pmd_init(struct x86_mapping_info *info, pmd_t *pmd_page,
 			   unsigned long addr, unsigned long end)
@@ -9,9 +17,16 @@ static void ident_pmd_init(struct x86_mapping_info *info, pmd_t *pmd_page,
 		if (pmd_present(*pmd))
 			continue;
 
+<<<<<<< HEAD
 		set_pmd(pmd, __pmd((addr - info->offset) | info->pmd_flag));
 	}
 }
+=======
+		set_pmd(pmd, __pmd((addr - info->offset) | info->page_flag));
+	}
+}
+
+>>>>>>> temp
 static int ident_pud_init(struct x86_mapping_info *info, pud_t *pud_page,
 			  unsigned long addr, unsigned long end)
 {
@@ -25,6 +40,21 @@ static int ident_pud_init(struct x86_mapping_info *info, pud_t *pud_page,
 		if (next > end)
 			next = end;
 
+<<<<<<< HEAD
+=======
+		if (info->direct_gbpages) {
+			pud_t pudval;
+
+			if (pud_present(*pud))
+				continue;
+
+			addr &= PUD_MASK;
+			pudval = __pud((addr - info->offset) | info->page_flag);
+			set_pud(pud, pudval);
+			continue;
+		}
+
+>>>>>>> temp
 		if (pud_present(*pud)) {
 			pmd = pmd_offset(pud, 0);
 			ident_pmd_init(info, pmd, addr, next);
@@ -34,7 +64,39 @@ static int ident_pud_init(struct x86_mapping_info *info, pud_t *pud_page,
 		if (!pmd)
 			return -ENOMEM;
 		ident_pmd_init(info, pmd, addr, next);
+<<<<<<< HEAD
 		set_pud(pud, __pud(__pa(pmd) | _KERNPG_TABLE));
+=======
+		set_pud(pud, __pud(__pa(pmd) | info->kernpg_flag));
+	}
+
+	return 0;
+}
+
+static int ident_p4d_init(struct x86_mapping_info *info, p4d_t *p4d_page,
+			  unsigned long addr, unsigned long end)
+{
+	unsigned long next;
+
+	for (; addr < end; addr = next) {
+		p4d_t *p4d = p4d_page + p4d_index(addr);
+		pud_t *pud;
+
+		next = (addr & P4D_MASK) + P4D_SIZE;
+		if (next > end)
+			next = end;
+
+		if (p4d_present(*p4d)) {
+			pud = pud_offset(p4d, 0);
+			ident_pud_init(info, pud, addr, next);
+			continue;
+		}
+		pud = (pud_t *)info->alloc_pgt_page(info->context);
+		if (!pud)
+			return -ENOMEM;
+		ident_pud_init(info, pud, addr, next);
+		set_p4d(p4d, __p4d(__pa(pud) | info->kernpg_flag));
+>>>>>>> temp
 	}
 
 	return 0;
@@ -48,22 +110,41 @@ int kernel_ident_mapping_init(struct x86_mapping_info *info, pgd_t *pgd_page,
 	unsigned long next;
 	int result;
 
+<<<<<<< HEAD
 	for (; addr < end; addr = next) {
 		pgd_t *pgd = pgd_page + pgd_index(addr);
 		pud_t *pud;
+=======
+	/* Set the default pagetable flags if not supplied */
+	if (!info->kernpg_flag)
+		info->kernpg_flag = _KERNPG_TABLE;
+
+	/* Filter out unsupported __PAGE_KERNEL_* bits: */
+	info->kernpg_flag &= __default_kernel_pte_mask;
+
+	for (; addr < end; addr = next) {
+		pgd_t *pgd = pgd_page + pgd_index(addr);
+		p4d_t *p4d;
+>>>>>>> temp
 
 		next = (addr & PGDIR_MASK) + PGDIR_SIZE;
 		if (next > end)
 			next = end;
 
 		if (pgd_present(*pgd)) {
+<<<<<<< HEAD
 			pud = pud_offset(pgd, 0);
 			result = ident_pud_init(info, pud, addr, next);
+=======
+			p4d = p4d_offset(pgd, 0);
+			result = ident_p4d_init(info, p4d, addr, next);
+>>>>>>> temp
 			if (result)
 				return result;
 			continue;
 		}
 
+<<<<<<< HEAD
 		pud = (pud_t *)info->alloc_pgt_page(info->context);
 		if (!pud)
 			return -ENOMEM;
@@ -71,6 +152,24 @@ int kernel_ident_mapping_init(struct x86_mapping_info *info, pgd_t *pgd_page,
 		if (result)
 			return result;
 		set_pgd(pgd, __pgd(__pa(pud) | _KERNPG_TABLE));
+=======
+		p4d = (p4d_t *)info->alloc_pgt_page(info->context);
+		if (!p4d)
+			return -ENOMEM;
+		result = ident_p4d_init(info, p4d, addr, next);
+		if (result)
+			return result;
+		if (IS_ENABLED(CONFIG_X86_5LEVEL)) {
+			set_pgd(pgd, __pgd(__pa(p4d) | info->kernpg_flag));
+		} else {
+			/*
+			 * With p4d folded, pgd is equal to p4d.
+			 * The pgd entry has to point to the pud page table in this case.
+			 */
+			pud_t *pud = pud_offset(p4d, 0);
+			set_pgd(pgd, __pgd(__pa(pud) | info->kernpg_flag));
+		}
+>>>>>>> temp
 	}
 
 	return 0;

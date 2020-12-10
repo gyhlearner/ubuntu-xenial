@@ -13,6 +13,10 @@
 #include <linux/device.h>
 #include <linux/iio/sysfs.h>
 #include <linux/delay.h>
+<<<<<<< HEAD
+=======
+#include <linux/pm.h>
+>>>>>>> temp
 #include <asm/unaligned.h>
 
 #include "hts221.h"
@@ -22,7 +26,10 @@
 
 #define HTS221_REG_CNTRL1_ADDR		0x20
 #define HTS221_REG_CNTRL2_ADDR		0x21
+<<<<<<< HEAD
 #define HTS221_REG_CNTRL3_ADDR		0x22
+=======
+>>>>>>> temp
 
 #define HTS221_REG_AVG_ADDR		0x10
 #define HTS221_REG_H_OUT_L		0x28
@@ -31,6 +38,7 @@
 #define HTS221_HUMIDITY_AVG_MASK	0x07
 #define HTS221_TEMP_AVG_MASK		0x38
 
+<<<<<<< HEAD
 #define HTS221_ODR_MASK			0x87
 #define HTS221_BDU_MASK			BIT(2)
 
@@ -55,6 +63,11 @@
 #define HTS221_TEMP_AVG_64		0x28 /* 0.015 degC */
 #define HTS221_TEMP_AVG_128		0x30 /* 0.01 degC */
 #define HTS221_TEMP_AVG_256		0x38 /* 0.007 degC */
+=======
+#define HTS221_ODR_MASK			0x03
+#define HTS221_BDU_MASK			BIT(2)
+#define HTS221_ENABLE_MASK		BIT(7)
+>>>>>>> temp
 
 /* calibration registers */
 #define HTS221_REG_0RH_CAL_X_H		0x36
@@ -72,10 +85,18 @@ struct hts221_odr {
 	u8 val;
 };
 
+<<<<<<< HEAD
 struct hts221_avg {
 	u8 addr;
 	u8 mask;
 	struct hts221_avg_avl avg_avl[HTS221_AVG_DEPTH];
+=======
+#define HTS221_AVG_DEPTH		8
+struct hts221_avg {
+	u8 addr;
+	u8 mask;
+	u16 avg_avl[HTS221_AVG_DEPTH];
+>>>>>>> temp
 };
 
 static const struct hts221_odr hts221_odr_table[] = {
@@ -89,6 +110,7 @@ static const struct hts221_avg hts221_avg_list[] = {
 		.addr = HTS221_REG_AVG_ADDR,
 		.mask = HTS221_HUMIDITY_AVG_MASK,
 		.avg_avl = {
+<<<<<<< HEAD
 			{ 4, HTS221_HUMIDITY_AVG_4 },
 			{ 8, HTS221_HUMIDITY_AVG_8 },
 			{ 16, HTS221_HUMIDITY_AVG_16 },
@@ -97,12 +119,23 @@ static const struct hts221_avg hts221_avg_list[] = {
 			{ 128, HTS221_HUMIDITY_AVG_128 },
 			{ 256, HTS221_HUMIDITY_AVG_256 },
 			{ 512, HTS221_HUMIDITY_AVG_512 },
+=======
+			4, /* 0.4 %RH */
+			8, /* 0.3 %RH */
+			16, /* 0.2 %RH */
+			32, /* 0.15 %RH */
+			64, /* 0.1 %RH */
+			128, /* 0.07 %RH */
+			256, /* 0.05 %RH */
+			512, /* 0.03 %RH */
+>>>>>>> temp
 		},
 	},
 	{
 		.addr = HTS221_REG_AVG_ADDR,
 		.mask = HTS221_TEMP_AVG_MASK,
 		.avg_avl = {
+<<<<<<< HEAD
 			{ 2, HTS221_TEMP_AVG_2 },
 			{ 4, HTS221_TEMP_AVG_4 },
 			{ 8, HTS221_TEMP_AVG_8 },
@@ -111,6 +144,16 @@ static const struct hts221_avg hts221_avg_list[] = {
 			{ 64, HTS221_TEMP_AVG_64 },
 			{ 128, HTS221_TEMP_AVG_128 },
 			{ 256, HTS221_TEMP_AVG_256 },
+=======
+			2, /* 0.08 degC */
+			4, /* 0.05 degC */
+			8, /* 0.04 degC */
+			16, /* 0.03 degC */
+			32, /* 0.02 degC */
+			64, /* 0.015 degC */
+			128, /* 0.01 degC */
+			256, /* 0.007 degC */
+>>>>>>> temp
 		},
 	},
 };
@@ -151,8 +194,12 @@ static const struct iio_chan_spec hts221_channels[] = {
 	IIO_CHAN_SOFT_TIMESTAMP(2),
 };
 
+<<<<<<< HEAD
 static int hts221_write_with_mask(struct hts221_hw *hw, u8 addr, u8 mask,
 				  u8 val)
+=======
+int hts221_write_with_mask(struct hts221_hw *hw, u8 addr, u8 mask, u8 val)
+>>>>>>> temp
 {
 	u8 data;
 	int err;
@@ -165,7 +212,11 @@ static int hts221_write_with_mask(struct hts221_hw *hw, u8 addr, u8 mask,
 		goto unlock;
 	}
 
+<<<<<<< HEAD
 	data = (data & ~mask) | (val & mask);
+=======
+	data = (data & ~mask) | ((val << __ffs(mask)) & mask);
+>>>>>>> temp
 
 	err = hw->tf->write(hw->dev, addr, sizeof(data), &data);
 	if (err < 0)
@@ -198,6 +249,7 @@ static int hts221_check_whoami(struct hts221_hw *hw)
 	return 0;
 }
 
+<<<<<<< HEAD
 int hts221_config_drdy(struct hts221_hw *hw, bool enable)
 {
 	u8 val = enable ? BIT(2) : 0;
@@ -213,6 +265,11 @@ static int hts221_update_odr(struct hts221_hw *hw, u8 odr)
 {
 	int i, err;
 	u8 val;
+=======
+static int hts221_update_odr(struct hts221_hw *hw, u8 odr)
+{
+	int i, err;
+>>>>>>> temp
 
 	for (i = 0; i < ARRAY_SIZE(hts221_odr_table); i++)
 		if (hts221_odr_table[i].hz == odr)
@@ -221,9 +278,14 @@ static int hts221_update_odr(struct hts221_hw *hw, u8 odr)
 	if (i == ARRAY_SIZE(hts221_odr_table))
 		return -EINVAL;
 
+<<<<<<< HEAD
 	val = HTS221_ENABLE_SENSOR | HTS221_BDU_MASK | hts221_odr_table[i].val;
 	err = hts221_write_with_mask(hw, HTS221_REG_CNTRL1_ADDR,
 				     HTS221_ODR_MASK, val);
+=======
+	err = hts221_write_with_mask(hw, HTS221_REG_CNTRL1_ADDR,
+				     HTS221_ODR_MASK, hts221_odr_table[i].val);
+>>>>>>> temp
 	if (err < 0)
 		return err;
 
@@ -240,14 +302,22 @@ static int hts221_update_avg(struct hts221_hw *hw,
 	const struct hts221_avg *avg = &hts221_avg_list[type];
 
 	for (i = 0; i < HTS221_AVG_DEPTH; i++)
+<<<<<<< HEAD
 		if (avg->avg_avl[i].avg == val)
+=======
+		if (avg->avg_avl[i] == val)
+>>>>>>> temp
 			break;
 
 	if (i == HTS221_AVG_DEPTH)
 		return -EINVAL;
 
+<<<<<<< HEAD
 	err = hts221_write_with_mask(hw, avg->addr, avg->mask,
 				     avg->avg_avl[i].val);
+=======
+	err = hts221_write_with_mask(hw, avg->addr, avg->mask, i);
+>>>>>>> temp
 	if (err < 0)
 		return err;
 
@@ -282,7 +352,11 @@ hts221_sysfs_rh_oversampling_avail(struct device *dev,
 
 	for (i = 0; i < ARRAY_SIZE(avg->avg_avl); i++)
 		len += scnprintf(buf + len, PAGE_SIZE - len, "%d ",
+<<<<<<< HEAD
 				 avg->avg_avl[i].avg);
+=======
+				 avg->avg_avl[i]);
+>>>>>>> temp
 	buf[len - 1] = '\n';
 
 	return len;
@@ -299,12 +373,17 @@ hts221_sysfs_temp_oversampling_avail(struct device *dev,
 
 	for (i = 0; i < ARRAY_SIZE(avg->avg_avl); i++)
 		len += scnprintf(buf + len, PAGE_SIZE - len, "%d ",
+<<<<<<< HEAD
 				 avg->avg_avl[i].avg);
+=======
+				 avg->avg_avl[i]);
+>>>>>>> temp
 	buf[len - 1] = '\n';
 
 	return len;
 }
 
+<<<<<<< HEAD
 int hts221_power_on(struct hts221_hw *hw)
 {
 	return hts221_update_odr(hw, hw->odr);
@@ -316,6 +395,20 @@ int hts221_power_off(struct hts221_hw *hw)
 
 	return hw->tf->write(hw->dev, HTS221_REG_CNTRL1_ADDR, sizeof(data),
 			     data);
+=======
+int hts221_set_enable(struct hts221_hw *hw, bool enable)
+{
+	int err;
+
+	err = hts221_write_with_mask(hw, HTS221_REG_CNTRL1_ADDR,
+				     HTS221_ENABLE_MASK, enable);
+	if (err < 0)
+		return err;
+
+	hw->enabled = enable;
+
+	return 0;
+>>>>>>> temp
 }
 
 static int hts221_parse_temp_caldata(struct hts221_hw *hw)
@@ -468,7 +561,11 @@ static int hts221_read_oneshot(struct hts221_hw *hw, u8 addr, int *val)
 	u8 data[HTS221_DATA_SIZE];
 	int err;
 
+<<<<<<< HEAD
 	err = hts221_power_on(hw);
+=======
+	err = hts221_set_enable(hw, true);
+>>>>>>> temp
 	if (err < 0)
 		return err;
 
@@ -478,7 +575,11 @@ static int hts221_read_oneshot(struct hts221_hw *hw, u8 addr, int *val)
 	if (err < 0)
 		return err;
 
+<<<<<<< HEAD
 	hts221_power_off(hw);
+=======
+	hts221_set_enable(hw, false);
+>>>>>>> temp
 
 	*val = (s16)get_unaligned_le16(data);
 
@@ -492,11 +593,17 @@ static int hts221_read_raw(struct iio_dev *iio_dev,
 	struct hts221_hw *hw = iio_priv(iio_dev);
 	int ret;
 
+<<<<<<< HEAD
 	mutex_lock(&iio_dev->mlock);
 	if (iio_buffer_enabled(iio_dev)) {
 		mutex_unlock(&iio_dev->mlock);
 		return -EBUSY;
 	}
+=======
+	ret = iio_device_claim_direct_mode(iio_dev);
+	if (ret)
+		return ret;
+>>>>>>> temp
 
 	switch (mask) {
 	case IIO_CHAN_INFO_RAW:
@@ -520,13 +627,21 @@ static int hts221_read_raw(struct iio_dev *iio_dev,
 		case IIO_HUMIDITYRELATIVE:
 			avg = &hts221_avg_list[HTS221_SENSOR_H];
 			idx = hw->sensors[HTS221_SENSOR_H].cur_avg_idx;
+<<<<<<< HEAD
 			*val = avg->avg_avl[idx].avg;
+=======
+			*val = avg->avg_avl[idx];
+>>>>>>> temp
 			ret = IIO_VAL_INT;
 			break;
 		case IIO_TEMP:
 			avg = &hts221_avg_list[HTS221_SENSOR_T];
 			idx = hw->sensors[HTS221_SENSOR_T].cur_avg_idx;
+<<<<<<< HEAD
 			*val = avg->avg_avl[idx].avg;
+=======
+			*val = avg->avg_avl[idx];
+>>>>>>> temp
 			ret = IIO_VAL_INT;
 			break;
 		default:
@@ -540,7 +655,11 @@ static int hts221_read_raw(struct iio_dev *iio_dev,
 		break;
 	}
 
+<<<<<<< HEAD
 	mutex_unlock(&iio_dev->mlock);
+=======
+	iio_device_release_direct_mode(iio_dev);
+>>>>>>> temp
 
 	return ret;
 }
@@ -552,11 +671,17 @@ static int hts221_write_raw(struct iio_dev *iio_dev,
 	struct hts221_hw *hw = iio_priv(iio_dev);
 	int ret;
 
+<<<<<<< HEAD
 	mutex_lock(&iio_dev->mlock);
 	if (iio_buffer_enabled(iio_dev)) {
 		mutex_unlock(&iio_dev->mlock);
 		return -EBUSY;
 	}
+=======
+	ret = iio_device_claim_direct_mode(iio_dev);
+	if (ret)
+		return ret;
+>>>>>>> temp
 
 	switch (mask) {
 	case IIO_CHAN_INFO_SAMP_FREQ:
@@ -580,7 +705,11 @@ static int hts221_write_raw(struct iio_dev *iio_dev,
 		break;
 	}
 
+<<<<<<< HEAD
 	mutex_unlock(&iio_dev->mlock);
+=======
+	iio_device_release_direct_mode(iio_dev);
+>>>>>>> temp
 
 	return ret;
 }
@@ -611,7 +740,10 @@ static const struct attribute_group hts221_attribute_group = {
 };
 
 static const struct iio_info hts221_info = {
+<<<<<<< HEAD
 	.driver_module = THIS_MODULE,
+=======
+>>>>>>> temp
 	.attrs = &hts221_attribute_group,
 	.read_raw = hts221_read_raw,
 	.write_raw = hts221_write_raw,
@@ -632,8 +764,11 @@ int hts221_probe(struct iio_dev *iio_dev)
 	if (err < 0)
 		return err;
 
+<<<<<<< HEAD
 	hw->odr = hts221_odr_table[0].hz;
 
+=======
+>>>>>>> temp
 	iio_dev->modes = INDIO_DIRECT_MODE;
 	iio_dev->dev.parent = hw->dev;
 	iio_dev->available_scan_masks = hts221_scan_masks;
@@ -642,6 +777,19 @@ int hts221_probe(struct iio_dev *iio_dev)
 	iio_dev->name = HTS221_DEV_NAME;
 	iio_dev->info = &hts221_info;
 
+<<<<<<< HEAD
+=======
+	/* enable Block Data Update */
+	err = hts221_write_with_mask(hw, HTS221_REG_CNTRL1_ADDR,
+				     HTS221_BDU_MASK, 1);
+	if (err < 0)
+		return err;
+
+	err = hts221_update_odr(hw, hts221_odr_table[0].hz);
+	if (err < 0)
+		return err;
+
+>>>>>>> temp
 	/* configure humidity sensor */
 	err = hts221_parse_rh_caldata(hw);
 	if (err < 0) {
@@ -649,7 +797,11 @@ int hts221_probe(struct iio_dev *iio_dev)
 		return err;
 	}
 
+<<<<<<< HEAD
 	data = hts221_avg_list[HTS221_SENSOR_H].avg_avl[3].avg;
+=======
+	data = hts221_avg_list[HTS221_SENSOR_H].avg_avl[3];
+>>>>>>> temp
 	err = hts221_update_avg(hw, HTS221_SENSOR_H, data);
 	if (err < 0) {
 		dev_err(hw->dev, "failed to set rh oversampling ratio\n");
@@ -664,7 +816,11 @@ int hts221_probe(struct iio_dev *iio_dev)
 		return err;
 	}
 
+<<<<<<< HEAD
 	data = hts221_avg_list[HTS221_SENSOR_T].avg_avl[3].avg;
+=======
+	data = hts221_avg_list[HTS221_SENSOR_T].avg_avl[3];
+>>>>>>> temp
 	err = hts221_update_avg(hw, HTS221_SENSOR_T, data);
 	if (err < 0) {
 		dev_err(hw->dev,
@@ -686,6 +842,39 @@ int hts221_probe(struct iio_dev *iio_dev)
 }
 EXPORT_SYMBOL(hts221_probe);
 
+<<<<<<< HEAD
+=======
+static int __maybe_unused hts221_suspend(struct device *dev)
+{
+	struct iio_dev *iio_dev = dev_get_drvdata(dev);
+	struct hts221_hw *hw = iio_priv(iio_dev);
+	int err;
+
+	err = hts221_write_with_mask(hw, HTS221_REG_CNTRL1_ADDR,
+				     HTS221_ENABLE_MASK, false);
+
+	return err < 0 ? err : 0;
+}
+
+static int __maybe_unused hts221_resume(struct device *dev)
+{
+	struct iio_dev *iio_dev = dev_get_drvdata(dev);
+	struct hts221_hw *hw = iio_priv(iio_dev);
+	int err = 0;
+
+	if (hw->enabled)
+		err = hts221_write_with_mask(hw, HTS221_REG_CNTRL1_ADDR,
+					     HTS221_ENABLE_MASK, true);
+
+	return err;
+}
+
+const struct dev_pm_ops hts221_pm_ops = {
+	SET_SYSTEM_SLEEP_PM_OPS(hts221_suspend, hts221_resume)
+};
+EXPORT_SYMBOL(hts221_pm_ops);
+
+>>>>>>> temp
 MODULE_AUTHOR("Lorenzo Bianconi <lorenzo.bianconi@st.com>");
 MODULE_DESCRIPTION("STMicroelectronics hts221 sensor driver");
 MODULE_LICENSE("GPL v2");

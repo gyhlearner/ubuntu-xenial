@@ -51,6 +51,7 @@
 #define elf_prstatus	compat_elf_prstatus
 #define elf_prpsinfo	compat_elf_prpsinfo
 
+<<<<<<< HEAD
 #ifdef CONFIG_ELF_CORE
 /*
  * Compat version of cputime_to_compat_timeval, perhaps this
@@ -69,6 +70,10 @@ static void cputime_to_compat_timeval(const cputime_t cputime,
 #undef cputime_to_timeval
 #define cputime_to_timeval cputime_to_compat_timeval
 
+=======
+#undef ns_to_timeval
+#define ns_to_timeval ns_to_compat_timeval
+>>>>>>> temp
 
 /*
  * To use this file, asm/elf.h must define compat_elf_check_arch.

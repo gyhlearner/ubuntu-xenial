@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+/* SPDX-License-Identifier: GPL-2.0 */
+>>>>>>> temp
 
 #ifndef _DT_BINDINGS_ADI_AD5592R_H
 #define _DT_BINDINGS_ADI_AD5592R_H

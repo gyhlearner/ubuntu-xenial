@@ -1,10 +1,18 @@
+<<<<<<< HEAD
 Source: linux
+=======
+Source: SRCPKGNAME
+>>>>>>> temp
 Section: devel
 Priority: optional
 Maintainer: Ubuntu Kernel Team <kernel-team@lists.ubuntu.com>
 Standards-Version: 3.9.4.0
 Build-Depends:
+<<<<<<< HEAD
  debhelper (>= 5),
+=======
+ debhelper (>= 9),
+>>>>>>> temp
  dh-systemd,
  cpio,
  kernel-wedge,
@@ -19,8 +27,12 @@ Build-Depends:
  pkg-config <!stage1>,
  flex <!stage1>,
  bison <!stage1>,
+<<<<<<< HEAD
  libunwind8-dev [amd64 arm64 armhf i386 powerpc ppc64el] <!stage1>,
  binutils-dev <!stage1>,
+=======
+ libunwind8-dev [amd64 arm64 armhf i386 ppc64el] <!stage1>,
+>>>>>>> temp
  liblzma-dev <!stage1>,
  openssl <!stage1>,
  libssl-dev <!stage1>,
@@ -28,18 +40,27 @@ Build-Depends:
  bc <!stage1>,
  python-dev <!stage1>,
  gawk <!stage1>,
+<<<<<<< HEAD
  device-tree-compiler [powerpc] <!stage1>,
  u-boot-tools [powerpc] <!stage1>,
  libc6-dev-ppc64 [powerpc] <!stage1>,
+=======
+>>>>>>> temp
  libudev-dev <!stage1>,
  autoconf <!stage1>,
  automake <!stage1>,
  libtool <!stage1>,
  uuid-dev <!stage1>,
+<<<<<<< HEAD
+=======
+ binutils-dev <!stage1>,
+ libnuma-dev [amd64 arm64 i386 ppc64el s390x] <!stage1>,
+>>>>>>> temp
 Build-Depends-Indep:
  xmlto <!stage1>,
  docbook-utils <!stage1>,
  ghostscript <!stage1>,
+<<<<<<< HEAD
  transfig <!stage1>,
  bzip2 <!stage1>,
  sharutils <!stage1>,
@@ -49,11 +70,28 @@ XS-Testsuite: autopkgtest
 #XS-Testsuite-Depends: gcc-4.7 binutils
 
 Package: SRCPKGNAME-source-PKGVER
+=======
+ fig2dev <!stage1>,
+ bzip2 <!stage1>,
+ sharutils <!stage1>,
+ asciidoc <!stage1>,
+ python-sphinx <!stage1>,
+ python-sphinx-rtd-theme <!stage1>,
+Vcs-Git: git://git.launchpad.net/~ubuntu-kernel/ubuntu/+source/linux/+git/bionic
+XS-Testsuite: autopkgtest
+#XS-Testsuite-Depends: gcc-4.7 binutils
+
+Package: linux-source-PKGVER
+>>>>>>> temp
 Build-Profiles: <!stage1>
 Architecture: all
 Section: devel
 Priority: optional
+<<<<<<< HEAD
 Provides: SRCPKGNAME-source, SRCPKGNAME-source-3
+=======
+Provides: linux-source, linux-source-3
+>>>>>>> temp
 Depends: ${misc:Depends}, binutils, bzip2, coreutils
 Recommends: libc-dev, gcc, make
 Suggests: libncurses-dev | ncurses-dev, kernel-package, libqt3-dev
@@ -92,18 +130,29 @@ Multi-Arch: foreign
 Section: devel
 Priority: optional
 Depends: ${misc:Depends}, coreutils
+<<<<<<< HEAD
 Breaks: iscsitarget-dkms (<< 1.4.20.3+svn502-2ubuntu4.3)
+=======
+>>>>>>> temp
 Description: Header files related to Linux kernel version PKGVER
  This package provides kernel header files for version PKGVER, for sites
  that want the latest kernel headers. Please read
  /usr/share/doc/SRCPKGNAME-headers-PKGVER-ABINUM/debian.README.gz for details
 
 Package: SRCPKGNAME-libc-dev
+<<<<<<< HEAD
 Architecture: i386 amd64 armhf arm64 x32 powerpc ppc64el s390x
 Depends: ${misc:Depends}
 Conflicts: SRCPKGNAME-kernel-headers
 Replaces: SRCPKGNAME-kernel-headers
 Provides: SRCPKGNAME-kernel-headers
+=======
+Architecture: i386 amd64 armhf arm64 x32 ppc64el s390x
+Depends: ${misc:Depends}
+Conflicts: SRCPKGNAME-kernel-headers
+Replaces: SRCPKGNAME-kernel-headers
+Provides: SRCPKGNAME-kernel-headers, aufs-dev
+>>>>>>> temp
 Multi-Arch: same
 Description: Linux Kernel Headers for development
  This package provides headers from the Linux kernel.  These headers
@@ -117,6 +166,7 @@ Architecture: all
 Multi-Arch: foreign
 Section: kernel
 Priority: optional
+<<<<<<< HEAD
 Provides:
  linux-aws-tools-common,
  linux-gke-tools-common,
@@ -126,6 +176,8 @@ Conflicts:
 Replaces:
  linux-aws-tools-common,
  linux-gke-tools-common,
+=======
+>>>>>>> temp
 Depends: ${misc:Depends}, lsb-release
 Description: Linux kernel version specific tools for version PKGVER
  This package provides the architecture independent parts for kernel
@@ -134,10 +186,17 @@ Description: Linux kernel version specific tools for version PKGVER
 
 Package: SRCPKGNAME-tools-PKGVER-ABINUM
 Build-Profiles: <!stage1>
+<<<<<<< HEAD
 Architecture: i386 amd64 armhf arm64 powerpc ppc64el s390x
 Section: devel
 Priority: optional
 Depends: ${misc:Depends}, ${shlibs:Depends}, SRCPKGNAME-tools-common
+=======
+Architecture: i386 amd64 armhf arm64 ppc64el s390x
+Section: devel
+Priority: optional
+Depends: ${misc:Depends}, ${shlibs:Depends}, linux-tools-common
+>>>>>>> temp
 Description: Linux kernel version specific tools for version PKGVER-ABINUM
  This package provides the architecture dependant parts for kernel
  version locked tools (such as perf and x86_energy_perf_policy) for
@@ -151,6 +210,7 @@ Architecture: all
 Multi-Arch: foreign
 Section: kernel
 Priority: optional
+<<<<<<< HEAD
 Provides:
  linux-aws-cloud-tools-common,
  linux-gke-cloud-tools-common,
@@ -160,6 +220,8 @@ Conflicts:
 Replaces:
  linux-aws-cloud-tools-common,
  linux-gke-cloud-tools-common,
+=======
+>>>>>>> temp
 Depends: ${misc:Depends}
 Description: Linux kernel version specific cloud tools for version PKGVER
  This package provides the architecture independent parts for kernel
@@ -170,10 +232,27 @@ Build-Profiles: <!stage1>
 Architecture: i386 amd64 armhf
 Section: devel
 Priority: optional
+<<<<<<< HEAD
 Depends: ${misc:Depends}, ${shlibs:Depends}, SRCPKGNAME-cloud-tools-common
+=======
+Depends: ${misc:Depends}, ${shlibs:Depends}, linux-cloud-tools-common
+>>>>>>> temp
 Description: Linux kernel version specific cloud tools for version PKGVER-ABINUM
  This package provides the architecture dependant parts for kernel
  version locked tools for cloud tools for version PKGVER-ABINUM on
  =HUMAN=.
  You probably want to install linux-cloud-tools-PKGVER-ABINUM-<flavour>.
 
+<<<<<<< HEAD
+=======
+Package: SRCPKGNAME-tools-host
+Build-Profiles: <!stage1>
+Architecture: all
+Multi-Arch: foreign
+Section: kernel
+Priority: optional
+Depends: ${misc:Depends}, python3
+Description: Linux kernel VM host tools
+ This package provides kernel tools useful for VM hosts.
+
+>>>>>>> temp

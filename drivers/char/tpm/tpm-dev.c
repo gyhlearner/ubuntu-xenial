@@ -18,6 +18,7 @@
  *
  */
 #include <linux/slab.h>
+<<<<<<< HEAD
 #include <linux/uaccess.h>
 #include "tpm.h"
 
@@ -50,12 +51,16 @@ static void timeout_work(struct work_struct *work)
 	memset(priv->data_buffer, 0, sizeof(priv->data_buffer));
 	mutex_unlock(&priv->buffer_mutex);
 }
+=======
+#include "tpm-dev.h"
+>>>>>>> temp
 
 static int tpm_open(struct inode *inode, struct file *file)
 {
-	struct tpm_chip *chip =
-		container_of(inode->i_cdev, struct tpm_chip, cdev);
+	struct tpm_chip *chip;
 	struct file_priv *priv;
+
+	chip = container_of(inode->i_cdev, struct tpm_chip, cdev);
 
 	/* It's assured that the chip will be opened just once,
 	 * by the check of is_open variable, which is protected
@@ -66,11 +71,10 @@ static int tpm_open(struct inode *inode, struct file *file)
 	}
 
 	priv = kzalloc(sizeof(*priv), GFP_KERNEL);
-	if (priv == NULL) {
-		clear_bit(0, &chip->is_open);
-		return -ENOMEM;
-	}
+	if (priv == NULL)
+		goto out;
 
+<<<<<<< HEAD
 	priv->chip = chip;
 	mutex_init(&priv->buffer_mutex);
 	setup_timer(&priv->user_read_timer, user_reader_timeout,
@@ -104,11 +108,21 @@ static ssize_t tpm_read(struct file *file, char __user *buf,
 
 	mutex_unlock(&priv->buffer_mutex);
 	return ret_size;
+=======
+	tpm_common_open(file, chip, priv);
+
+	return 0;
+
+ out:
+	clear_bit(0, &chip->is_open);
+	return -ENOMEM;
+>>>>>>> temp
 }
 
 static ssize_t tpm_write(struct file *file, const char __user *buf,
 			 size_t size, loff_t *off)
 {
+<<<<<<< HEAD
 	struct file_priv *priv = file->private_data;
 	size_t in_size = size;
 	ssize_t out_size;
@@ -157,6 +171,9 @@ static ssize_t tpm_write(struct file *file, const char __user *buf,
 	mod_timer(&priv->user_read_timer, jiffies + (60 * HZ));
 
 	return in_size;
+=======
+	return tpm_common_write(file, buf, size, off, NULL);
+>>>>>>> temp
 }
 
 /*
@@ -166,12 +183,17 @@ static int tpm_release(struct inode *inode, struct file *file)
 {
 	struct file_priv *priv = file->private_data;
 
+<<<<<<< HEAD
 	del_singleshot_timer_sync(&priv->user_read_timer);
 	flush_work(&priv->work);
 	file->private_data = NULL;
 	priv->data_pending = 0;
+=======
+	tpm_common_release(file, priv);
+>>>>>>> temp
 	clear_bit(0, &priv->chip->is_open);
 	kfree(priv);
+
 	return 0;
 }
 
@@ -179,9 +201,7 @@ const struct file_operations tpm_fops = {
 	.owner = THIS_MODULE,
 	.llseek = no_llseek,
 	.open = tpm_open,
-	.read = tpm_read,
+	.read = tpm_common_read,
 	.write = tpm_write,
 	.release = tpm_release,
 };
-
-

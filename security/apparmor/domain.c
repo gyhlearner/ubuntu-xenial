@@ -29,6 +29,7 @@
 #include "include/match.h"
 #include "include/path.h"
 #include "include/policy.h"
+#include "include/policy_ns.h"
 
 /**
  * aa_free_domain_entries - free entries in a domain table
@@ -96,11 +97,14 @@ out:
  * If a subns profile is not to be matched should be prescreened with
  * visibility test.
  */
+<<<<<<< HEAD
 /* match a profile and its associated ns component if needed
  * Assumes visibility test has already been done.
  * If a subns profile is not to be matched should be prescreened with
  * visibility test.
  */
+=======
+>>>>>>> temp
 static inline unsigned int match_component(struct aa_profile *profile,
 					   struct aa_profile *tp,
 					   bool stack, unsigned int state)
@@ -121,7 +125,11 @@ static inline unsigned int match_component(struct aa_profile *profile,
 }
 
 /**
+<<<<<<< HEAD
  * label_component_match - find perms for full compound label
+=======
+ * label_compound_match - find perms for full compound label
+>>>>>>> temp
  * @profile: profile to find perms for
  * @label: label to check access permissions for
  * @stack: whether this is a stacking request
@@ -181,7 +189,11 @@ fail:
 }
 
 /**
+<<<<<<< HEAD
  * label_component_match - find perms for all subcomponents of a label
+=======
+ * label_components_match - find perms for all subcomponents of a label
+>>>>>>> temp
  * @profile: profile to find perms for
  * @label: label to check access permissions for
  * @stack: whether this is a stacking request
@@ -246,7 +258,11 @@ fail:
 }
 
 /**
+<<<<<<< HEAD
  * aa_label_match - do a multi-component label match
+=======
+ * label_match - do a multi-component label match
+>>>>>>> temp
  * @profile: profile to match against (NOT NULL)
  * @label: label to match (NOT NULL)
  * @stack: whether this is a stacking request
@@ -309,6 +325,7 @@ static int change_profile_perms(struct aa_profile *profile,
  * __attach_match_ - find an attachment match
  * @name - to match against  (NOT NULL)
  * @head - profile list to walk  (NOT NULL)
+ * @info - info message if there was an error (NOT NULL)
  *
  * Do a linear search on the profiles in the list.  There is a matching
  * preference where an exact match is preferred over a name which uses
@@ -320,26 +337,49 @@ static int change_profile_perms(struct aa_profile *profile,
  * Returns: profile or NULL if no match found
  */
 static struct aa_profile *__attach_match(const char *name,
-					 struct list_head *head)
+					 struct list_head *head,
+					 const char **info)
 {
 	int len = 0;
+	bool conflict = false;
 	struct aa_profile *profile, *candidate = NULL;
 
 	list_for_each_entry_rcu(profile, head, base.list) {
+<<<<<<< HEAD
 		if (profile->label.flags & FLAG_NULL)
+=======
+		if (profile->label.flags & FLAG_NULL &&
+		    &profile->label == ns_unconfined(profile->ns))
+>>>>>>> temp
 			continue;
-		if (profile->xmatch && profile->xmatch_len > len) {
-			unsigned int state = aa_dfa_match(profile->xmatch,
-							  DFA_START, name);
-			u32 perm = dfa_user_allow(profile->xmatch, state);
-			/* any accepting state means a valid match. */
-			if (perm & MAY_EXEC) {
-				candidate = profile;
-				len = profile->xmatch_len;
+
+		if (profile->xmatch) {
+			if (profile->xmatch_len >= len) {
+				unsigned int state;
+				u32 perm;
+
+				state = aa_dfa_match(profile->xmatch,
+						     DFA_START, name);
+				perm = dfa_user_allow(profile->xmatch, state);
+				/* any accepting state means a valid match. */
+				if (perm & MAY_EXEC) {
+					if (profile->xmatch_len == len) {
+						conflict = true;
+						continue;
+					}
+					candidate = profile;
+					len = profile->xmatch_len;
+					conflict = false;
+				}
 			}
 		} else if (!strcmp(profile->base.name, name))
 			/* exact non-re match, no more searching required */
 			return profile;
+	}
+
+	if (conflict) {
+		*info = "conflicting profile attachments";
+		return NULL;
 	}
 
 	return candidate;
@@ -350,16 +390,21 @@ static struct aa_profile *__attach_match(const char *name,
  * @ns: the current namespace  (NOT NULL)
  * @list: list to search  (NOT NULL)
  * @name: the executable name to match against  (NOT NULL)
+ * @info: info message if there was an error
  *
  * Returns: label or NULL if no match found
  */
 static struct aa_label *find_attach(struct aa_ns *ns, struct list_head *list,
+<<<<<<< HEAD
 				    const char *name)
+=======
+				    const char *name, const char **info)
+>>>>>>> temp
 {
 	struct aa_profile *profile;
 
 	rcu_read_lock();
-	profile = aa_get_profile(__attach_match(name, list));
+	profile = aa_get_profile(__attach_match(name, list, info));
 	rcu_read_unlock();
 
 	return profile ? &profile->label : NULL;
@@ -408,6 +453,10 @@ struct aa_label *x_table_lookup(struct aa_profile *profile, u32 xindex,
 	}
 
 	/* released by caller */
+<<<<<<< HEAD
+=======
+
+>>>>>>> temp
 	return label;
 }
 
@@ -451,11 +500,19 @@ static struct aa_label *x_to_label(struct aa_profile *profile,
 		if (xindex & AA_X_CHILD)
 			/* released by caller */
 			new = find_attach(ns, &profile->base.profiles,
+<<<<<<< HEAD
 						name);
 		else
 			/* released by caller */
 			new = find_attach(ns, &ns->base.profiles,
 						name);
+=======
+					  name, info);
+		else
+			/* released by caller */
+			new = find_attach(ns, &ns->base.profiles,
+					  name, info);
+>>>>>>> temp
 		*lookupname = name;
 		break;
 	}
@@ -477,6 +534,10 @@ static struct aa_label *x_to_label(struct aa_profile *profile,
 	if (new && stack) {
 		/* base the stack on post domain transition */
 		struct aa_label *base = new;
+<<<<<<< HEAD
+=======
+
+>>>>>>> temp
 		new = aa_label_parse(base, stack, GFP_ATOMIC, true, false);
 		if (IS_ERR(new))
 			new = NULL;
@@ -518,7 +579,11 @@ static struct aa_label *profile_transition(struct aa_profile *profile,
 
 	if (profile_unconfined(profile)) {
 		new = find_attach(profile->ns, &profile->ns->base.profiles,
+<<<<<<< HEAD
 				  name);
+=======
+				  name, &info);
+>>>>>>> temp
 		if (new) {
 			AA_DEBUG("unconfined attached to new label");
 			return new;
@@ -543,8 +608,26 @@ static struct aa_label *profile_transition(struct aa_profile *profile,
 		}
 	} else if (COMPLAIN_MODE(profile)) {
 		/* no exec permission - learning mode */
+<<<<<<< HEAD
 		struct aa_profile *new_profile = aa_null_profile(profile, false,
 							      name, GFP_ATOMIC);
+=======
+		struct aa_profile *new_profile = NULL;
+		char *n = kstrdup(name, GFP_ATOMIC);
+
+		if (n) {
+			/* name is ptr into buffer */
+			long pos = name - buffer;
+			/* break per cpu buffer hold */
+			put_buffers(buffer);
+			new_profile = aa_new_null_profile(profile, false, n,
+							  GFP_KERNEL);
+			get_buffers(buffer);
+			name = buffer + pos;
+			strcpy((char *)name, n);
+			kfree(n);
+		}
+>>>>>>> temp
 		if (!new_profile) {
 			error = -ENOMEM;
 			info = "could not create null profile";
@@ -573,18 +656,28 @@ static struct aa_label *profile_transition(struct aa_profile *profile,
 		error = -EPERM;
 		info = "no new privs";
 		nonewprivs = true;
+<<<<<<< HEAD
+=======
+		perms.allow &= ~MAY_EXEC;
+>>>>>>> temp
 		goto audit;
 	}
 
 	if (!(perms.xindex & AA_X_UNSAFE)) {
 		if (DEBUG_ON) {
+<<<<<<< HEAD
 			dbg_printk("apparmor: scrubbing environment variables "
 				   "for %s profile=", name);
+=======
+			dbg_printk("apparmor: scrubbing environment variables"
+				   " for %s profile=", name);
+>>>>>>> temp
 			aa_label_printk(new, GFP_ATOMIC);
 			dbg_printk("\n");
 		}
 		*secure_exec = true;
 	}
+<<<<<<< HEAD
 
 audit:
 	aa_audit_file(profile, &perms, OP_EXEC, MAY_EXEC, name, target, new,
@@ -785,12 +878,18 @@ int apparmor_bprm_set_creds(struct linux_binprm *bprm)
 	}
 
 	/* TODO: Add ns level no_new_privs subset test */
+=======
+>>>>>>> temp
 
-	if (bprm->unsafe & LSM_UNSAFE_SHARE) {
-		/* FIXME: currently don't mediate shared state */
-		;
+audit:
+	aa_audit_file(profile, &perms, OP_EXEC, MAY_EXEC, name, target, new,
+		      cond->uid, info, error);
+	if (!new || nonewprivs) {
+		aa_put_label(new);
+		return ERR_PTR(error);
 	}
 
+<<<<<<< HEAD
 	if (bprm->unsafe & (LSM_UNSAFE_PTRACE | LSM_UNSAFE_PTRACE_CAP)) {
 		/* TODO: test needs to be profile of label to new */
 		error = may_change_ptraced_domain(new, &info);
@@ -839,25 +938,176 @@ audit:
 				      error));
 	aa_put_label(new);
 	goto done;
+=======
+	return new;
+}
+
+static int profile_onexec(struct aa_profile *profile, struct aa_label *onexec,
+			  bool stack, const struct linux_binprm *bprm,
+			  char *buffer, struct path_cond *cond,
+			  bool *secure_exec)
+{
+	unsigned int state = profile->file.start;
+	struct aa_perms perms = {};
+	const char *xname = NULL, *info = "change_profile onexec";
+	int error = -EACCES;
+
+	AA_BUG(!profile);
+	AA_BUG(!onexec);
+	AA_BUG(!bprm);
+	AA_BUG(!buffer);
+
+	if (profile_unconfined(profile)) {
+		/* change_profile on exec already granted */
+		/*
+		 * NOTE: Domain transitions from unconfined are allowed
+		 * even when no_new_privs is set because this aways results
+		 * in a further reduction of permissions.
+		 */
+		return 0;
+	}
+
+	error = aa_path_name(&bprm->file->f_path, profile->path_flags, buffer,
+			     &xname, &info, profile->disconnected);
+	if (error) {
+		if (profile_unconfined(profile) ||
+		    (profile->label.flags & FLAG_IX_ON_NAME_ERROR)) {
+			AA_DEBUG("name lookup ix on error");
+			error = 0;
+		}
+		xname = bprm->filename;
+		goto audit;
+	}
+
+	/* find exec permissions for name */
+	state = aa_str_perms(profile->file.dfa, state, xname, cond, &perms);
+	if (!(perms.allow & AA_MAY_ONEXEC)) {
+		info = "no change_onexec valid for executable";
+		goto audit;
+	}
+	/* test if this exec can be paired with change_profile onexec.
+	 * onexec permission is linked to exec with a standard pairing
+	 * exec\0change_profile
+	 */
+	state = aa_dfa_null_transition(profile->file.dfa, state);
+	error = change_profile_perms(profile, onexec, stack, AA_MAY_ONEXEC,
+				     state, &perms);
+	if (error) {
+		perms.allow &= ~AA_MAY_ONEXEC;
+		goto audit;
+	}
+	/* Policy has specified a domain transitions. if no_new_privs and
+	 * confined and not transitioning to the current domain fail.
+	 *
+	 * NOTE: Domain transitions from unconfined and to stritly stacked
+	 * subsets are allowed even when no_new_privs is set because this
+	 * aways results in a further reduction of permissions.
+	 */
+	if ((bprm->unsafe & LSM_UNSAFE_NO_NEW_PRIVS) &&
+	    !profile_unconfined(profile) &&
+	    !aa_label_is_subset(onexec, &profile->label)) {
+		error = -EPERM;
+		info = "no new privs";
+		perms.allow &= ~AA_MAY_ONEXEC;
+		goto audit;
+	}
+
+	if (!(perms.xindex & AA_X_UNSAFE)) {
+		if (DEBUG_ON) {
+			dbg_printk("apparmor: scrubbing environment "
+				   "variables for %s label=", xname);
+			aa_label_printk(onexec, GFP_ATOMIC);
+			dbg_printk("\n");
+		}
+		*secure_exec = true;
+	}
+
+audit:
+	return aa_audit_file(profile, &perms, OP_EXEC, AA_MAY_ONEXEC, xname,
+			     NULL, onexec, cond->uid, info, error);
+}
+
+/* ensure none ns domain transitions are correctly applied with onexec */
+
+static struct aa_label *handle_onexec(struct aa_label *label,
+				      struct aa_label *onexec, bool stack,
+				      const struct linux_binprm *bprm,
+				      char *buffer, struct path_cond *cond,
+				      bool *unsafe)
+{
+	struct aa_profile *profile;
+	struct aa_label *new;
+	int error;
+
+	AA_BUG(!label);
+	AA_BUG(!onexec);
+	AA_BUG(!bprm);
+	AA_BUG(!buffer);
+
+	if (!stack) {
+		error = fn_for_each_in_ns(label, profile,
+				profile_onexec(profile, onexec, stack,
+					       bprm, buffer, cond, unsafe));
+		if (error)
+			return ERR_PTR(error);
+		new = fn_label_build_in_ns(label, profile, GFP_ATOMIC,
+				aa_get_newest_label(onexec),
+				profile_transition(profile, bprm, buffer,
+						   cond, unsafe));
+
+	} else {
+		/* TODO: determine how much we want to losen this */
+		error = fn_for_each_in_ns(label, profile,
+				profile_onexec(profile, onexec, stack, bprm,
+					       buffer, cond, unsafe));
+		if (error)
+			return ERR_PTR(error);
+		new = fn_label_build_in_ns(label, profile, GFP_ATOMIC,
+				aa_label_merge(&profile->label, onexec,
+					       GFP_ATOMIC),
+				profile_transition(profile, bprm, buffer,
+						   cond, unsafe));
+	}
+
+	if (new)
+		return new;
+
+	/* TODO: get rid of GLOBAL_ROOT_UID */
+	error = fn_for_each_in_ns(label, profile,
+			aa_audit_file(profile, &nullperms, OP_CHANGE_ONEXEC,
+				      AA_MAY_ONEXEC, bprm->filename, NULL,
+				      onexec, GLOBAL_ROOT_UID,
+				      "failed to build target label", -ENOMEM));
+	return ERR_PTR(error);
+>>>>>>> temp
 }
 
 /**
- * apparmor_bprm_secureexec - determine if secureexec is needed
- * @bprm: binprm for exec  (NOT NULL)
+ * apparmor_bprm_set_creds - set the new creds on the bprm struct
+ * @bprm: binprm for the exec  (NOT NULL)
  *
- * Returns: %1 if secureexec is needed else %0
+ * Returns: %0 or error on failure
+ *
+ * TODO: once the other paths are done see if we can't refactor into a fn
  */
-int apparmor_bprm_secureexec(struct linux_binprm *bprm)
+int apparmor_bprm_set_creds(struct linux_binprm *bprm)
 {
-	/* the decision to use secure exec is computed in set_creds
-	 * and stored in bprm->unsafe.
-	 */
-	if (bprm->unsafe & AA_SECURE_X_NEEDED)
-		return 1;
+	struct aa_task_ctx *ctx;
+	struct aa_label *label, *new = NULL;
+	struct aa_profile *profile;
+	char *buffer = NULL;
+	const char *info = NULL;
+	int error = 0;
+	bool unsafe = false;
+	struct path_cond cond = {
+		file_inode(bprm->file)->i_uid,
+		file_inode(bprm->file)->i_mode
+	};
 
-	return 0;
-}
+	if (bprm->called_set_creds)
+		return 0;
 
+<<<<<<< HEAD
 /*
  * Functions for self directed profile change
  */
@@ -873,6 +1123,89 @@ static struct aa_label *build_change_hat(struct aa_profile *profile,
 	struct aa_profile *root, *hat = NULL;
 	const char *info = NULL;
 	int error = 0;
+=======
+	ctx = cred_ctx(bprm->cred);
+	AA_BUG(!ctx);
+
+	label = aa_get_newest_label(ctx->label);
+
+	/* buffer freed below, name is pointer into buffer */
+	get_buffers(buffer);
+	/* Test for onexec first as onexec override other x transitions. */
+	if (ctx->onexec)
+		new = handle_onexec(label, ctx->onexec, ctx->token,
+				    bprm, buffer, &cond, &unsafe);
+	else
+		new = fn_label_build(label, profile, GFP_ATOMIC,
+				profile_transition(profile, bprm, buffer,
+						   &cond, &unsafe));
+
+	AA_BUG(!new);
+	if (IS_ERR(new)) {
+		error = PTR_ERR(new);
+		goto done;
+	} else if (!new) {
+		error = -ENOMEM;
+		goto done;
+	}
+
+	/* TODO: Add ns level no_new_privs subset test */
+
+	if (bprm->unsafe & LSM_UNSAFE_SHARE) {
+		/* FIXME: currently don't mediate shared state */
+		;
+	}
+
+	if (bprm->unsafe & (LSM_UNSAFE_PTRACE)) {
+		/* TODO: test needs to be profile of label to new */
+		error = may_change_ptraced_domain(new, &info);
+		if (error)
+			goto audit;
+	}
+
+	if (unsafe) {
+		if (DEBUG_ON) {
+			dbg_printk("scrubbing environment variables for %s "
+				   "label=", bprm->filename);
+			aa_label_printk(new, GFP_ATOMIC);
+			dbg_printk("\n");
+		}
+		bprm->secureexec = 1;
+	}
+
+	if (label->proxy != new->proxy) {
+		/* when transitioning clear unsafe personality bits */
+		if (DEBUG_ON) {
+			dbg_printk("apparmor: clearing unsafe personality "
+				   "bits. %s label=", bprm->filename);
+			aa_label_printk(new, GFP_ATOMIC);
+			dbg_printk("\n");
+		}
+		bprm->per_clear |= PER_CLEAR_ON_SETID;
+	}
+	aa_put_label(ctx->label);
+	/* transfer reference, released when ctx is freed */
+	ctx->label = new;
+
+done:
+	/* clear out temporary/transitional state from the context */
+	aa_clear_task_ctx_trans(ctx);
+
+	aa_put_label(label);
+	put_buffers(buffer);
+
+	return error;
+
+audit:
+	error = fn_for_each(label, profile,
+			aa_audit_file(profile, &nullperms, OP_EXEC, MAY_EXEC,
+				      bprm->filename, NULL, new,
+				      file_inode(bprm->file)->i_uid, info,
+				      error));
+	aa_put_label(new);
+	goto done;
+}
+>>>>>>> temp
 
 	if (sibling && PROFILE_IS_HAT(profile)) {
 		root = aa_get_profile_rcu(&profile->parent);
@@ -884,6 +1217,7 @@ static struct aa_label *build_change_hat(struct aa_profile *profile,
 		goto audit;
 	}
 
+<<<<<<< HEAD
 	hat = aa_find_child(root, name);
 	if (!hat) {
 		error = -ENOENT;
@@ -916,6 +1250,64 @@ audit:
 static struct aa_label *change_hat(struct aa_label *label, const char *hats[],
 				   int count, bool permtest)
 {
+=======
+
+/* helper fn for change_hat
+ *
+ * Returns: label for hat transition OR ERR_PTR.  Does NOT return NULL
+ */
+static struct aa_label *build_change_hat(struct aa_profile *profile,
+					 const char *name, bool sibling)
+{
+	struct aa_profile *root, *hat = NULL;
+	const char *info = NULL;
+	int error = 0;
+
+	if (sibling && PROFILE_IS_HAT(profile)) {
+		root = aa_get_profile_rcu(&profile->parent);
+	} else if (!sibling && !PROFILE_IS_HAT(profile)) {
+		root = aa_get_profile(profile);
+	} else {
+		info = "conflicting target types";
+		error = -EPERM;
+		goto audit;
+	}
+
+	hat = aa_find_child(root, name);
+	if (!hat) {
+		error = -ENOENT;
+		if (COMPLAIN_MODE(profile)) {
+			hat = aa_new_null_profile(profile, true, name,
+						  GFP_KERNEL);
+			if (!hat) {
+				info = "failed null profile create";
+				error = -ENOMEM;
+			}
+		}
+	}
+	aa_put_profile(root);
+
+audit:
+	aa_audit_file(profile, &nullperms, OP_CHANGE_HAT, AA_MAY_CHANGEHAT,
+		      name, hat ? hat->base.hname : NULL,
+		      hat ? &hat->label : NULL, GLOBAL_ROOT_UID, NULL,
+		      error);
+	if (!hat || (error && error != -ENOENT))
+		return ERR_PTR(error);
+	/* if hat && error - complain mode, already audited and we adjust for
+	 * complain mode allow by returning hat->label
+	 */
+	return &hat->label;
+}
+
+/* helper fn for changing into a hat
+ *
+ * Returns: label for hat transition or ERR_PTR. Does not return NULL
+ */
+static struct aa_label *change_hat(struct aa_label *label, const char *hats[],
+				   int count, int flags)
+{
+>>>>>>> temp
 	struct aa_profile *profile, *root, *hat = NULL;
 	struct aa_label *new;
 	struct label_it it;
@@ -959,7 +1351,12 @@ static struct aa_label *change_hat(struct aa_label *label, const char *hats[],
 		}
 		/* found a hat for all profiles in ns */
 		goto build;
+<<<<<<< HEAD
 	outer_continue: ;
+=======
+outer_continue:
+	;
+>>>>>>> temp
 	}
 	/* no hats that match, find appropriate error
 	 *
@@ -993,7 +1390,11 @@ fail:
 				      GLOBAL_ROOT_UID, info, error);
 		}
 	}
+<<<<<<< HEAD
 	return (ERR_PTR(error));
+=======
+	return ERR_PTR(error);
+>>>>>>> temp
 
 build:
 	new = fn_label_build_in_ns(label, profile, GFP_KERNEL,
@@ -1013,7 +1414,9 @@ build:
  * @hats: vector of hat names to try changing into (MAYBE NULL if @count == 0)
  * @count: number of hat names in @hats
  * @token: magic value to validate the hat change
- * @permtest: true if this is just a permission test
+ * @flags: flags affecting behavior of the change
+ *
+ * Returns %0 on success, error otherwise.
  *
  * Returns %0 on success, error otherwise.
  *
@@ -1025,7 +1428,7 @@ build:
  * change_hat only applies to profiles in the current ns, and each profile
  * in the ns must make the same transition otherwise change_hat will fail.
  */
-int aa_change_hat(const char *hats[], int count, u64 token, bool permtest)
+int aa_change_hat(const char *hats[], int count, u64 token, int flags)
 {
 	const struct cred *cred;
 	struct aa_task_ctx *ctx;
@@ -1042,7 +1445,11 @@ int aa_change_hat(const char *hats[], int count, u64 token, bool permtest)
 	 */
 	if (task_no_new_privs(current)) {
 		/* not an apparmor denial per se, so don't log it */
+<<<<<<< HEAD
 		AA_DEBUG("no_new_privs - chanage_hat denied");
+=======
+		AA_DEBUG("no_new_privs - change_hat denied");
+>>>>>>> temp
 		return -EPERM;
 	}
 
@@ -1059,7 +1466,11 @@ int aa_change_hat(const char *hats[], int count, u64 token, bool permtest)
 	}
 
 	if (count) {
+<<<<<<< HEAD
 		new = change_hat(label, hats, count, permtest);
+=======
+		new = change_hat(label, hats, count, flags);
+>>>>>>> temp
 		AA_BUG(!new);
 		if (IS_ERR(new)) {
 			error = PTR_ERR(new);
@@ -1072,7 +1483,11 @@ int aa_change_hat(const char *hats[], int count, u64 token, bool permtest)
 		if (error)
 			goto fail;
 
+<<<<<<< HEAD
 		if (permtest)
+=======
+		if (flags & AA_CHANGE_TEST)
+>>>>>>> temp
 			goto out;
 
 		target = new;
@@ -1080,7 +1495,11 @@ int aa_change_hat(const char *hats[], int count, u64 token, bool permtest)
 		if (error == -EACCES)
 			/* kill task in case of brute force attacks */
 			goto kill;
+<<<<<<< HEAD
 	} else if (previous && !permtest) {
+=======
+	} else if (previous && !(flags & AA_CHANGE_TEST)) {
+>>>>>>> temp
 		/* Return to saved label.  Kill task if restore fails
 		 * to avoid brute force attacks
 		 */
@@ -1091,7 +1510,11 @@ int aa_change_hat(const char *hats[], int count, u64 token, bool permtest)
 				goto kill;
 			goto fail;
 		}
+<<<<<<< HEAD
 	} /* else ignore permtest && restores when there is no saved profile */
+=======
+	} /* else ignore @flags && restores when there is no saved profile */
+>>>>>>> temp
 
 out:
 	aa_put_label(new);
@@ -1107,8 +1530,14 @@ kill:
 
 fail:
 	fn_for_each_in_ns(label, profile,
+<<<<<<< HEAD
 		aa_audit_file(profile, &perms, OP_CHANGE_HAT, AA_MAY_CHANGEHAT,
 			      NULL, NULL, target, GLOBAL_ROOT_UID, info, error));
+=======
+		aa_audit_file(profile, &perms, OP_CHANGE_HAT,
+			      AA_MAY_CHANGEHAT, NULL, NULL, target,
+			      GLOBAL_ROOT_UID, info, error));
+>>>>>>> temp
 
 	goto out;
 }
@@ -1152,8 +1581,13 @@ static int change_profile_perms_wrapper(const char *op, const char *name,
  * aa_change_profile - perform a one-way profile transition
  * @fqname: name of profile may include namespace (NOT NULL)
  * @onexec: whether this transition is to take place immediately or at exec
+<<<<<<< HEAD
  * @permtest: true if this is just a permission test
  * @stack: true if this call is to stack on top of current domain
+=======
+ * @flags: flags affecting change behavior
+ *
+>>>>>>> temp
  * Change to new profile @name.  Unlike with hats, there is no way
  * to change back.  If @name isn't specified the current profile name is
  * used.
@@ -1162,14 +1596,22 @@ static int change_profile_perms_wrapper(const char *op, const char *name,
  *
  * Returns %0 on success, error otherwise.
  */
+<<<<<<< HEAD
 int aa_change_profile(const char *fqname, bool onexec,
 		      bool permtest, bool stack)
+=======
+int aa_change_profile(const char *fqname, int flags)
+>>>>>>> temp
 {
 	struct aa_label *label, *new = NULL, *target = NULL;
 	struct aa_profile *profile;
 	struct aa_perms perms = {};
 	const char *info = NULL;
 	const char *auditname = fqname;		/* retain leading & if stack */
+<<<<<<< HEAD
+=======
+	bool stack = flags & AA_CHANGE_STACK;
+>>>>>>> temp
 	int error = 0;
 	char *op;
 	u32 request;
@@ -1179,7 +1621,7 @@ int aa_change_profile(const char *fqname, bool onexec,
 		return -EINVAL;
 	}
 
-	if (onexec) {
+	if (flags & AA_CHANGE_ONEXEC) {
 		request = AA_MAY_ONEXEC;
 		if (stack)
 			op = OP_STACK_ONEXEC;
@@ -1194,6 +1636,7 @@ int aa_change_profile(const char *fqname, bool onexec,
 	}
 
 	label = aa_get_current_label();
+<<<<<<< HEAD
 
 	if (*fqname == '&') {
 		stack = true;
@@ -1213,6 +1656,31 @@ int aa_change_profile(const char *fqname, bool onexec,
 			goto audit;
 		/* released below */
 		tprofile = aa_null_profile(labels_profile(label), false, fqname, GFP_KERNEL);
+=======
+
+	if (*fqname == '&') {
+		stack = true;
+		/* don't have label_parse() do stacking */
+		fqname++;
+	}
+	target = aa_label_parse(label, fqname, GFP_KERNEL, true, false);
+	if (IS_ERR(target)) {
+		struct aa_profile *tprofile;
+
+		info = "label not found";
+		error = PTR_ERR(target);
+		target = NULL;
+		/*
+		 * TODO: fixme using labels_profile is not right - do profile
+		 * per complain profile
+		 */
+		if ((flags & AA_CHANGE_TEST) ||
+		    !COMPLAIN_MODE(labels_profile(label)))
+			goto audit;
+		/* released below */
+		tprofile = aa_new_null_profile(labels_profile(label), false,
+					       fqname, GFP_KERNEL);
+>>>>>>> temp
 		if (!tprofile) {
 			info = "failed null profile create";
 			error = -ENOMEM;
@@ -1222,12 +1690,23 @@ int aa_change_profile(const char *fqname, bool onexec,
 		goto check;
 	}
 
+<<<<<<< HEAD
 	/* self directed transitions only apply to current policy ns */
 	/* TODO: currently requiring perms for stacking and straight change
 	 *       stacking doesn't strictly need this. Determine how much
 	 *       we want to loosen this restriction for stacking
 	 */
 	/* if (!stack) { */
+=======
+	/*
+	 * self directed transitions only apply to current policy ns
+	 * TODO: currently requiring perms for stacking and straight change
+	 *       stacking doesn't strictly need this. Determine how much
+	 *       we want to loosen this restriction for stacking
+	 *
+	 * if (!stack) {
+	 */
+>>>>>>> temp
 	error = fn_for_each_in_ns(label, profile,
 			change_profile_perms_wrapper(op, auditname,
 						     profile, target, stack,
@@ -1246,6 +1725,7 @@ check:
 		goto audit;
 
 	/* TODO: add permission check to allow this
+<<<<<<< HEAD
 	if (onexec && !current_is_single_threaded()) {
 		info = "not a single threaded task";
 		error = -EACCES;
@@ -1256,6 +1736,18 @@ check:
 		goto out;
 
 	if (!onexec) {
+=======
+	 * if ((flags & AA_CHANGE_ONEXEC) && !current_is_single_threaded()) {
+	 *      info = "not a single threaded task";
+	 *      error = -EACCES;
+	 *      goto audit;
+	 * }
+	 */
+	if (flags & AA_CHANGE_TEST)
+		goto out;
+
+	if (!(flags & AA_CHANGE_ONEXEC)) {
+>>>>>>> temp
 		/* only transition profiles in the current ns */
 		if (stack)
 			new = aa_label_merge(label, target, GFP_KERNEL);

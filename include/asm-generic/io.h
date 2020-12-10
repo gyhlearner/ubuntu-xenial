@@ -191,7 +191,7 @@ static inline void writeq(u64 value, volatile void __iomem *addr)
 #define readl_relaxed readl
 #endif
 
-#ifndef readq_relaxed
+#if defined(readq) && !defined(readq_relaxed)
 #define readq_relaxed readq
 #endif
 
@@ -207,7 +207,7 @@ static inline void writeq(u64 value, volatile void __iomem *addr)
 #define writel_relaxed writel
 #endif
 
-#ifndef writeq_relaxed
+#if defined(writeq) && !defined(writeq_relaxed)
 #define writeq_relaxed writeq
 #endif
 
@@ -350,6 +350,8 @@ static inline void writesq(volatile void __iomem *addr, const void *buffer,
 #ifndef IO_SPACE_LIMIT
 #define IO_SPACE_LIMIT 0xffff
 #endif
+
+#include <linux/logic_pio.h>
 
 /*
  * {in,out}{b,w,l}() access little endian I/O. {in,out}{b,w,l}_p() can be
@@ -585,6 +587,16 @@ static inline u32 ioread32(const volatile void __iomem *addr)
 }
 #endif
 
+#ifdef CONFIG_64BIT
+#ifndef ioread64
+#define ioread64 ioread64
+static inline u64 ioread64(const volatile void __iomem *addr)
+{
+	return readq(addr);
+}
+#endif
+#endif /* CONFIG_64BIT */
+
 #ifndef iowrite8
 #define iowrite8 iowrite8
 static inline void iowrite8(u8 value, volatile void __iomem *addr)
@@ -609,11 +621,21 @@ static inline void iowrite32(u32 value, volatile void __iomem *addr)
 }
 #endif
 
+#ifdef CONFIG_64BIT
+#ifndef iowrite64
+#define iowrite64 iowrite64
+static inline void iowrite64(u64 value, volatile void __iomem *addr)
+{
+	writeq(value, addr);
+}
+#endif
+#endif /* CONFIG_64BIT */
+
 #ifndef ioread16be
 #define ioread16be ioread16be
 static inline u16 ioread16be(const volatile void __iomem *addr)
 {
-	return __be16_to_cpu(__raw_readw(addr));
+	return swab16(readw(addr));
 }
 #endif
 
@@ -621,15 +643,25 @@ static inline u16 ioread16be(const volatile void __iomem *addr)
 #define ioread32be ioread32be
 static inline u32 ioread32be(const volatile void __iomem *addr)
 {
-	return __be32_to_cpu(__raw_readl(addr));
+	return swab32(readl(addr));
 }
 #endif
+
+#ifdef CONFIG_64BIT
+#ifndef ioread64be
+#define ioread64be ioread64be
+static inline u64 ioread64be(const volatile void __iomem *addr)
+{
+	return swab64(readq(addr));
+}
+#endif
+#endif /* CONFIG_64BIT */
 
 #ifndef iowrite16be
 #define iowrite16be iowrite16be
 static inline void iowrite16be(u16 value, void volatile __iomem *addr)
 {
-	__raw_writew(__cpu_to_be16(value), addr);
+	writew(swab16(value), addr);
 }
 #endif
 
@@ -637,9 +669,19 @@ static inline void iowrite16be(u16 value, void volatile __iomem *addr)
 #define iowrite32be iowrite32be
 static inline void iowrite32be(u32 value, volatile void __iomem *addr)
 {
-	__raw_writel(__cpu_to_be32(value), addr);
+	writel(swab32(value), addr);
 }
 #endif
+
+#ifdef CONFIG_64BIT
+#ifndef iowrite64be
+#define iowrite64be iowrite64be
+static inline void iowrite64be(u64 value, volatile void __iomem *addr)
+{
+	writeq(swab64(value), addr);
+}
+#endif
+#endif /* CONFIG_64BIT */
 
 #ifndef ioread8_rep
 #define ioread8_rep ioread8_rep
@@ -667,6 +709,17 @@ static inline void ioread32_rep(const volatile void __iomem *addr,
 	readsl(addr, buffer, count);
 }
 #endif
+
+#ifdef CONFIG_64BIT
+#ifndef ioread64_rep
+#define ioread64_rep ioread64_rep
+static inline void ioread64_rep(const volatile void __iomem *addr,
+				void *buffer, unsigned int count)
+{
+	readsq(addr, buffer, count);
+}
+#endif
+#endif /* CONFIG_64BIT */
 
 #ifndef iowrite8_rep
 #define iowrite8_rep iowrite8_rep
@@ -697,6 +750,18 @@ static inline void iowrite32_rep(volatile void __iomem *addr,
 	writesl(addr, buffer, count);
 }
 #endif
+
+#ifdef CONFIG_64BIT
+#ifndef iowrite64_rep
+#define iowrite64_rep iowrite64_rep
+static inline void iowrite64_rep(volatile void __iomem *addr,
+				 const void *buffer,
+				 unsigned int count)
+{
+	writesq(addr, buffer, count);
+}
+#endif
+#endif /* CONFIG_64BIT */
 #endif /* CONFIG_GENERIC_IOMAP */
 
 #ifdef __KERNEL__
@@ -836,7 +901,7 @@ static inline void iounmap(void __iomem *addr)
 #define ioport_map ioport_map
 static inline void __iomem *ioport_map(unsigned long port, unsigned int nr)
 {
-	return PCI_IOBASE + (port & IO_SPACE_LIMIT);
+	return PCI_IOBASE + (port & MMIO_UPPER_LIMIT);
 }
 #endif
 
@@ -852,6 +917,9 @@ extern void ioport_unmap(void __iomem *p);
 #endif /* CONFIG_GENERIC_IOMAP */
 #endif /* CONFIG_HAS_IOPORT_MAP */
 
+/*
+ * Convert a virtual cached pointer to an uncached pointer
+ */
 #ifndef xlate_dev_kmem_ptr
 #define xlate_dev_kmem_ptr xlate_dev_kmem_ptr
 static inline void *xlate_dev_kmem_ptr(void *addr)
@@ -891,6 +959,14 @@ static inline void *bus_to_virt(unsigned long address)
 
 #ifndef memset_io
 #define memset_io memset_io
+/**
+ * memset_io	Set a range of I/O memory to a constant value
+ * @addr:	The beginning of the I/O-memory range to set
+ * @val:	The value to set the memory to
+ * @count:	The number of bytes to set
+ *
+ * Set a range of I/O memory to a given value.
+ */
 static inline void memset_io(volatile void __iomem *addr, int value,
 			     size_t size)
 {
@@ -900,6 +976,14 @@ static inline void memset_io(volatile void __iomem *addr, int value,
 
 #ifndef memcpy_fromio
 #define memcpy_fromio memcpy_fromio
+/**
+ * memcpy_fromio	Copy a block of data from I/O memory
+ * @dst:		The (RAM) destination for the copy
+ * @src:		The (I/O memory) source for the data
+ * @count:		The number of bytes to copy
+ *
+ * Copy a block of data from I/O memory.
+ */
 static inline void memcpy_fromio(void *buffer,
 				 const volatile void __iomem *addr,
 				 size_t size)
@@ -910,6 +994,14 @@ static inline void memcpy_fromio(void *buffer,
 
 #ifndef memcpy_toio
 #define memcpy_toio memcpy_toio
+/**
+ * memcpy_toio		Copy a block of data into I/O memory
+ * @dst:		The (I/O memory) destination for the copy
+ * @src:		The (RAM) source for the data
+ * @count:		The number of bytes to copy
+ *
+ * Copy a block of data to I/O memory.
+ */
 static inline void memcpy_toio(volatile void __iomem *addr, const void *buffer,
 			       size_t size)
 {

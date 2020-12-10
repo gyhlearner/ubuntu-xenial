@@ -7,13 +7,22 @@
  */
 
 #include <linux/kernel.h>
+<<<<<<< HEAD
 #include <linux/module.h>
+=======
+#include <linux/init.h>
+>>>>>>> temp
 #include <linux/ioport.h>
 #include <linux/of_pci.h>
 #include <linux/of.h>
 #include <linux/pci-ecam.h>
 #include <linux/platform_device.h>
 
+<<<<<<< HEAD
+=======
+#if defined(CONFIG_PCI_HOST_THUNDER_ECAM) || (defined(CONFIG_ACPI) && defined(CONFIG_PCI_QUIRKS))
+
+>>>>>>> temp
 static void set_val(u32 v, int where, int size, u32 *val)
 {
 	int shift = (where & 3) * 8;
@@ -346,7 +355,11 @@ static int thunder_ecam_config_write(struct pci_bus *bus, unsigned int devfn,
 	return pci_generic_config_write(bus, devfn, where, size, val);
 }
 
+<<<<<<< HEAD
 static struct pci_ecam_ops pci_thunder_ecam_ops = {
+=======
+struct pci_ecam_ops pci_thunder_ecam_ops = {
+>>>>>>> temp
 	.bus_shift	= 20,
 	.pci_ops	= {
 		.map_bus        = pci_ecam_map_bus,
@@ -355,11 +368,19 @@ static struct pci_ecam_ops pci_thunder_ecam_ops = {
 	}
 };
 
+<<<<<<< HEAD
+=======
+#ifdef CONFIG_PCI_HOST_THUNDER_ECAM
+
+>>>>>>> temp
 static const struct of_device_id thunder_ecam_of_match[] = {
 	{ .compatible = "cavium,pci-host-thunder-ecam" },
 	{ },
 };
+<<<<<<< HEAD
 MODULE_DEVICE_TABLE(of, thunder_ecam_of_match);
+=======
+>>>>>>> temp
 
 static int thunder_ecam_probe(struct platform_device *pdev)
 {
@@ -370,6 +391,7 @@ static struct platform_driver thunder_ecam_driver = {
 	.driver = {
 		.name = KBUILD_MODNAME,
 		.of_match_table = thunder_ecam_of_match,
+<<<<<<< HEAD
 	},
 	.probe = thunder_ecam_probe,
 };
@@ -377,3 +399,13 @@ module_platform_driver(thunder_ecam_driver);
 
 MODULE_DESCRIPTION("Thunder ECAM PCI host driver");
 MODULE_LICENSE("GPL v2");
+=======
+		.suppress_bind_attrs = true,
+	},
+	.probe = thunder_ecam_probe,
+};
+builtin_platform_driver(thunder_ecam_driver);
+
+#endif
+#endif
+>>>>>>> temp

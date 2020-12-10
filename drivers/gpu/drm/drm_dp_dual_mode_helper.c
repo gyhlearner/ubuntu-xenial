@@ -111,7 +111,11 @@ ssize_t drm_dp_dual_mode_write(struct i2c_adapter *adapter,
 	void *data;
 	int ret;
 
+<<<<<<< HEAD
 	data = kmalloc(msg.len, GFP_TEMPORARY);
+=======
+	data = kmalloc(msg.len, GFP_KERNEL);
+>>>>>>> temp
 	if (!data)
 		return -ENOMEM;
 
@@ -142,14 +146,27 @@ static bool is_hdmi_adaptor(const char hdmi_id[DP_DUAL_MODE_HDMI_ID_LEN])
 		      sizeof(dp_dual_mode_hdmi_id)) == 0;
 }
 
+<<<<<<< HEAD
+=======
+static bool is_type1_adaptor(uint8_t adaptor_id)
+{
+	return adaptor_id == 0 || adaptor_id == 0xff;
+}
+
+>>>>>>> temp
 static bool is_type2_adaptor(uint8_t adaptor_id)
 {
 	return adaptor_id == (DP_DUAL_MODE_TYPE_TYPE2 |
 			      DP_DUAL_MODE_REV_TYPE2);
 }
 
+<<<<<<< HEAD
 bool is_lspcon_adaptor(const char hdmi_id[DP_DUAL_MODE_HDMI_ID_LEN],
 	const uint8_t adaptor_id)
+=======
+static bool is_lspcon_adaptor(const char hdmi_id[DP_DUAL_MODE_HDMI_ID_LEN],
+			      const uint8_t adaptor_id)
+>>>>>>> temp
 {
 	return is_hdmi_adaptor(hdmi_id) &&
 		(adaptor_id == (DP_DUAL_MODE_TYPE_TYPE2 |
@@ -193,6 +210,11 @@ enum drm_dp_dual_mode_type drm_dp_dual_mode_detect(struct i2c_adapter *adapter)
 	 */
 	ret = drm_dp_dual_mode_read(adapter, DP_DUAL_MODE_HDMI_ID,
 				    hdmi_id, sizeof(hdmi_id));
+<<<<<<< HEAD
+=======
+	DRM_DEBUG_KMS("DP dual mode HDMI ID: %*pE (err %zd)\n",
+		      ret ? 0 : (int)sizeof(hdmi_id), hdmi_id, ret);
+>>>>>>> temp
 	if (ret)
 		return DRM_DP_DUAL_MODE_UNKNOWN;
 
@@ -210,6 +232,11 @@ enum drm_dp_dual_mode_type drm_dp_dual_mode_detect(struct i2c_adapter *adapter)
 	 */
 	ret = drm_dp_dual_mode_read(adapter, DP_DUAL_MODE_ADAPTOR_ID,
 				    &adaptor_id, sizeof(adaptor_id));
+<<<<<<< HEAD
+=======
+	DRM_DEBUG_KMS("DP dual mode adaptor ID: %02x (err %zd)\n",
+		      adaptor_id, ret);
+>>>>>>> temp
 	if (ret == 0) {
 		if (is_lspcon_adaptor(hdmi_id, adaptor_id))
 			return DRM_DP_DUAL_MODE_LSPCON;
@@ -219,6 +246,18 @@ enum drm_dp_dual_mode_type drm_dp_dual_mode_detect(struct i2c_adapter *adapter)
 			else
 				return DRM_DP_DUAL_MODE_TYPE2_DVI;
 		}
+<<<<<<< HEAD
+=======
+		/*
+		 * If neither a proper type 1 ID nor a broken type 1 adaptor
+		 * as described above, assume type 1, but let the user know
+		 * that we may have misdetected the type.
+		 */
+		if (!is_type1_adaptor(adaptor_id) && adaptor_id != hdmi_id[0])
+			DRM_ERROR("Unexpected DP dual mode adaptor ID %02x\n",
+				  adaptor_id);
+
+>>>>>>> temp
 	}
 
 	if (is_hdmi_adaptor(hdmi_id))
@@ -332,10 +371,15 @@ int drm_dp_dual_mode_set_tmds_output(enum drm_dp_dual_mode_type type,
 {
 	uint8_t tmds_oen = enable ? 0 : DP_DUAL_MODE_TMDS_DISABLE;
 	ssize_t ret;
+<<<<<<< HEAD
+=======
+	int retry;
+>>>>>>> temp
 
 	if (type < DRM_DP_DUAL_MODE_TYPE2_DVI)
 		return 0;
 
+<<<<<<< HEAD
 	ret = drm_dp_dual_mode_write(adapter, DP_DUAL_MODE_TMDS_OEN,
 				     &tmds_oen, sizeof(tmds_oen));
 	if (ret) {
@@ -345,6 +389,41 @@ int drm_dp_dual_mode_set_tmds_output(enum drm_dp_dual_mode_type type,
 	}
 
 	return 0;
+=======
+	/*
+	 * LSPCON adapters in low-power state may ignore the first write, so
+	 * read back and verify the written value a few times.
+	 */
+	for (retry = 0; retry < 3; retry++) {
+		uint8_t tmp;
+
+		ret = drm_dp_dual_mode_write(adapter, DP_DUAL_MODE_TMDS_OEN,
+					     &tmds_oen, sizeof(tmds_oen));
+		if (ret) {
+			DRM_DEBUG_KMS("Failed to %s TMDS output buffers (%d attempts)\n",
+				      enable ? "enable" : "disable",
+				      retry + 1);
+			return ret;
+		}
+
+		ret = drm_dp_dual_mode_read(adapter, DP_DUAL_MODE_TMDS_OEN,
+					    &tmp, sizeof(tmp));
+		if (ret) {
+			DRM_DEBUG_KMS("I2C read failed during TMDS output buffer %s (%d attempts)\n",
+				      enable ? "enabling" : "disabling",
+				      retry + 1);
+			return ret;
+		}
+
+		if (tmp == tmds_oen)
+			return 0;
+	}
+
+	DRM_DEBUG_KMS("I2C write value mismatch during TMDS output buffer %s\n",
+		      enable ? "enabling" : "disabling");
+
+	return -EIO;
+>>>>>>> temp
 }
 EXPORT_SYMBOL(drm_dp_dual_mode_set_tmds_output);
 
@@ -368,6 +447,11 @@ const char *drm_dp_get_dual_mode_type_name(enum drm_dp_dual_mode_type type)
 		return "type 2 DVI";
 	case DRM_DP_DUAL_MODE_TYPE2_HDMI:
 		return "type 2 HDMI";
+<<<<<<< HEAD
+=======
+	case DRM_DP_DUAL_MODE_LSPCON:
+		return "lspcon";
+>>>>>>> temp
 	default:
 		WARN_ON(type != DRM_DP_DUAL_MODE_UNKNOWN);
 		return "unknown";
@@ -377,9 +461,15 @@ EXPORT_SYMBOL(drm_dp_get_dual_mode_type_name);
 
 /**
  * drm_lspcon_get_mode: Get LSPCON's current mode of operation by
+<<<<<<< HEAD
  * by reading offset (0x80, 0x41)
  * @i2c_adapter: I2C-over-aux adapter
  * @current_mode: out vaiable, current lspcon mode of operation
+=======
+ * reading offset (0x80, 0x41)
+ * @adapter: I2C-over-aux adapter
+ * @mode: current lspcon mode of operation output variable
+>>>>>>> temp
  *
  * Returns:
  * 0 on success, sets the current_mode value to appropriate mode
@@ -390,6 +480,10 @@ int drm_lspcon_get_mode(struct i2c_adapter *adapter,
 {
 	u8 data;
 	int ret = 0;
+<<<<<<< HEAD
+=======
+	int retry;
+>>>>>>> temp
 
 	if (!mode) {
 		DRM_ERROR("NULL input\n");
@@ -397,10 +491,26 @@ int drm_lspcon_get_mode(struct i2c_adapter *adapter,
 	}
 
 	/* Read Status: i2c over aux */
+<<<<<<< HEAD
 	ret = drm_dp_dual_mode_read(adapter, DP_DUAL_MODE_LSPCON_CURRENT_MODE,
 				    &data, sizeof(data));
 	if (ret < 0) {
 		DRM_ERROR("LSPCON read(0x80, 0x41) failed\n");
+=======
+	for (retry = 0; retry < 6; retry++) {
+		if (retry)
+			usleep_range(500, 1000);
+
+		ret = drm_dp_dual_mode_read(adapter,
+					    DP_DUAL_MODE_LSPCON_CURRENT_MODE,
+					    &data, sizeof(data));
+		if (!ret)
+			break;
+	}
+
+	if (ret < 0) {
+		DRM_DEBUG_KMS("LSPCON read(0x80, 0x41) failed\n");
+>>>>>>> temp
 		return -EFAULT;
 	}
 
@@ -413,10 +523,17 @@ int drm_lspcon_get_mode(struct i2c_adapter *adapter,
 EXPORT_SYMBOL(drm_lspcon_get_mode);
 
 /**
+<<<<<<< HEAD
  * drm_lspcon_change_mode: Change LSPCON's mode of operation by
  * by writing offset (0x80, 0x40)
  * @i2c_adapter: I2C-over-aux adapter
  * @reqd_mode: required mode of operation
+=======
+ * drm_lspcon_set_mode: Change LSPCON's mode of operation by
+ * writing offset (0x80, 0x40)
+ * @adapter: I2C-over-aux adapter
+ * @mode: required mode of operation
+>>>>>>> temp
  *
  * Returns:
  * 0 on success, -error on failure/timeout

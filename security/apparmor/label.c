@@ -3,7 +3,11 @@
  *
  * This file contains AppArmor label definitions
  *
+<<<<<<< HEAD
  * Copyright 2013 Canonical Ltd.
+=======
+ * Copyright 2017 Canonical Ltd.
+>>>>>>> temp
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -19,7 +23,11 @@
 #include "include/context.h"
 #include "include/label.h"
 #include "include/policy.h"
+<<<<<<< HEAD
 #include "include/sid.h"
+=======
+#include "include/secid.h"
+>>>>>>> temp
 
 
 /*
@@ -31,7 +39,11 @@
  *   code - will take a ref count on a label if it needs the label
  *          beyond what is possible with an rcu_read_lock.
  *   profiles - each profile is a label
+<<<<<<< HEAD
  *   sids - a pinned sid will keep a refcount of the label it is
+=======
+ *   secids - a pinned secid will keep a refcount of the label it is
+>>>>>>> temp
  *          referencing
  *   objects - inode, files, sockets, ...
  *
@@ -49,7 +61,11 @@ static void free_proxy(struct aa_proxy *proxy)
 		/* p->label will not updated any more as p is dead */
 		aa_put_label(rcu_dereference_protected(proxy->label, true));
 		memset(proxy, 0, sizeof(*proxy));
+<<<<<<< HEAD
 		proxy->label = (struct aa_label *) PROXY_POISON;
+=======
+		RCU_INIT_POINTER(proxy->label, (struct aa_label *)PROXY_POISON);
+>>>>>>> temp
 		kfree(proxy);
 	}
 }
@@ -57,6 +73,10 @@ static void free_proxy(struct aa_proxy *proxy)
 void aa_proxy_kref(struct kref *kref)
 {
 	struct aa_proxy *proxy = container_of(kref, struct aa_proxy, count);
+<<<<<<< HEAD
+=======
+
+>>>>>>> temp
 	free_proxy(proxy);
 }
 
@@ -79,7 +99,11 @@ void __aa_proxy_redirect(struct aa_label *orig, struct aa_label *new)
 
 	AA_BUG(!orig);
 	AA_BUG(!new);
+<<<<<<< HEAD
 	AA_BUG(!write_is_locked(&labels_set(orig)->lock));
+=======
+	lockdep_assert_held_exclusive(&labels_set(orig)->lock);
+>>>>>>> temp
 
 	tmp = rcu_dereference_protected(orig->proxy->label,
 					&labels_ns(orig)->lock);
@@ -91,6 +115,10 @@ void __aa_proxy_redirect(struct aa_label *orig, struct aa_label *new)
 static void __proxy_share(struct aa_label *old, struct aa_label *new)
 {
 	struct aa_proxy *proxy = new->proxy;
+<<<<<<< HEAD
+=======
+
+>>>>>>> temp
 	new->proxy = aa_get_proxy(old->proxy);
 	__aa_proxy_redirect(old, new);
 	aa_put_proxy(proxy);
@@ -177,6 +205,10 @@ static int vec_cmp(struct aa_profile **a, int an, struct aa_profile **b, int bn)
 
 	for (i = 0; i < an && i < bn; i++) {
 		int res = profile_cmp(a[i], b[i]);
+<<<<<<< HEAD
+=======
+
+>>>>>>> temp
 		if (res != 0)
 			return res;
 	}
@@ -217,10 +249,18 @@ static int sort_cmp(const void *a, const void *b)
 	return profile_cmp(*(struct aa_profile **)a, *(struct aa_profile **)b);
 }
 
+<<<<<<< HEAD
 /* assumes vec is sorted
  * Assumes @vec has null terminator at vec[n], and will null terminate
  * vec[n - dups]
 */
+=======
+/*
+ * assumes vec is sorted
+ * Assumes @vec has null terminator at vec[n], and will null terminate
+ * vec[n - dups]
+ */
+>>>>>>> temp
 static inline int unique(struct aa_profile **vec, int n)
 {
 	int i, pos, dups = 0;
@@ -231,6 +271,10 @@ static inline int unique(struct aa_profile **vec, int n)
 	pos = 0;
 	for (i = 1; i < n; i++) {
 		int res = profile_cmp(vec[pos], vec[i]);
+<<<<<<< HEAD
+=======
+
+>>>>>>> temp
 		AA_BUG(res > 0, "vec not sorted");
 		if (res == 0) {
 			/* drop duplicate */
@@ -249,7 +293,11 @@ static inline int unique(struct aa_profile **vec, int n)
 }
 
 /**
+<<<<<<< HEAD
  * vec_unique - canonical sort and unique a list of profiles
+=======
+ * aa_vec_unique - canonical sort and unique a list of profiles
+>>>>>>> temp
  * @n: number of refcounted profiles in the list (@n > 0)
  * @vec: list of profiles to sort and merge
  *
@@ -279,6 +327,10 @@ int aa_vec_unique(struct aa_profile **vec, int n, int flags)
 
 		for (pos = i - 1 - dups; pos >= 0; pos--) {
 			int res = profile_cmp(vec[pos], tmp);
+<<<<<<< HEAD
+=======
+
+>>>>>>> temp
 			if (res == 0) {
 				/* drop duplicate entry */
 				aa_put_profile(tmp);
@@ -293,7 +345,12 @@ int aa_vec_unique(struct aa_profile **vec, int n, int flags)
 		for (j = i - dups; j > pos; j--)
 			vec[j] = vec[j - 1];
 		vec[pos] = tmp;
+<<<<<<< HEAD
 	continue_outer: ;
+=======
+continue_outer:
+		;
+>>>>>>> temp
 	}
 
 	AA_BUG(dups < 0);
@@ -312,9 +369,12 @@ static void label_destroy(struct aa_label *label)
 
 	AA_BUG(!label);
 
+<<<<<<< HEAD
 	if (label_is_stale(label))
 		labelsetstats_dec(labels_set(label), stale);
 
+=======
+>>>>>>> temp
 	if (!label_isprofile(label)) {
 		struct aa_profile *profile;
 		struct label_it i;
@@ -323,14 +383,23 @@ static void label_destroy(struct aa_label *label)
 
 		label_for_each(i, label, profile) {
 			aa_put_profile(profile);
+<<<<<<< HEAD
 			label->vec[i.i] = (struct aa_profile *) (LABEL_POISON + (long) i.i);
+=======
+			label->vec[i.i] = (struct aa_profile *)
+					   (LABEL_POISON + (long) i.i);
+>>>>>>> temp
 		}
 	}
 
 	if (rcu_dereference_protected(label->proxy->label, true) == label)
 		rcu_assign_pointer(label->proxy->label, NULL);
 
+<<<<<<< HEAD
 	aa_free_sid(label->sid);
+=======
+	aa_free_secid(label->secid);
+>>>>>>> temp
 
 	tmp = rcu_dereference_protected(label->proxy->label, true);
 	if (tmp == label)
@@ -346,7 +415,10 @@ void aa_label_free(struct aa_label *label)
 		return;
 
 	label_destroy(label);
+<<<<<<< HEAD
 	labelstats_inc(freed);
+=======
+>>>>>>> temp
 	kfree(label);
 }
 
@@ -380,8 +452,15 @@ void aa_label_kref(struct kref *kref)
 		return;
 	}
 	/* TODO: update labels_profile macro so it works here */
+<<<<<<< HEAD
 	AA_BUG(label_isprofile(label) && on_list_rcu(&label->vec[0]->base.profiles));
 	AA_BUG(label_isprofile(label) && on_list_rcu(&label->vec[0]->base.list));
+=======
+	AA_BUG(label_isprofile(label) &&
+	       on_list_rcu(&label->vec[0]->base.profiles));
+	AA_BUG(label_isprofile(label) &&
+	       on_list_rcu(&label->vec[0]->base.list));
+>>>>>>> temp
 
 	/* TODO: if compound label and not stale add to reclaim cache */
 	call_rcu(&label->rcu, label_free_rcu);
@@ -401,8 +480,13 @@ bool aa_label_init(struct aa_label *label, int size)
 	AA_BUG(!label);
 	AA_BUG(size < 1);
 
+<<<<<<< HEAD
 	label->sid = aa_alloc_sid();
 	if (label->sid == AA_SID_INVALID)
+=======
+	label->secid = aa_alloc_secid();
+	if (label->secid == AA_SECID_INVALID)
+>>>>>>> temp
 		return false;
 
 	label->size = size;			/* doesn't include null */
@@ -447,13 +531,19 @@ struct aa_label *aa_label_alloc(int size, struct aa_proxy *proxy, gfp_t gfp)
 	/* just set new's proxy, don't redirect proxy here if it was passed in*/
 	new->proxy = proxy;
 
+<<<<<<< HEAD
 	labelstats_inc(allocated);
 
+=======
+>>>>>>> temp
 	return new;
 
 fail:
 	kfree(new);
+<<<<<<< HEAD
 	labelstats_inc(failed);
+=======
+>>>>>>> temp
 
 	return NULL;
 }
@@ -515,6 +605,10 @@ struct aa_profile *__aa_label_next_not_in_set(struct label_it *I,
 
 	while (I->j < sub->size && I->i < set->size) {
 		int res = profile_cmp(sub->vec[I->j], set->vec[I->i]);
+<<<<<<< HEAD
+=======
+
+>>>>>>> temp
 		if (res == 0) {
 			(I->j)++;
 			(I->i)++;
@@ -564,13 +658,21 @@ bool aa_label_is_subset(struct aa_label *set, struct aa_label *sub)
 static bool __label_remove(struct aa_label *label, struct aa_label *new)
 {
 	struct aa_labelset *ls = labels_set(label);
+<<<<<<< HEAD
 	AA_BUG(!ls);
 	AA_BUG(!label);
 	AA_BUG(!write_is_locked(&ls->lock));
+=======
+
+	AA_BUG(!ls);
+	AA_BUG(!label);
+	lockdep_assert_held_exclusive(&ls->lock);
+>>>>>>> temp
 
 	if (new)
 		__aa_proxy_redirect(label, new);
 
+<<<<<<< HEAD
 	if (label_is_stale(label))
 		labelstats_dec(stale_intree);
 	else
@@ -578,6 +680,12 @@ static bool __label_remove(struct aa_label *label, struct aa_label *new)
 
 	if (label->flags & FLAG_IN_TREE) {
 		labelsetstats_dec(ls, intree);
+=======
+	if (!label_is_stale(label))
+		__label_make_stale(label);
+
+	if (label->flags & FLAG_IN_TREE) {
+>>>>>>> temp
 		rb_erase(&label->node, &ls->root);
 		label->flags &= ~FLAG_IN_TREE;
 		return true;
@@ -602,6 +710,7 @@ static bool __label_remove(struct aa_label *label, struct aa_label *new)
 static bool __label_replace(struct aa_label *old, struct aa_label *new)
 {
 	struct aa_labelset *ls = labels_set(old);
+<<<<<<< HEAD
 	AA_BUG(!ls);
 	AA_BUG(!old);
 	AA_BUG(!new);
@@ -611,6 +720,16 @@ static bool __label_replace(struct aa_label *old, struct aa_label *new)
 	if (label_is_stale(old))
 		labelstats_dec(stale_intree);
 	else
+=======
+
+	AA_BUG(!ls);
+	AA_BUG(!old);
+	AA_BUG(!new);
+	lockdep_assert_held_exclusive(&ls->lock);
+	AA_BUG(new->flags & FLAG_IN_TREE);
+
+	if (!label_is_stale(old))
+>>>>>>> temp
 		__label_make_stale(old);
 
 	if (old->flags & FLAG_IN_TREE) {
@@ -634,7 +753,11 @@ static bool __label_replace(struct aa_label *old, struct aa_label *new)
  *           if @replace is true l has a preallocated proxy associated
  * Returns: @l if successful in inserting @l - with additional refcount
  *          else ref counted equivalent label that is already in the set,
+<<<<<<< HEAD
             the else condition only happens if @replace is false
+=======
+ *          the else condition only happens if @replace is false
+>>>>>>> temp
  */
 static struct aa_label *__label_insert(struct aa_labelset *ls,
 				       struct aa_label *label, bool replace)
@@ -644,7 +767,11 @@ static struct aa_label *__label_insert(struct aa_labelset *ls,
 	AA_BUG(!ls);
 	AA_BUG(!label);
 	AA_BUG(labels_set(label) != ls);
+<<<<<<< HEAD
 	AA_BUG(!write_is_locked(&ls->lock));
+=======
+	lockdep_assert_held_exclusive(&ls->lock);
+>>>>>>> temp
 	AA_BUG(label->flags & FLAG_IN_TREE);
 
 	/* Figure out where to put new node */
@@ -655,14 +782,22 @@ static struct aa_label *__label_insert(struct aa_labelset *ls,
 
 		parent = *new;
 		if (result == 0) {
+<<<<<<< HEAD
 			labelsetstats_inc(ls, existing);
 			/* !aa_get_label_not0 means queued for destruction,
+=======
+			/* !__aa_get_label means queued for destruction,
+>>>>>>> temp
 			 * so replace in place, however the label has
 			 * died before the replacement so do not share
 			 * the proxy
 			 */
 			if (!replace && !label_is_stale(this)) {
+<<<<<<< HEAD
 				if (aa_get_label_not0(this))
+=======
+				if (__aa_get_label(this))
+>>>>>>> temp
 					return this;
 			} else
 				__proxy_share(this, label);
@@ -678,8 +813,11 @@ static struct aa_label *__label_insert(struct aa_labelset *ls,
 	rb_link_node(&label->node, parent, new);
 	rb_insert_color(&label->node, &ls->root);
 	label->flags |= FLAG_IN_TREE;
+<<<<<<< HEAD
 	labelsetstats_inc(ls, insert);
 	labelsetstats_inc(ls, intree);
+=======
+>>>>>>> temp
 
 	return aa_get_label(label);
 }
@@ -714,7 +852,11 @@ static struct aa_label *__vec_find(struct aa_profile **vec, int n)
 		else if (result < 0)
 			node = node->rb_right;
 		else
+<<<<<<< HEAD
 			return aa_get_label_not0(this);
+=======
+			return __aa_get_label(this);
+>>>>>>> temp
 	}
 
 	return NULL;
@@ -776,15 +918,25 @@ bool aa_label_replace(struct aa_label *old, struct aa_label *new)
 
 	if (name_is_shared(old, new) && labels_ns(old) == labels_ns(new)) {
 		write_lock_irqsave(&labels_set(old)->lock, flags);
+<<<<<<< HEAD
 		if (old->proxy != new->proxy) {
 			__proxy_share(old, new);
 		} else
+=======
+		if (old->proxy != new->proxy)
+			__proxy_share(old, new);
+		else
+>>>>>>> temp
 			__aa_proxy_redirect(old, new);
 		res = __label_replace(old, new);
 		write_unlock_irqrestore(&labels_set(old)->lock, flags);
 	} else {
 		struct aa_label *l;
 		struct aa_labelset *ls = labels_set(old);
+<<<<<<< HEAD
+=======
+
+>>>>>>> temp
 		write_lock_irqsave(&ls->lock, flags);
 		res = __label_remove(old, new);
 		if (labels_ns(old) != labels_ns(new)) {
@@ -822,7 +974,10 @@ static struct aa_label *vec_find(struct aa_profile **vec, int n)
 	ls = vec_labelset(vec, n);
 	read_lock_irqsave(&ls->lock, flags);
 	label = __vec_find(vec, n);
+<<<<<<< HEAD
 	labelstats_inc(sread);
+=======
+>>>>>>> temp
 	read_unlock_irqrestore(&ls->lock, flags);
 
 	return label;
@@ -852,9 +1007,15 @@ static struct aa_label *vec_create_and_insert_label(struct aa_profile **vec,
 	if (!new)
 		return NULL;
 
+<<<<<<< HEAD
 	for (i = 0; i < len; i++) {
 		new->vec[i] = aa_get_profile(vec[i]);
 	}
+=======
+	for (i = 0; i < len; i++)
+		new->vec[i] = aa_get_profile(vec[i]);
+
+>>>>>>> temp
 	write_lock_irqsave(&ls->lock, flags);
 	label = __label_insert(ls, new, false);
 	write_unlock_irqrestore(&ls->lock, flags);
@@ -867,6 +1028,10 @@ struct aa_label *aa_vec_find_or_create_label(struct aa_profile **vec, int len,
 					     gfp_t gfp)
 {
 	struct aa_label *label = vec_find(vec, len);
+<<<<<<< HEAD
+=======
+
+>>>>>>> temp
 	if (label)
 		return label;
 
@@ -914,7 +1079,10 @@ struct aa_label *aa_label_insert(struct aa_labelset *ls, struct aa_label *label)
 		read_lock_irqsave(&ls->lock, flags);
 		l = __label_find(label);
 		read_unlock_irqrestore(&ls->lock, flags);
+<<<<<<< HEAD
 		labelstats_inc(fread);
+=======
+>>>>>>> temp
 		if (l)
 			return l;
 	}
@@ -951,6 +1119,10 @@ struct aa_profile *aa_label_next_in_merge(struct label_it *I,
 	if (I->i < a->size) {
 		if (I->j < b->size) {
 			int res = profile_cmp(a->vec[I->i], b->vec[I->j]);
+<<<<<<< HEAD
+=======
+
+>>>>>>> temp
 			if (res > 0)
 				return b->vec[(I->j)++];
 			if (res == 0)
@@ -979,7 +1151,11 @@ struct aa_profile *aa_label_next_in_merge(struct label_it *I,
  *          >0  if a > b
  */
 static int label_merge_cmp(struct aa_label *a, struct aa_label *b,
+<<<<<<< HEAD
                            struct aa_label *z)
+=======
+			   struct aa_label *z)
+>>>>>>> temp
 {
 	struct aa_profile *p = NULL;
 	struct label_it i = { };
@@ -1005,6 +1181,7 @@ static int label_merge_cmp(struct aa_label *a, struct aa_label *b,
 	return 0;
 }
 
+<<<<<<< HEAD
 #if 0
 /**
  * label_merge_len - find the length of the merge of @a and @b
@@ -1040,6 +1217,8 @@ static int label_merge_len(struct aa_label *a, struct aa_label *b)
 }
 #endif
 
+=======
+>>>>>>> temp
 /**
  * label_merge_insert - create a new label by merging @a and @b
  * @new: preallocated label to merge into (NOT NULL)
@@ -1102,8 +1281,15 @@ static struct aa_label *label_merge_insert(struct aa_label *new,
 			return label;
 		}
 	} else if (!stale) {
+<<<<<<< HEAD
 		/* merge could be same as a || b, note: it is not possible
 		 * for new->size == a->size == b->size unless a == b */
+=======
+		/*
+		 * merge could be same as a || b, note: it is not possible
+		 * for new->size == a->size == b->size unless a == b
+		 */
+>>>>>>> temp
 		if (k == a->size)
 			return aa_get_label(a);
 		else if (k == b->size)
@@ -1120,13 +1306,22 @@ static struct aa_label *label_merge_insert(struct aa_label *new,
 }
 
 /**
+<<<<<<< HEAD
  * labelset_of_merge - find into which labelset a merged label should be inserted
+=======
+ * labelset_of_merge - find which labelset a merged label should be inserted
+>>>>>>> temp
  * @a: label to merge and insert
  * @b: label to merge and insert
  *
  * Returns: labelset that the merged label should be inserted into
  */
+<<<<<<< HEAD
 static struct aa_labelset *labelset_of_merge(struct aa_label *a, struct aa_label *b)
+=======
+static struct aa_labelset *labelset_of_merge(struct aa_label *a,
+					     struct aa_label *b)
+>>>>>>> temp
 {
 	struct aa_ns *nsa = labels_ns(a);
 	struct aa_ns *nsb = labels_ns(b);
@@ -1171,7 +1366,11 @@ static struct aa_label *__label_find_merge(struct aa_labelset *ls,
 		else if (result > 0)
 			node = node->rb_right;
 		else
+<<<<<<< HEAD
 			return aa_get_label_not0(this);
+=======
+			return __aa_get_label(this);
+>>>>>>> temp
 	}
 
 	return NULL;
@@ -1207,7 +1406,10 @@ struct aa_label *aa_label_find_merge(struct aa_label *a, struct aa_label *b)
 	read_unlock_irqrestore(&ls->lock, flags);
 	aa_put_label(ar);
 	aa_put_label(br);
+<<<<<<< HEAD
 	labelsetstats_inc(ls, msread);
+=======
+>>>>>>> temp
 
 	return label;
 }
@@ -1258,7 +1460,11 @@ struct aa_label *aa_label_merge(struct aa_label *a, struct aa_label *b,
 
 		label = label_merge_insert(new, a, b);
 		label_free_or_put_new(label, new);
+<<<<<<< HEAD
 	out:
+=======
+out:
+>>>>>>> temp
 		aa_put_label(a);
 		aa_put_label(b);
 	}
@@ -1295,7 +1501,11 @@ static inline unsigned int match_component(struct aa_profile *profile,
 }
 
 /**
+<<<<<<< HEAD
  * label_component_match - find perms for full compound label
+=======
+ * label_compound_match - find perms for full compound label
+>>>>>>> temp
  * @profile: profile to find perms for
  * @label: label to check access permissions for
  * @start: state to start match in
@@ -1353,7 +1563,11 @@ fail:
 }
 
 /**
+<<<<<<< HEAD
  * label_component_match - find perms for all subcomponents of a label
+=======
+ * label_components_match - find perms for all subcomponents of a label
+>>>>>>> temp
  * @profile: profile to find perms for
  * @label: label to check access permissions for
  * @start: state to start match in
@@ -1480,11 +1694,23 @@ bool aa_update_label_name(struct aa_ns *ns, struct aa_label *label, gfp_t gfp)
 	return res;
 }
 
+<<<<<<< HEAD
 /* cached label name is present and visible
  * @label->hname only exists if label is namespace hierachical */
 static inline bool use_label_hname(struct aa_ns *ns, struct aa_label *label)
 {
 	if (label->hname && labels_ns(label) == ns)
+=======
+/*
+ * cached label name is present and visible
+ * @label->hname only exists if label is namespace hierachical
+ */
+static inline bool use_label_hname(struct aa_ns *ns, struct aa_label *label,
+				   int flags)
+{
+	if (label->hname && (!ns || labels_ns(label) == ns) &&
+	    !(flags & ~FLAG_SHOW_MODE))
+>>>>>>> temp
 		return true;
 
 	return false;
@@ -1501,31 +1727,61 @@ do {					\
 } while (0)
 
 /**
+<<<<<<< HEAD
  * aa_profile_snxprint_profile - print a profile name to a buffer
  * @str: buffer to write to. (MAY BE NULL if @size == 0)
  * @size: size of buffer
  * @ns: namespace profile is being viewed from
  * @profile: profile to view (NOT NULL)
  * @flags: whether to include the mode string
+=======
+ * aa_profile_snxprint - print a profile name to a buffer
+ * @str: buffer to write to. (MAY BE NULL if @size == 0)
+ * @size: size of buffer
+ * @view: namespace profile is being viewed from
+ * @profile: profile to view (NOT NULL)
+ * @flags: whether to include the mode string
+ * @prev_ns: last ns printed when used in compound print
+>>>>>>> temp
  *
  * Returns: size of name written or would be written if larger than
  *          available buffer
  *
  * Note: will not print anything if the profile is not visible
  */
+<<<<<<< HEAD
 int aa_profile_snxprint(char *str, size_t size, struct aa_ns *ns,
 			struct aa_profile *profile, int flags)
 {
 	const char *ns_name = "";
+=======
+static int aa_profile_snxprint(char *str, size_t size, struct aa_ns *view,
+			       struct aa_profile *profile, int flags,
+			       struct aa_ns **prev_ns)
+{
+	const char *ns_name = NULL;
+>>>>>>> temp
 
 	AA_BUG(!str && size != 0);
 	AA_BUG(!profile);
 
+<<<<<<< HEAD
 	if (!ns)
 		ns = profiles_ns(profile);
 
 	if (ns != profile->ns) {
 		ns_name = aa_ns_name(ns, profile->ns, flags & FLAG_VIEW_SUBNS);
+=======
+	if (!view)
+		view = profiles_ns(profile);
+
+	if (view != profile->ns &&
+	    (!prev_ns || (*prev_ns != profile->ns))) {
+		if (prev_ns)
+			*prev_ns = profile->ns;
+		ns_name = aa_ns_name(view, profile->ns,
+				     flags & FLAG_VIEW_SUBNS);
+>>>>>>> temp
 		if (ns_name == aa_hidden_ns_name) {
 			if (flags & FLAG_HIDDEN_UNCONFINED)
 				return snprintf(str, size, "%s", "unconfined");
@@ -1535,15 +1791,26 @@ int aa_profile_snxprint(char *str, size_t size, struct aa_ns *ns,
 
 	if ((flags & FLAG_SHOW_MODE) && profile != profile->ns->unconfined) {
 		const char *modestr = aa_profile_mode_names[profile->mode];
+<<<<<<< HEAD
 		if (strlen(ns_name))
 			return snprintf(str, size, ":%s://%s (%s)", ns_name,
+=======
+
+		if (ns_name)
+			return snprintf(str, size, ":%s:%s (%s)", ns_name,
+>>>>>>> temp
 					profile->base.hname, modestr);
 		return snprintf(str, size, "%s (%s)", profile->base.hname,
 				modestr);
 	}
 
+<<<<<<< HEAD
 	if (strlen(ns_name))
 		return snprintf(str, size, ":%s://%s", ns_name,
+=======
+	if (ns_name)
+		return snprintf(str, size, ":%s:%s", ns_name,
+>>>>>>> temp
 				profile->base.hname);
 	return snprintf(str, size, "%s", profile->base.hname);
 }
@@ -1560,7 +1827,11 @@ static const char *label_modename(struct aa_ns *ns, struct aa_label *label,
 			if (profile->mode == APPARMOR_UNCONFINED)
 				/* special case unconfined so stacks with
 				 * unconfined don't report as mixed. ie.
+<<<<<<< HEAD
 				 * profile_foo//&:ns1://unconfined (mixed)
+=======
+				 * profile_foo//&:ns1:unconfined (mixed)
+>>>>>>> temp
 				 */
 				continue;
 			count++;
@@ -1622,6 +1893,10 @@ int aa_label_snxprint(char *str, size_t size, struct aa_ns *ns,
 		      struct aa_label *label, int flags)
 {
 	struct aa_profile *profile;
+<<<<<<< HEAD
+=======
+	struct aa_ns *prev_ns = NULL;
+>>>>>>> temp
 	struct label_it i;
 	int count = 0, total = 0;
 	size_t len;
@@ -1629,8 +1904,18 @@ int aa_label_snxprint(char *str, size_t size, struct aa_ns *ns,
 	AA_BUG(!str && size != 0);
 	AA_BUG(!label);
 
+<<<<<<< HEAD
 	if (!ns)
 		ns = labels_ns(label);
+=======
+	if (flags & FLAG_ABS_ROOT) {
+		ns = root_ns;
+		len = snprintf(str, size, "=");
+		update_for_len(total, len, size, str);
+	} else if (!ns) {
+		ns = labels_ns(label);
+	}
+>>>>>>> temp
 
 	label_for_each(i, label, profile) {
 		if (aa_ns_visible(ns, profile->ns, flags & FLAG_VIEW_SUBNS)) {
@@ -1639,7 +1924,12 @@ int aa_label_snxprint(char *str, size_t size, struct aa_ns *ns,
 				update_for_len(total, len, size, str);
 			}
 			len = aa_profile_snxprint(str, size, ns, profile,
+<<<<<<< HEAD
 						  flags & FLAG_VIEW_SUBNS);
+=======
+						  flags & FLAG_VIEW_SUBNS,
+						  &prev_ns);
+>>>>>>> temp
 			update_for_len(total, len, size, str);
 			count++;
 		}
@@ -1733,6 +2023,7 @@ void aa_label_xaudit(struct audit_buffer *ab, struct aa_ns *ns,
 	AA_BUG(!ab);
 	AA_BUG(!label);
 
+<<<<<<< HEAD
 	if (!ns)
 		ns = labels_ns(label);
 
@@ -1741,6 +2032,12 @@ void aa_label_xaudit(struct audit_buffer *ab, struct aa_ns *ns,
 		len  = aa_label_asxprint(&name, ns, label, flags, gfp);
 		if (len == -1) {
 			labelstats_inc(audit_name_fail);
+=======
+	if (!use_label_hname(ns, label, flags) ||
+	    display_mode(ns, label, flags)) {
+		len  = aa_label_asxprint(&name, ns, label, flags, gfp);
+		if (len == -1) {
+>>>>>>> temp
 			AA_DEBUG("label print error");
 			return;
 		}
@@ -1763,6 +2060,7 @@ void aa_label_seq_xprint(struct seq_file *f, struct aa_ns *ns,
 	AA_BUG(!f);
 	AA_BUG(!label);
 
+<<<<<<< HEAD
 	if (!ns)
 		ns = labels_ns(label);
 
@@ -1774,6 +2072,14 @@ void aa_label_seq_xprint(struct seq_file *f, struct aa_ns *ns,
 		len = aa_label_asxprint(&str, ns, label, flags, gfp);
 		if (len == -1) {
 			labelstats_inc(seq_print_name_fail);
+=======
+	if (!use_label_hname(ns, label, flags)) {
+		char *str;
+		int len;
+
+		len = aa_label_asxprint(&str, ns, label, flags, gfp);
+		if (len == -1) {
+>>>>>>> temp
 			AA_DEBUG("label print error");
 			return;
 		}
@@ -1791,6 +2097,7 @@ void aa_label_xprintk(struct aa_ns *ns, struct aa_label *label, int flags,
 {
 	AA_BUG(!label);
 
+<<<<<<< HEAD
 	if (!ns)
 		ns = labels_ns(label);
 
@@ -1812,11 +2119,33 @@ void aa_label_xprintk(struct aa_ns *ns, struct aa_label *label, int flags,
 		       label_modename(ns, label, flags));
 	else
 		printk("%s", label->hname);
+=======
+	if (!use_label_hname(ns, label, flags)) {
+		char *str;
+		int len;
+
+		len = aa_label_asxprint(&str, ns, label, flags, gfp);
+		if (len == -1) {
+			AA_DEBUG("label print error");
+			return;
+		}
+		pr_info("%s", str);
+		kfree(str);
+	} else if (display_mode(ns, label, flags))
+		pr_info("%s (%s)", label->hname,
+		       label_modename(ns, label, flags));
+	else
+		pr_info("%s", label->hname);
+>>>>>>> temp
 }
 
 void aa_label_audit(struct audit_buffer *ab, struct aa_label *label, gfp_t gfp)
 {
 	struct aa_ns *ns = aa_get_current_ns();
+<<<<<<< HEAD
+=======
+
+>>>>>>> temp
 	aa_label_xaudit(ab, ns, label, FLAG_VIEW_SUBNS, gfp);
 	aa_put_ns(ns);
 }
@@ -1824,6 +2153,10 @@ void aa_label_audit(struct audit_buffer *ab, struct aa_label *label, gfp_t gfp)
 void aa_label_seq_print(struct seq_file *f, struct aa_label *label, gfp_t gfp)
 {
 	struct aa_ns *ns = aa_get_current_ns();
+<<<<<<< HEAD
+=======
+
+>>>>>>> temp
 	aa_label_seq_xprint(f, ns, label, FLAG_VIEW_SUBNS, gfp);
 	aa_put_ns(ns);
 }
@@ -1831,6 +2164,10 @@ void aa_label_seq_print(struct seq_file *f, struct aa_label *label, gfp_t gfp)
 void aa_label_printk(struct aa_label *label, gfp_t gfp)
 {
 	struct aa_ns *ns = aa_get_current_ns();
+<<<<<<< HEAD
+=======
+
+>>>>>>> temp
 	aa_label_xprintk(ns, label, FLAG_VIEW_SUBNS, gfp);
 	aa_put_ns(ns);
 }
@@ -1850,6 +2187,28 @@ static int label_count_str_entries(const char *str)
 	return count;
 }
 
+<<<<<<< HEAD
+=======
+/*
+ * ensure stacks with components like
+ *   :ns:A//&B
+ * have :ns: applied to both 'A' and 'B' by making the lookup relative
+ * to the base if the lookup specifies an ns, else making the stacked lookup
+ * relative to the last embedded ns in the string.
+ */
+static struct aa_profile *fqlookupn_profile(struct aa_label *base,
+					    struct aa_label *currentbase,
+					    const char *str, size_t n)
+{
+	const char *first = skipn_spaces(str, n);
+
+	if (first && *first == ':')
+		return aa_fqlookupn_profile(base, str, n);
+
+	return aa_fqlookupn_profile(currentbase, str, n);
+}
+
+>>>>>>> temp
 /**
  * aa_label_parse - parse, validate and convert a text string to a label
  * @base: base label to use for lookups (NOT NULL)
@@ -1865,7 +2224,11 @@ struct aa_label *aa_label_parse(struct aa_label *base, const char *str,
 				gfp_t gfp, bool create, bool force_stack)
 {
 	DEFINE_VEC(profile, vec);
+<<<<<<< HEAD
 	struct aa_label *label;
+=======
+	struct aa_label *label, *currbase = base;
+>>>>>>> temp
 	int i, len, stack = 0, error;
 	char *split;
 
@@ -1881,6 +2244,12 @@ struct aa_label *aa_label_parse(struct aa_label *base, const char *str,
 		if (*str == '&')
 			str++;
 	}
+<<<<<<< HEAD
+=======
+	if (*str == '=')
+		base = &root_ns->unconfined->label;
+
+>>>>>>> temp
 	error = vec_setup(profile, vec, len, gfp);
 	if (error)
 		return ERR_PTR(error);
@@ -1889,6 +2258,7 @@ struct aa_label *aa_label_parse(struct aa_label *base, const char *str,
 		vec[i] = aa_get_profile(base->vec[i]);
 
 	for (split = strstr(str, "//&"), i = stack; split && i < len; i++) {
+<<<<<<< HEAD
 		vec[i] = aa_fqlookupn_profile(base, str, split - str);
 		if (!vec[i])
 			goto fail;
@@ -1898,6 +2268,23 @@ struct aa_label *aa_label_parse(struct aa_label *base, const char *str,
 	/* last element doesn't have a split so this should be the case but just to be safe */
 	if (i < len) {
 		vec[i] = aa_fqlookupn_profile(base, str, strlen(str));
+=======
+		vec[i] = fqlookupn_profile(base, currbase, str, split - str);
+		if (!vec[i])
+			goto fail;
+		/*
+		 * if component specified a new ns it becomes the new base
+		 * so that subsequent lookups are relative to it
+		 */
+		if (vec[i]->ns != labels_ns(currbase))
+			currbase = &vec[i]->label;
+		str = split + 3;
+		split = strstr(str, "//&");
+	}
+	/* last element doesn't have a split */
+	if (i < len) {
+		vec[i] = fqlookupn_profile(base, currbase, str, strlen(str));
+>>>>>>> temp
 		if (!vec[i])
 			goto fail;
 	}
@@ -1947,6 +2334,10 @@ void aa_labelset_destroy(struct aa_labelset *ls)
 	write_lock_irqsave(&ls->lock, flags);
 	for (node = rb_first(&ls->root); node; node = rb_first(&ls->root)) {
 		struct aa_label *this = rb_entry(node, struct aa_label, node);
+<<<<<<< HEAD
+=======
+
+>>>>>>> temp
 		if (labels_ns(this) != root_ns)
 			__label_remove(this,
 				       ns_unconfined(labels_ns(this)->parent));
@@ -1965,7 +2356,10 @@ void aa_labelset_init(struct aa_labelset *ls)
 
 	rwlock_init(&ls->lock);
 	ls->root = RB_ROOT;
+<<<<<<< HEAD
 	labelstats_init(&ls);
+=======
+>>>>>>> temp
 }
 
 static struct aa_label *labelset_next_stale(struct aa_labelset *ls)
@@ -1980,8 +2374,14 @@ static struct aa_label *labelset_next_stale(struct aa_labelset *ls)
 
 	__labelset_for_each(ls, node) {
 		label = rb_entry(node, struct aa_label, node);
+<<<<<<< HEAD
 		if ((label_is_stale(label) || vec_is_stale(label->vec, label->size)) &&
 		    aa_get_label_not0(label))
+=======
+		if ((label_is_stale(label) ||
+		     vec_is_stale(label->vec, label->size)) &&
+		    __aa_get_label(label))
+>>>>>>> temp
 			goto out;
 
 	}
@@ -2019,8 +2419,14 @@ static struct aa_label *__label_update(struct aa_label *label)
 	if (!new)
 		return NULL;
 
+<<<<<<< HEAD
 	/* while holding the ns_lock will stop profile replacement, removal,
 	 * and label updates, label merging and removal can be occuring
+=======
+	/*
+	 * while holding the ns_lock will stop profile replacement, removal,
+	 * and label updates, label merging and removal can be occurring
+>>>>>>> temp
 	 */
 	ls = labels_set(label);
 	write_lock_irqsave(&ls->lock, flags);
@@ -2086,8 +2492,13 @@ static void __labelset_update(struct aa_ns *ns)
 	do {
 		label = labelset_next_stale(&ns->labels);
 		if (label) {
+<<<<<<< HEAD
 			struct aa_label *l;
 			l = __label_update(label);
+=======
+			struct aa_label *l = __label_update(label);
+
+>>>>>>> temp
 			aa_put_label(l);
 			aa_put_label(label);
 		}
@@ -2101,7 +2512,11 @@ static void __labelset_update(struct aa_ns *ns)
  * Requires: @ns lock be held
  *
  * Invalidates labels based on @p in @ns and any children namespaces.
+<<<<<<< HEAD
 */
+=======
+ */
+>>>>>>> temp
 void __aa_labelset_update_subtree(struct aa_ns *ns)
 {
 	struct aa_ns *child;
@@ -2112,7 +2527,11 @@ void __aa_labelset_update_subtree(struct aa_ns *ns)
 	__labelset_update(ns);
 
 	list_for_each_entry(child, &ns->sub_ns, base.list) {
+<<<<<<< HEAD
 		mutex_lock(&child->lock);
+=======
+		mutex_lock_nested(&child->lock, child->level);
+>>>>>>> temp
 		__aa_labelset_update_subtree(child);
 		mutex_unlock(&child->lock);
 	}

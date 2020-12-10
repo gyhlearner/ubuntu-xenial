@@ -1,7 +1,11 @@
 /*
  *  ZPIOS is a heavily modified version of the original PIOS test code.
  *  It is designed to have the test code running in the Linux kernel
+<<<<<<< HEAD
  *  against ZFS while still being flexibly controled from user space.
+=======
+ *  against ZFS while still being flexibly controlled from user space.
+>>>>>>> temp
  *
  *  Copyright (C) 2008-2010 Lawrence Livermore National Security, LLC.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
@@ -29,6 +33,11 @@
  *
  *  You should have received a copy of the GNU General Public License along
  *  with ZPIOS.  If not, see <http://www.gnu.org/licenses/>.
+<<<<<<< HEAD
+=======
+ *
+ *  Copyright (c) 2015, Intel Corporation.
+>>>>>>> temp
  */
 
 #ifndef _ZPIOS_CTL_H
@@ -116,6 +125,10 @@ typedef struct zpios_cmd {
 	uint32_t cmd_chunk_noise;	/* Chunk noise */
 	uint32_t cmd_thread_delay;	/* Thread delay */
 	uint32_t cmd_flags;		/* Test flags */
+<<<<<<< HEAD
+=======
+	uint32_t cmd_block_size;	/* ZFS block size */
+>>>>>>> temp
 	char cmd_pre[ZPIOS_PATH_SIZE];	/* Pre-exec hook */
 	char cmd_post[ZPIOS_PATH_SIZE];	/* Post-exec hook */
 	char cmd_log[ZPIOS_PATH_SIZE];  /* Requested log dir */
@@ -143,7 +156,11 @@ zpios_timespec_normalize(zpios_timespec_t *ts, uint32_t sec, uint32_t nsec)
 		nsec -= NSEC_PER_SEC;
 		sec++;
 	}
+<<<<<<< HEAD
 	while (nsec < 0) {
+=======
+	while (((int32_t)nsec) < 0) {
+>>>>>>> temp
 		nsec += NSEC_PER_SEC;
 		sec--;
 	}

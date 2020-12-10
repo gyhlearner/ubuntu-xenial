@@ -1,9 +1,14 @@
 dnl #
+<<<<<<< HEAD
 dnl # Default ZFS kernel configuration 
+=======
+dnl # Default ZFS kernel configuration
+>>>>>>> temp
 dnl #
 AC_DEFUN([ZFS_AC_CONFIG_KERNEL], [
 	ZFS_AC_KERNEL
 	ZFS_AC_SPL
+<<<<<<< HEAD
 	ZFS_AC_TEST_MODULE
 	ZFS_AC_KERNEL_CONFIG
 	ZFS_AC_KERNEL_DECLARE_EVENT_CLASS
@@ -12,6 +17,19 @@ AC_DEFUN([ZFS_AC_CONFIG_KERNEL], [
 	ZFS_AC_KERNEL_BLOCK_DEVICE_OPERATIONS_RELEASE_VOID
 	ZFS_AC_KERNEL_TYPE_FMODE_T
 	ZFS_AC_KERNEL_KOBJ_NAME_LEN
+=======
+	ZFS_AC_QAT
+	ZFS_AC_TEST_MODULE
+	ZFS_AC_KERNEL_OBJTOOL
+	ZFS_AC_KERNEL_CONFIG
+	ZFS_AC_KERNEL_DECLARE_EVENT_CLASS
+	ZFS_AC_KERNEL_CURRENT_BIO_TAIL
+	ZFS_AC_KERNEL_SUPER_USER_NS
+	ZFS_AC_KERNEL_SUBMIT_BIO
+	ZFS_AC_KERNEL_BDEV_BLOCK_DEVICE_OPERATIONS
+	ZFS_AC_KERNEL_BLOCK_DEVICE_OPERATIONS_RELEASE_VOID
+	ZFS_AC_KERNEL_TYPE_FMODE_T
+>>>>>>> temp
 	ZFS_AC_KERNEL_3ARG_BLKDEV_GET
 	ZFS_AC_KERNEL_BLKDEV_GET_BY_PATH
 	ZFS_AC_KERNEL_OPEN_BDEV_EXCLUSIVE
@@ -21,6 +39,7 @@ AC_DEFUN([ZFS_AC_CONFIG_KERNEL], [
 	ZFS_AC_KERNEL_BDEV_PHYSICAL_BLOCK_SIZE
 	ZFS_AC_KERNEL_BIO_BVEC_ITER
 	ZFS_AC_KERNEL_BIO_FAILFAST_DTD
+<<<<<<< HEAD
 	ZFS_AC_KERNEL_REQ_FAILFAST_MASK
 	ZFS_AC_KERNEL_BIO_END_IO_T_ARGS
 	ZFS_AC_KERNEL_BIO_RW_BARRIER
@@ -32,14 +51,44 @@ AC_DEFUN([ZFS_AC_CONFIG_KERNEL], [
 	ZFS_AC_KERNEL_GET_GENDISK
 	ZFS_AC_KERNEL_DISCARD_GRANULARITY
 	ZFS_AC_KERNEL_CONST_XATTR_HANDLER
+=======
+	ZFS_AC_KERNEL_BIO_SET_DEV
+	ZFS_AC_KERNEL_REQ_FAILFAST_MASK
+	ZFS_AC_KERNEL_REQ_OP_DISCARD
+	ZFS_AC_KERNEL_REQ_OP_SECURE_ERASE
+	ZFS_AC_KERNEL_REQ_OP_FLUSH
+	ZFS_AC_KERNEL_BIO_BI_OPF
+	ZFS_AC_KERNEL_BIO_END_IO_T_ARGS
+	ZFS_AC_KERNEL_BIO_BI_STATUS
+	ZFS_AC_KERNEL_BIO_RW_BARRIER
+	ZFS_AC_KERNEL_BIO_RW_DISCARD
+	ZFS_AC_KERNEL_BLK_QUEUE_BDI
+	ZFS_AC_KERNEL_BLK_QUEUE_FLUSH
+	ZFS_AC_KERNEL_BLK_QUEUE_MAX_HW_SECTORS
+	ZFS_AC_KERNEL_BLK_QUEUE_MAX_SEGMENTS
+	ZFS_AC_KERNEL_BLK_QUEUE_HAVE_BIO_RW_UNPLUG
+	ZFS_AC_KERNEL_BLK_QUEUE_HAVE_BLK_PLUG
+	ZFS_AC_KERNEL_GET_DISK_RO
+	ZFS_AC_KERNEL_GET_GENDISK
+	ZFS_AC_KERNEL_HAVE_BIO_SET_OP_ATTRS
+	ZFS_AC_KERNEL_GENERIC_READLINK_GLOBAL
+	ZFS_AC_KERNEL_DISCARD_GRANULARITY
+	ZFS_AC_KERNEL_CONST_XATTR_HANDLER
+	ZFS_AC_KERNEL_XATTR_HANDLER_NAME
+>>>>>>> temp
 	ZFS_AC_KERNEL_XATTR_HANDLER_GET
 	ZFS_AC_KERNEL_XATTR_HANDLER_SET
 	ZFS_AC_KERNEL_XATTR_HANDLER_LIST
 	ZFS_AC_KERNEL_INODE_OWNER_OR_CAPABLE
 	ZFS_AC_KERNEL_POSIX_ACL_FROM_XATTR_USERNS
 	ZFS_AC_KERNEL_POSIX_ACL_RELEASE
+<<<<<<< HEAD
 	ZFS_AC_KERNEL_POSIX_ACL_CHMOD
 	ZFS_AC_KERNEL_POSIX_ACL_CACHING
+=======
+	ZFS_AC_KERNEL_SET_CACHED_ACL_USABLE
+	ZFS_AC_KERNEL_POSIX_ACL_CHMOD
+>>>>>>> temp
 	ZFS_AC_KERNEL_POSIX_ACL_EQUIV_MODE_WANTS_UMODE_T
 	ZFS_AC_KERNEL_POSIX_ACL_VALID_WITH_NS
 	ZFS_AC_KERNEL_INODE_OPERATIONS_PERMISSION
@@ -47,25 +96,47 @@ AC_DEFUN([ZFS_AC_CONFIG_KERNEL], [
 	ZFS_AC_KERNEL_INODE_OPERATIONS_CHECK_ACL
 	ZFS_AC_KERNEL_INODE_OPERATIONS_CHECK_ACL_WITH_FLAGS
 	ZFS_AC_KERNEL_INODE_OPERATIONS_GET_ACL
+<<<<<<< HEAD
 	ZFS_AC_KERNEL_CURRENT_UMASK
 	ZFS_AC_KERNEL_SHOW_OPTIONS
 	ZFS_AC_KERNEL_FILE_INODE
+=======
+	ZFS_AC_KERNEL_INODE_OPERATIONS_SET_ACL
+	ZFS_AC_KERNEL_INODE_OPERATIONS_GETATTR
+	ZFS_AC_KERNEL_INODE_SET_FLAGS
+	ZFS_AC_KERNEL_GET_ACL_HANDLE_CACHE
+	ZFS_AC_KERNEL_SHOW_OPTIONS
+	ZFS_AC_KERNEL_FILE_INODE
+	ZFS_AC_KERNEL_FILE_DENTRY
+>>>>>>> temp
 	ZFS_AC_KERNEL_FSYNC
 	ZFS_AC_KERNEL_EVICT_INODE
 	ZFS_AC_KERNEL_DIRTY_INODE_WITH_FLAGS
 	ZFS_AC_KERNEL_NR_CACHED_OBJECTS
 	ZFS_AC_KERNEL_FREE_CACHED_OBJECTS
 	ZFS_AC_KERNEL_FALLOCATE
+<<<<<<< HEAD
+=======
+	ZFS_AC_KERNEL_AIO_FSYNC
+>>>>>>> temp
 	ZFS_AC_KERNEL_MKDIR_UMODE_T
 	ZFS_AC_KERNEL_LOOKUP_NAMEIDATA
 	ZFS_AC_KERNEL_CREATE_NAMEIDATA
 	ZFS_AC_KERNEL_GET_LINK
 	ZFS_AC_KERNEL_PUT_LINK
+<<<<<<< HEAD
+=======
+	ZFS_AC_KERNEL_TMPFILE
+>>>>>>> temp
 	ZFS_AC_KERNEL_TRUNCATE_RANGE
 	ZFS_AC_KERNEL_AUTOMOUNT
 	ZFS_AC_KERNEL_ENCODE_FH_WITH_INODE
 	ZFS_AC_KERNEL_COMMIT_METADATA
 	ZFS_AC_KERNEL_CLEAR_INODE
+<<<<<<< HEAD
+=======
+	ZFS_AC_KERNEL_SETATTR_PREPARE
+>>>>>>> temp
 	ZFS_AC_KERNEL_INSERT_INODE_LOCKED
 	ZFS_AC_KERNEL_D_MAKE_ROOT
 	ZFS_AC_KERNEL_D_OBTAIN_ALIAS
@@ -73,7 +144,10 @@ AC_DEFUN([ZFS_AC_CONFIG_KERNEL], [
 	ZFS_AC_KERNEL_D_SET_D_OP
 	ZFS_AC_KERNEL_D_REVALIDATE_NAMEIDATA
 	ZFS_AC_KERNEL_CONST_DENTRY_OPERATIONS
+<<<<<<< HEAD
 	ZFS_AC_KERNEL_CHECK_DISK_SIZE_CHANGE
+=======
+>>>>>>> temp
 	ZFS_AC_KERNEL_TRUNCATE_SETSIZE
 	ZFS_AC_KERNEL_6ARGS_SECURITY_INODE_INIT_SECURITY
 	ZFS_AC_KERNEL_CALLBACK_SECURITY_INODE_INIT_SECURITY
@@ -82,7 +156,11 @@ AC_DEFUN([ZFS_AC_CONFIG_KERNEL], [
 	ZFS_AC_KERNEL_SHRINK_CONTROL_HAS_NID
 	ZFS_AC_KERNEL_S_INSTANCES_LIST_HEAD
 	ZFS_AC_KERNEL_S_D_OP
+<<<<<<< HEAD
 	ZFS_AC_KERNEL_BDI_SETUP_AND_REGISTER
+=======
+	ZFS_AC_KERNEL_BDI
+>>>>>>> temp
 	ZFS_AC_KERNEL_SET_NLINK
 	ZFS_AC_KERNEL_ELEVATOR_CHANGE
 	ZFS_AC_KERNEL_5ARG_SGET
@@ -93,7 +171,20 @@ AC_DEFUN([ZFS_AC_CONFIG_KERNEL], [
 	ZFS_AC_KERNEL_KMAP_ATOMIC_ARGS
 	ZFS_AC_KERNEL_FOLLOW_DOWN_ONE
 	ZFS_AC_KERNEL_MAKE_REQUEST_FN
+<<<<<<< HEAD
 	ZFS_AC_KERNEL_GENERIC_IO_ACCT
+=======
+	ZFS_AC_KERNEL_GENERIC_IO_ACCT_3ARG
+	ZFS_AC_KERNEL_GENERIC_IO_ACCT_4ARG
+	ZFS_AC_KERNEL_FPU
+	ZFS_AC_KERNEL_KUID_HELPERS
+	ZFS_AC_KERNEL_MODULE_PARAM_CALL_CONST
+	ZFS_AC_KERNEL_RENAME_WANTS_FLAGS
+	ZFS_AC_KERNEL_HAVE_GENERIC_SETXATTR
+	ZFS_AC_KERNEL_CURRENT_TIME
+	ZFS_AC_KERNEL_VM_NODE_STAT
+	ZFS_AC_KERNEL_USERNS_CAPABILITIES
+>>>>>>> temp
 
 	AS_IF([test "$LINUX_OBJ" != "$LINUX"], [
 		KERNELMAKE_PARAMS="$KERNELMAKE_PARAMS O=$LINUX_OBJ"
@@ -103,6 +194,11 @@ AC_DEFUN([ZFS_AC_CONFIG_KERNEL], [
 
 	dnl # -Wall -fno-strict-aliasing -Wstrict-prototypes and other
 	dnl # compiler options are added by the kernel build system.
+<<<<<<< HEAD
+=======
+	KERNELCPPFLAGS="$KERNELCPPFLAGS -std=gnu99"
+	KERNELCPPFLAGS="$KERNELCPPFLAGS -Wno-declaration-after-statement"
+>>>>>>> temp
 	KERNELCPPFLAGS="$KERNELCPPFLAGS $NO_UNUSED_BUT_SET_VARIABLE"
 	KERNELCPPFLAGS="$KERNELCPPFLAGS $NO_BOOL_COMPARE"
 	KERNELCPPFLAGS="$KERNELCPPFLAGS -DHAVE_SPL -D_KERNEL"
@@ -175,6 +271,10 @@ AC_DEFUN([ZFS_AC_KERNEL], [
 		AS_IF([test "$kernelsrc" = "NONE"], [
 			kernsrcver=NONE
 		])
+<<<<<<< HEAD
+=======
+		withlinux=yes
+>>>>>>> temp
 	])
 
 	AC_MSG_RESULT([$kernelsrc])
@@ -187,7 +287,11 @@ AC_DEFUN([ZFS_AC_KERNEL], [
 
 	AC_MSG_CHECKING([kernel build directory])
 	AS_IF([test -z "$kernelbuild"], [
+<<<<<<< HEAD
 		AS_IF([test -e "/lib/modules/$(uname -r)/build"], [
+=======
+		AS_IF([test x$withlinux != xyes -a -e "/lib/modules/$(uname -r)/build"], [
+>>>>>>> temp
 			kernelbuild=`readlink -f /lib/modules/$(uname -r)/build`
 		], [test -d ${kernelsrc}-obj/${target_cpu}/${target_cpu}], [
 			kernelbuild=${kernelsrc}-obj/${target_cpu}/${target_cpu}
@@ -255,7 +359,13 @@ AC_DEFUN([ZFS_AC_SPL], [
 	AC_ARG_WITH([spl],
 		AS_HELP_STRING([--with-spl=PATH],
 		[Path to spl source]),
+<<<<<<< HEAD
 		[splsrc="$withval"])
+=======
+		AS_IF([test "$withval" = "yes"],
+			AC_MSG_ERROR([--with-spl=PATH requires a PATH]),
+			[splsrc="$withval"]))
+>>>>>>> temp
 
 	AC_ARG_WITH([spl-obj],
 		AS_HELP_STRING([--with-spl-obj=PATH],
@@ -281,6 +391,17 @@ AC_DEFUN([ZFS_AC_SPL], [
 
 	AC_MSG_CHECKING([spl source directory])
 	AS_IF([test -z "${splsrc}"], [
+<<<<<<< HEAD
+=======
+		[all_spl_sources="
+		${splsrc0}
+		${splsrc1}
+		${splsrc2}
+		${splsrc3}
+		${splsrc4}
+		${splsrc5}
+		${splsrc6}"],
+>>>>>>> temp
 		AS_IF([ test -e "${splsrc0}/spl.release.in"], [
 			splsrc=${splsrc0}
 		], [ test -e "${splsrc1}/spl.release.in"], [
@@ -299,6 +420,10 @@ AC_DEFUN([ZFS_AC_SPL], [
 			splsrc="[Not found]"
 		])
 	], [
+<<<<<<< HEAD
+=======
+		[all_spl_sources="$withval"],
+>>>>>>> temp
 		AS_IF([test "$splsrc" = "NONE"], [
 			splbuild=NONE
 			splsrcver=NONE
@@ -310,7 +435,14 @@ AC_DEFUN([ZFS_AC_SPL], [
 		AC_MSG_ERROR([
 	*** Please make sure the kmod spl devel package for your distribution
 	*** is installed then try again.  If that fails you can specify the
+<<<<<<< HEAD
 	*** location of the spl source with the '--with-spl=PATH' option.])
+=======
+	*** location of the spl source with the '--with-spl=PATH' option.
+	*** The spl version must match the version of ZFS you are building,
+	*** ${VERSION}.  Failed to find spl.release.in in the following:
+	$all_spl_sources])
+>>>>>>> temp
 	])
 
 	dnl #
@@ -326,6 +458,13 @@ AC_DEFUN([ZFS_AC_SPL], [
 	dnl # SPL package.
 	dnl #
 	AC_MSG_CHECKING([spl build directory])
+<<<<<<< HEAD
+=======
+
+	all_spl_config_locs="${splsrc}/${LINUX_VERSION}
+	${splsrc}"
+
+>>>>>>> temp
 	while true; do
 		AS_IF([test -z "$splbuild"], [
 			AS_IF([ test -e "${splsrc}/${LINUX_VERSION}/spl_config.h" ], [
@@ -352,7 +491,13 @@ AC_DEFUN([ZFS_AC_SPL], [
 	*** Please make sure the kmod spl devel <kernel> package for your
 	*** distribution is installed then try again.  If that fails you
 	*** can specify the location of the spl objects with the
+<<<<<<< HEAD
 	*** '--with-spl-obj=PATH' option.])
+=======
+	*** '--with-spl-obj=PATH' option.  Failed to find spl_config.h in
+	*** any of the following:
+	$all_spl_config_locs])
+>>>>>>> temp
 	])
 
 	AC_MSG_CHECKING([spl source version])
@@ -426,6 +571,98 @@ AC_DEFUN([ZFS_AC_SPL], [
 ])
 
 dnl #
+<<<<<<< HEAD
+=======
+dnl # Detect the QAT module to be built against
+dnl # QAT provides hardware acceleration for data compression:
+dnl # 	https://01.org/intel-quickassist-technology
+dnl # * Download and install QAT driver from the above link
+dnl # * Start QAT driver in your system:
+dnl # 	service qat_service start
+dnl # * Enable QAT in ZFS, e.g.:
+dnl # 	./configure --with-qat=<qat-driver-path>/QAT1.6
+dnl #	make
+dnl # * Set GZIP compression in ZFS dataset:
+dnl # 	zfs set compression = gzip <dataset>
+dnl # Then the data written to this ZFS pool is compressed
+dnl # by QAT accelerator automatically, and de-compressed by
+dnl # QAT when read from the pool.
+dnl # * Get QAT hardware statistics by:
+dnl #	cat /proc/icp_dh895xcc_dev/qat
+dnl # * To disable QAT:
+dnl # 	insmod zfs.ko zfs_qat_disable=1
+dnl #
+AC_DEFUN([ZFS_AC_QAT], [
+	AC_ARG_WITH([qat],
+		AS_HELP_STRING([--with-qat=PATH],
+		[Path to qat source]),
+		AS_IF([test "$withval" = "yes"],
+			AC_MSG_ERROR([--with-qat=PATH requires a PATH]),
+			[qatsrc="$withval"]))
+
+	AC_ARG_WITH([qat-obj],
+		AS_HELP_STRING([--with-qat-obj=PATH],
+		[Path to qat build objects]),
+		[qatbuild="$withval"])
+
+	AS_IF([test ! -z "${qatsrc}"], [
+		AC_MSG_CHECKING([qat source directory])
+		AC_MSG_RESULT([$qatsrc])
+		QAT_SRC="${qatsrc}/quickassist"
+		AS_IF([ test ! -e "$QAT_SRC/include/cpa.h"], [
+			AC_MSG_ERROR([
+		*** Please make sure the qat driver package is installed
+		*** and specify the location of the qat source with the
+		*** '--with-qat=PATH' option then try again. Failed to
+		*** find cpa.h in:
+		${QAT_SRC}/include])
+		])
+	])
+
+	AS_IF([test ! -z "${qatsrc}"], [
+		AC_MSG_CHECKING([qat build directory])
+		AS_IF([test -z "$qatbuild"], [
+			qatbuild="${qatsrc}/build"
+		])
+
+		AC_MSG_RESULT([$qatbuild])
+		QAT_OBJ=${qatbuild}
+		AS_IF([ ! test -e "$QAT_OBJ/icp_qa_al.ko" && ! test -e "$QAT_OBJ/qat_api.ko"], [
+			AC_MSG_ERROR([
+		*** Please make sure the qat driver is installed then try again.
+		*** Failed to find icp_qa_al.ko or qat_api.ko in:
+		$QAT_OBJ])
+		])
+
+		AC_SUBST(QAT_SRC)
+		AC_SUBST(QAT_OBJ)
+
+		AC_DEFINE(HAVE_QAT, 1,
+		[qat is enabled and existed])
+	])
+
+	dnl #
+	dnl # Detect the name used for the QAT Module.symvers file.
+	dnl #
+	AS_IF([test ! -z "${qatsrc}"], [
+		AC_MSG_CHECKING([qat file for module symbols])
+		QAT_SYMBOLS=$QAT_SRC/lookaside/access_layer/src/Module.symvers
+
+		AS_IF([test -r $QAT_SYMBOLS], [
+			AC_MSG_RESULT([$QAT_SYMBOLS])
+			AC_SUBST(QAT_SYMBOLS)
+		],[
+                       AC_MSG_ERROR([
+			*** Please make sure the qat driver is installed then try again.
+			*** Failed to find Module.symvers in:
+			$QAT_SYMBOLS])
+			])
+		])
+	])
+])
+
+dnl #
+>>>>>>> temp
 dnl # Basic toolchain sanity check.
 dnl #
 AC_DEFUN([ZFS_AC_TEST_MODULE], [
@@ -464,10 +701,42 @@ AC_DEFUN([ZFS_AC_KERNEL_CONFIG], [
 		])
 	])
 
+<<<<<<< HEAD
+=======
+	ZFS_AC_KERNEL_CONFIG_THREAD_SIZE
+>>>>>>> temp
 	ZFS_AC_KERNEL_CONFIG_DEBUG_LOCK_ALLOC
 ])
 
 dnl #
+<<<<<<< HEAD
+=======
+dnl # Check configured THREAD_SIZE
+dnl #
+dnl # The stack size will vary by architecture, but as of Linux 3.15 on x86_64
+dnl # the default thread stack size was increased to 16K from 8K.  Therefore,
+dnl # on newer kernels and some architectures stack usage optimizations can be
+dnl # conditionally applied to improve performance without negatively impacting
+dnl # stability.
+dnl #
+AC_DEFUN([ZFS_AC_KERNEL_CONFIG_THREAD_SIZE], [
+	AC_MSG_CHECKING([whether kernel was built with 16K or larger stacks])
+	ZFS_LINUX_TRY_COMPILE([
+		#include <linux/module.h>
+	],[
+		#if (THREAD_SIZE < 16384)
+		#error "THREAD_SIZE is less than 16K"
+		#endif
+	],[
+		AC_MSG_RESULT([yes])
+		AC_DEFINE(HAVE_LARGE_STACKS, 1, [kernel has large stacks])
+	],[
+		AC_MSG_RESULT([no])
+	])
+])
+
+dnl #
+>>>>>>> temp
 dnl # Check CONFIG_DEBUG_LOCK_ALLOC
 dnl #
 dnl # This is typically only set for debug kernels because it comes with
@@ -576,7 +845,11 @@ dnl #
 dnl # ZFS_LINUX_CONFIG
 dnl #
 AC_DEFUN([ZFS_LINUX_CONFIG],
+<<<<<<< HEAD
 	[AC_MSG_CHECKING([whether Linux was built with CONFIG_$1])
+=======
+	[AC_MSG_CHECKING([whether kernel was built with CONFIG_$1])
+>>>>>>> temp
 	ZFS_LINUX_TRY_COMPILE([
 		#include <linux/module.h>
 	],[

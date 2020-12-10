@@ -100,7 +100,7 @@ static int hda_codec_driver_probe(struct device *dev)
 	if (patch) {
 		err = patch(codec);
 		if (err < 0)
-			goto error_module;
+			goto error_module_put;
 	}
 
 	err = snd_hda_codec_build_pcms(codec);
@@ -120,6 +120,9 @@ static int hda_codec_driver_probe(struct device *dev)
 	return 0;
 
  error_module:
+	if (codec->patch_ops.free)
+		codec->patch_ops.free(codec);
+ error_module_put:
 	module_put(owner);
 
  error:
@@ -197,12 +200,21 @@ static void request_codec_module(struct hda_codec *codec)
 		mod = modalias;
 		break;
 	}
+<<<<<<< HEAD
 
 	if (mod)
 		request_module(mod);
 #endif /* MODULE */
 }
 
+=======
+
+	if (mod)
+		request_module(mod);
+#endif /* MODULE */
+}
+
+>>>>>>> temp
 /* try to auto-load and bind the codec module */
 static void codec_bind_module(struct hda_codec *codec)
 {

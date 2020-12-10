@@ -41,7 +41,10 @@ bmac ?
 bnx2 ?
 bnx2x ?
 bnxt_en ?
+<<<<<<< HEAD
 bnxt_en_bpo ?
+=======
+>>>>>>> temp
 bonding ?
 brcmfmac ?
 brcmsmac ?
@@ -55,6 +58,10 @@ com90io ?
 com90xx ?
 cs89x0 ?
 ctcm ?
+<<<<<<< HEAD
+=======
+cxgb4 ?
+>>>>>>> temp
 de2104x ?
 de4x5 ?
 de600 ?
@@ -81,10 +88,25 @@ fealnx ?
 forcedeth ?
 fsm ?
 ibmveth ?
+<<<<<<< HEAD
 igb ?
 ps3_gelic ?
 hamachi ?
 hermes ?
+=======
+ibmvnic ?
+igb ?
+ps3_gelic ?
+hamachi ?
+hclge ?
+hermes ?
+hfi1 ?
+hinic ?
+hns_dsaf ?
+hns_enet_drv ?
+hns_mdio ?
+hns3 ?
+>>>>>>> temp
 hp ?
 hp100 ?
 hp-plus ?
@@ -122,6 +144,10 @@ ne2k-pci ?
 ne3210 ?
 netconsole ?
 netiucv ?
+<<<<<<< HEAD
+=======
+netsec ?
+>>>>>>> temp
 netxen_nic ?
 ni5010 ?
 ni52 ?
@@ -136,6 +162,10 @@ orinoco_pci ?
 orinoco_plx ?
 orinoco_tmd ?
 pcnet32 ?
+<<<<<<< HEAD
+=======
+qcom-emac ?
+>>>>>>> temp
 qede ?
 qeth ?
 qeth_l2 ?

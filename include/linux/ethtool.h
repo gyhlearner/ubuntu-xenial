@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 /*
  * ethtool.h: Defines for Linux ethtool.
  *
@@ -60,6 +61,7 @@ enum ethtool_phys_id_state {
 enum {
 	ETH_RSS_HASH_TOP_BIT, /* Configurable RSS hash function - Toeplitz */
 	ETH_RSS_HASH_XOR_BIT, /* Configurable RSS hash function - Xor */
+	ETH_RSS_HASH_CRC32_BIT, /* Configurable RSS hash function - Crc32 */
 
 	/*
 	 * Add your fresh new hash function bits above and remember to update
@@ -73,6 +75,7 @@ enum {
 
 #define ETH_RSS_HASH_TOP	__ETH_RSS_HASH(TOP)
 #define ETH_RSS_HASH_XOR	__ETH_RSS_HASH(XOR)
+#define ETH_RSS_HASH_CRC32	__ETH_RSS_HASH(CRC32)
 
 #define ETH_RSS_HASH_UNKNOWN	0
 #define ETH_RSS_HASH_NO_CHANGE	0
@@ -135,6 +138,20 @@ struct ethtool_link_ksettings {
 	__set_bit(ETHTOOL_LINK_MODE_ ## mode ## _BIT, (ptr)->link_modes.name)
 
 /**
+<<<<<<< HEAD
+=======
+ * ethtool_link_ksettings_del_link_mode - clear bit in link_ksettings
+ * link mode mask
+ *   @ptr : pointer to struct ethtool_link_ksettings
+ *   @name : one of supported/advertising/lp_advertising
+ *   @mode : one of the ETHTOOL_LINK_MODE_*_BIT
+ * (not atomic, no bound checking)
+ */
+#define ethtool_link_ksettings_del_link_mode(ptr, name, mode)		\
+	__clear_bit(ETHTOOL_LINK_MODE_ ## mode ## _BIT, (ptr)->link_modes.name)
+
+/**
+>>>>>>> temp
  * ethtool_link_ksettings_test_link_mode - test bit in ksettings link mode mask
  *   @ptr : pointer to struct ethtool_link_ksettings
  *   @name : one of supported/advertising/lp_advertising
@@ -150,9 +167,28 @@ extern int
 __ethtool_get_link_ksettings(struct net_device *dev,
 			     struct ethtool_link_ksettings *link_ksettings);
 
+<<<<<<< HEAD
 /* DEPRECATED, use __ethtool_get_link_ksettings */
 extern int __ethtool_get_settings(struct net_device *dev,
 				  struct ethtool_cmd *cmd);
+=======
+/**
+ * ethtool_intersect_link_masks - Given two link masks, AND them together
+ * @dst: first mask and where result is stored
+ * @src: second mask to intersect with
+ *
+ * Given two link mode masks, AND them together and save the result in dst.
+ */
+void ethtool_intersect_link_masks(struct ethtool_link_ksettings *dst,
+				  struct ethtool_link_ksettings *src);
+
+void ethtool_convert_legacy_u32_to_link_mode(unsigned long *dst,
+					     u32 legacy_u32);
+
+/* return false if src had higher bits set. lower bits always updated. */
+bool ethtool_convert_link_mode_to_legacy_u32(u32 *legacy_u32,
+				     const unsigned long *src);
+>>>>>>> temp
 
 /**
  * struct ethtool_ops - optional netdev operations
@@ -260,6 +296,19 @@ extern int __ethtool_get_settings(struct net_device *dev,
  * @get_module_eeprom: Get the eeprom information from the plug-in module
  * @get_eee: Get Energy-Efficient (EEE) supported and status.
  * @set_eee: Set EEE status (enable/disable) as well as LPI timers.
+<<<<<<< HEAD
+=======
+ * @get_per_queue_coalesce: Get interrupt coalescing parameters per queue.
+ *	It must check that the given queue number is valid. If neither a RX nor
+ *	a TX queue has this number, return -EINVAL. If only a RX queue or a TX
+ *	queue has this number, set the inapplicable fields to ~0 and return 0.
+ *	Returns a negative error code or zero.
+ * @set_per_queue_coalesce: Set interrupt coalescing parameters per queue.
+ *	It must check that the given queue number is valid. If neither a RX nor
+ *	a TX queue has this number, return -EINVAL. If only a RX queue or a TX
+ *	queue has this number, ignore the inapplicable fields.
+ *	Returns a negative error code or zero.
+>>>>>>> temp
  * @get_link_ksettings: When defined, takes precedence over the
  *	%get_settings method. Get various device settings
  *	including Ethernet link settings. The %cmd and
@@ -273,6 +322,11 @@ extern int __ethtool_get_settings(struct net_device *dev,
  *	fields should be ignored (use %__ETHTOOL_LINK_MODE_MASK_NBITS
  *	instead of the latter), any change to them will be overwritten
  *	by kernel. Returns a negative error code or zero.
+<<<<<<< HEAD
+=======
+ * @get_fecparam: Get the network device Forward Error Correction parameters.
+ * @set_fecparam: Set the network device Forward Error Correction parameters.
+>>>>>>> temp
  *
  * All operations are optional (i.e. the function pointer may be set
  * to %NULL) and callers must take this into account.  Callers must
@@ -351,9 +405,23 @@ struct ethtool_ops {
 			       const struct ethtool_tunable *, void *);
 	int	(*set_tunable)(struct net_device *,
 			       const struct ethtool_tunable *, const void *);
+<<<<<<< HEAD
+=======
+	int	(*get_per_queue_coalesce)(struct net_device *, u32,
+					  struct ethtool_coalesce *);
+	int	(*set_per_queue_coalesce)(struct net_device *, u32,
+					  struct ethtool_coalesce *);
+>>>>>>> temp
 	int	(*get_link_ksettings)(struct net_device *,
 				      struct ethtool_link_ksettings *);
 	int	(*set_link_ksettings)(struct net_device *,
 				      const struct ethtool_link_ksettings *);
+<<<<<<< HEAD
+=======
+	int	(*get_fecparam)(struct net_device *,
+				      struct ethtool_fecparam *);
+	int	(*set_fecparam)(struct net_device *,
+				      struct ethtool_fecparam *);
+>>>>>>> temp
 };
 #endif /* _LINUX_ETHTOOL_H */

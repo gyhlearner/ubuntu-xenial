@@ -33,621 +33,223 @@
 #include <linux/list.h>
 #include <linux/slab.h>
 #include <linux/export.h>
+#include <linux/dma-fence.h>
 #include <drm/drmP.h>
 #include <drm/drm_crtc.h>
 #include <drm/drm_edid.h>
 #include <drm/drm_fourcc.h>
 #include <drm/drm_modeset_lock.h>
 #include <drm/drm_atomic.h>
+#include <drm/drm_auth.h>
+#include <drm/drm_debugfs_crc.h>
 
 #include "drm_crtc_internal.h"
 #include "drm_internal.h"
 
-static struct drm_framebuffer *
-internal_framebuffer_create(struct drm_device *dev,
-			    struct drm_mode_fb_cmd2 *r,
-			    struct drm_file *file_priv);
-
-/* Avoid boilerplate.  I'm tired of typing. */
-#define DRM_ENUM_NAME_FN(fnname, list)				\
-	const char *fnname(int val)				\
-	{							\
-		int i;						\
-		for (i = 0; i < ARRAY_SIZE(list); i++) {	\
-			if (list[i].type == val)		\
-				return list[i].name;		\
-		}						\
-		return "(unknown)";				\
-	}
-
-/*
- * Global properties
+/**
+ * DOC: overview
+ *
+ * A CRTC represents the overall display pipeline. It receives pixel data from
+ * &drm_plane and blends them together. The &drm_display_mode is also attached
+ * to the CRTC, specifying display timings. On the output side the data is fed
+ * to one or more &drm_encoder, which are then each connected to one
+ * &drm_connector.
+ *
+ * To create a CRTC, a KMS drivers allocates and zeroes an instances of
+ * &struct drm_crtc (possibly as part of a larger structure) and registers it
+ * with a call to drm_crtc_init_with_planes().
+ *
+ * The CRTC is also the entry point for legacy modeset operations, see
+ * &drm_crtc_funcs.set_config, legacy plane operations, see
+ * &drm_crtc_funcs.page_flip and &drm_crtc_funcs.cursor_set2, and other legacy
+ * operations like &drm_crtc_funcs.gamma_set. For atomic drivers all these
+ * features are controlled through &drm_property and
+ * &drm_mode_config_funcs.atomic_check and &drm_mode_config_funcs.atomic_check.
  */
-static const struct drm_prop_enum_list drm_dpms_enum_list[] = {
-	{ DRM_MODE_DPMS_ON, "On" },
-	{ DRM_MODE_DPMS_STANDBY, "Standby" },
-	{ DRM_MODE_DPMS_SUSPEND, "Suspend" },
-	{ DRM_MODE_DPMS_OFF, "Off" }
-};
-
-DRM_ENUM_NAME_FN(drm_get_dpms_name, drm_dpms_enum_list)
-
-static const struct drm_prop_enum_list drm_plane_type_enum_list[] = {
-	{ DRM_PLANE_TYPE_OVERLAY, "Overlay" },
-	{ DRM_PLANE_TYPE_PRIMARY, "Primary" },
-	{ DRM_PLANE_TYPE_CURSOR, "Cursor" },
-};
-
-/*
- * Optional properties
- */
-static const struct drm_prop_enum_list drm_scaling_mode_enum_list[] = {
-	{ DRM_MODE_SCALE_NONE, "None" },
-	{ DRM_MODE_SCALE_FULLSCREEN, "Full" },
-	{ DRM_MODE_SCALE_CENTER, "Center" },
-	{ DRM_MODE_SCALE_ASPECT, "Full aspect" },
-};
-
-static const struct drm_prop_enum_list drm_aspect_ratio_enum_list[] = {
-	{ DRM_MODE_PICTURE_ASPECT_NONE, "Automatic" },
-	{ DRM_MODE_PICTURE_ASPECT_4_3, "4:3" },
-	{ DRM_MODE_PICTURE_ASPECT_16_9, "16:9" },
-};
-
-/*
- * Non-global properties, but "required" for certain connectors.
- */
-static const struct drm_prop_enum_list drm_dvi_i_select_enum_list[] = {
-	{ DRM_MODE_SUBCONNECTOR_Automatic, "Automatic" }, /* DVI-I and TV-out */
-	{ DRM_MODE_SUBCONNECTOR_DVID,      "DVI-D"     }, /* DVI-I  */
-	{ DRM_MODE_SUBCONNECTOR_DVIA,      "DVI-A"     }, /* DVI-I  */
-};
-
-DRM_ENUM_NAME_FN(drm_get_dvi_i_select_name, drm_dvi_i_select_enum_list)
-
-static const struct drm_prop_enum_list drm_dvi_i_subconnector_enum_list[] = {
-	{ DRM_MODE_SUBCONNECTOR_Unknown,   "Unknown"   }, /* DVI-I and TV-out */
-	{ DRM_MODE_SUBCONNECTOR_DVID,      "DVI-D"     }, /* DVI-I  */
-	{ DRM_MODE_SUBCONNECTOR_DVIA,      "DVI-A"     }, /* DVI-I  */
-};
-
-DRM_ENUM_NAME_FN(drm_get_dvi_i_subconnector_name,
-		 drm_dvi_i_subconnector_enum_list)
-
-static const struct drm_prop_enum_list drm_tv_select_enum_list[] = {
-	{ DRM_MODE_SUBCONNECTOR_Automatic, "Automatic" }, /* DVI-I and TV-out */
-	{ DRM_MODE_SUBCONNECTOR_Composite, "Composite" }, /* TV-out */
-	{ DRM_MODE_SUBCONNECTOR_SVIDEO,    "SVIDEO"    }, /* TV-out */
-	{ DRM_MODE_SUBCONNECTOR_Component, "Component" }, /* TV-out */
-	{ DRM_MODE_SUBCONNECTOR_SCART,     "SCART"     }, /* TV-out */
-};
-
-DRM_ENUM_NAME_FN(drm_get_tv_select_name, drm_tv_select_enum_list)
-
-static const struct drm_prop_enum_list drm_tv_subconnector_enum_list[] = {
-	{ DRM_MODE_SUBCONNECTOR_Unknown,   "Unknown"   }, /* DVI-I and TV-out */
-	{ DRM_MODE_SUBCONNECTOR_Composite, "Composite" }, /* TV-out */
-	{ DRM_MODE_SUBCONNECTOR_SVIDEO,    "SVIDEO"    }, /* TV-out */
-	{ DRM_MODE_SUBCONNECTOR_Component, "Component" }, /* TV-out */
-	{ DRM_MODE_SUBCONNECTOR_SCART,     "SCART"     }, /* TV-out */
-};
-
-DRM_ENUM_NAME_FN(drm_get_tv_subconnector_name,
-		 drm_tv_subconnector_enum_list)
-
-static const struct drm_prop_enum_list drm_dirty_info_enum_list[] = {
-	{ DRM_MODE_DIRTY_OFF,      "Off"      },
-	{ DRM_MODE_DIRTY_ON,       "On"       },
-	{ DRM_MODE_DIRTY_ANNOTATE, "Annotate" },
-};
-
-struct drm_conn_prop_enum_list {
-	int type;
-	const char *name;
-	struct ida ida;
-};
-
-/*
- * Connector and encoder types.
- */
-static struct drm_conn_prop_enum_list drm_connector_enum_list[] = {
-	{ DRM_MODE_CONNECTOR_Unknown, "Unknown" },
-	{ DRM_MODE_CONNECTOR_VGA, "VGA" },
-	{ DRM_MODE_CONNECTOR_DVII, "DVI-I" },
-	{ DRM_MODE_CONNECTOR_DVID, "DVI-D" },
-	{ DRM_MODE_CONNECTOR_DVIA, "DVI-A" },
-	{ DRM_MODE_CONNECTOR_Composite, "Composite" },
-	{ DRM_MODE_CONNECTOR_SVIDEO, "SVIDEO" },
-	{ DRM_MODE_CONNECTOR_LVDS, "LVDS" },
-	{ DRM_MODE_CONNECTOR_Component, "Component" },
-	{ DRM_MODE_CONNECTOR_9PinDIN, "DIN" },
-	{ DRM_MODE_CONNECTOR_DisplayPort, "DP" },
-	{ DRM_MODE_CONNECTOR_HDMIA, "HDMI-A" },
-	{ DRM_MODE_CONNECTOR_HDMIB, "HDMI-B" },
-	{ DRM_MODE_CONNECTOR_TV, "TV" },
-	{ DRM_MODE_CONNECTOR_eDP, "eDP" },
-	{ DRM_MODE_CONNECTOR_VIRTUAL, "Virtual" },
-	{ DRM_MODE_CONNECTOR_DSI, "DSI" },
-};
-
-static const struct drm_prop_enum_list drm_encoder_enum_list[] = {
-	{ DRM_MODE_ENCODER_NONE, "None" },
-	{ DRM_MODE_ENCODER_DAC, "DAC" },
-	{ DRM_MODE_ENCODER_TMDS, "TMDS" },
-	{ DRM_MODE_ENCODER_LVDS, "LVDS" },
-	{ DRM_MODE_ENCODER_TVDAC, "TV" },
-	{ DRM_MODE_ENCODER_VIRTUAL, "Virtual" },
-	{ DRM_MODE_ENCODER_DSI, "DSI" },
-	{ DRM_MODE_ENCODER_DPMST, "DP MST" },
-};
-
-static const struct drm_prop_enum_list drm_subpixel_enum_list[] = {
-	{ SubPixelUnknown, "Unknown" },
-	{ SubPixelHorizontalRGB, "Horizontal RGB" },
-	{ SubPixelHorizontalBGR, "Horizontal BGR" },
-	{ SubPixelVerticalRGB, "Vertical RGB" },
-	{ SubPixelVerticalBGR, "Vertical BGR" },
-	{ SubPixelNone, "None" },
-};
-
-void drm_connector_ida_init(void)
-{
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(drm_connector_enum_list); i++)
-		ida_init(&drm_connector_enum_list[i].ida);
-}
-
-void drm_connector_ida_destroy(void)
-{
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(drm_connector_enum_list); i++)
-		ida_destroy(&drm_connector_enum_list[i].ida);
-}
 
 /**
- * drm_get_connector_status_name - return a string for connector status
- * @status: connector status to compute name of
- *
- * In contrast to the other drm_get_*_name functions this one here returns a
- * const pointer and hence is threadsafe.
- */
-const char *drm_get_connector_status_name(enum drm_connector_status status)
-{
-	if (status == connector_status_connected)
-		return "connected";
-	else if (status == connector_status_disconnected)
-		return "disconnected";
-	else
-		return "unknown";
-}
-EXPORT_SYMBOL(drm_get_connector_status_name);
-
-/**
- * drm_get_subpixel_order_name - return a string for a given subpixel enum
- * @order: enum of subpixel_order
- *
- * Note you could abuse this and return something out of bounds, but that
- * would be a caller error.  No unscrubbed user data should make it here.
- */
-const char *drm_get_subpixel_order_name(enum subpixel_order order)
-{
-	return drm_subpixel_enum_list[order].name;
-}
-EXPORT_SYMBOL(drm_get_subpixel_order_name);
-
-static char printable_char(int c)
-{
-	return isascii(c) && isprint(c) ? c : '?';
-}
-
-/**
- * drm_get_format_name - return a string for drm fourcc format
- * @format: format to compute name of
- *
- * Note that the buffer used by this function is globally shared and owned by
- * the function itself.
- *
- * FIXME: This isn't really multithreading safe.
- */
-const char *drm_get_format_name(uint32_t format)
-{
-	static char buf[32];
-
-	snprintf(buf, sizeof(buf),
-		 "%c%c%c%c %s-endian (0x%08x)",
-		 printable_char(format & 0xff),
-		 printable_char((format >> 8) & 0xff),
-		 printable_char((format >> 16) & 0xff),
-		 printable_char((format >> 24) & 0x7f),
-		 format & DRM_FORMAT_BIG_ENDIAN ? "big" : "little",
-		 format);
-
-	return buf;
-}
-EXPORT_SYMBOL(drm_get_format_name);
-
-/*
- * Internal function to assign a slot in the object idr and optionally
- * register the object into the idr.
- */
-static int drm_mode_object_get_reg(struct drm_device *dev,
-				   struct drm_mode_object *obj,
-				   uint32_t obj_type,
-				   bool register_obj)
-{
-	int ret;
-
-	mutex_lock(&dev->mode_config.idr_mutex);
-	ret = idr_alloc(&dev->mode_config.crtc_idr, register_obj ? obj : NULL, 1, 0, GFP_KERNEL);
-	if (ret >= 0) {
-		/*
-		 * Set up the object linking under the protection of the idr
-		 * lock so that other users can't see inconsistent state.
-		 */
-		obj->id = ret;
-		obj->type = obj_type;
-	}
-	mutex_unlock(&dev->mode_config.idr_mutex);
-
-	return ret < 0 ? ret : 0;
-}
-
-/**
- * drm_mode_object_get - allocate a new modeset identifier
+ * drm_crtc_from_index - find the registered CRTC at an index
  * @dev: DRM device
- * @obj: object pointer, used to generate unique ID
- * @obj_type: object type
+ * @idx: index of registered CRTC to find for
  *
- * Create a unique identifier based on @ptr in @dev's identifier space.  Used
- * for tracking modes, CRTCs and connectors. Note that despite the _get postfix
- * modeset identifiers are _not_ reference counted. Hence don't use this for
- * reference counted modeset objects like framebuffers.
+ * Given a CRTC index, return the registered CRTC from DRM device's
+ * list of CRTCs with matching index. This is the inverse of drm_crtc_index().
+ * It's useful in the vblank callbacks (like &drm_driver.enable_vblank or
+ * &drm_driver.disable_vblank), since that still deals with indices instead
+ * of pointers to &struct drm_crtc."
+ */
+struct drm_crtc *drm_crtc_from_index(struct drm_device *dev, int idx)
+{
+	struct drm_crtc *crtc;
+
+	drm_for_each_crtc(crtc, dev)
+		if (idx == crtc->index)
+			return crtc;
+
+	return NULL;
+}
+EXPORT_SYMBOL(drm_crtc_from_index);
+
+/**
+ * drm_crtc_force_disable - Forcibly turn off a CRTC
+ * @crtc: CRTC to turn off
+ *
+ * Note: This should only be used by non-atomic legacy drivers.
  *
  * Returns:
  * Zero on success, error code on failure.
  */
-int drm_mode_object_get(struct drm_device *dev,
-			struct drm_mode_object *obj, uint32_t obj_type)
+int drm_crtc_force_disable(struct drm_crtc *crtc)
 {
-	return drm_mode_object_get_reg(dev, obj, obj_type, true);
-}
+	struct drm_mode_set set = {
+		.crtc = crtc,
+	};
 
-static void drm_mode_object_register(struct drm_device *dev,
-				     struct drm_mode_object *obj)
-{
-	mutex_lock(&dev->mode_config.idr_mutex);
-	idr_replace(&dev->mode_config.crtc_idr, obj, obj->id);
-	mutex_unlock(&dev->mode_config.idr_mutex);
+	WARN_ON(drm_drv_uses_atomic_modeset(crtc->dev));
+
+	return drm_mode_set_config_internal(&set);
 }
+EXPORT_SYMBOL(drm_crtc_force_disable);
 
 /**
- * drm_mode_object_put - free a modeset identifer
- * @dev: DRM device
- * @object: object to free
+ * drm_crtc_force_disable_all - Forcibly turn off all enabled CRTCs
+ * @dev: DRM device whose CRTCs to turn off
  *
- * Free @id from @dev's unique identifier pool. Note that despite the _get
- * postfix modeset identifiers are _not_ reference counted. Hence don't use this
- * for reference counted modeset objects like framebuffers.
- */
-void drm_mode_object_put(struct drm_device *dev,
-			 struct drm_mode_object *object)
-{
-	mutex_lock(&dev->mode_config.idr_mutex);
-	idr_remove(&dev->mode_config.crtc_idr, object->id);
-	mutex_unlock(&dev->mode_config.idr_mutex);
-}
-
-static struct drm_mode_object *_object_find(struct drm_device *dev,
-		uint32_t id, uint32_t type)
-{
-	struct drm_mode_object *obj = NULL;
-
-	mutex_lock(&dev->mode_config.idr_mutex);
-	obj = idr_find(&dev->mode_config.crtc_idr, id);
-	if (obj && type != DRM_MODE_OBJECT_ANY && obj->type != type)
-		obj = NULL;
-	if (obj && obj->id != id)
-		obj = NULL;
-	/* don't leak out unref'd fb's */
-	if (obj &&
-	    (obj->type == DRM_MODE_OBJECT_FB ||
-	     obj->type == DRM_MODE_OBJECT_BLOB))
-		obj = NULL;
-	mutex_unlock(&dev->mode_config.idr_mutex);
-
-	return obj;
-}
-
-/**
- * drm_mode_object_find - look up a drm object with static lifetime
- * @dev: drm device
- * @id: id of the mode object
- * @type: type of the mode object
+ * Drivers may want to call this on unload to ensure that all displays are
+ * unlit and the GPU is in a consistent, low power state. Takes modeset locks.
  *
- * Note that framebuffers cannot be looked up with this functions - since those
- * are reference counted, they need special treatment.  Even with
- * DRM_MODE_OBJECT_ANY (although that will simply return NULL
- * rather than WARN_ON()).
- */
-struct drm_mode_object *drm_mode_object_find(struct drm_device *dev,
-		uint32_t id, uint32_t type)
-{
-	struct drm_mode_object *obj = NULL;
-
-	/* Framebuffers are reference counted and need their own lookup
-	 * function.*/
-	WARN_ON(type == DRM_MODE_OBJECT_FB || type == DRM_MODE_OBJECT_BLOB);
-	obj = _object_find(dev, id, type);
-	return obj;
-}
-EXPORT_SYMBOL(drm_mode_object_find);
-
-/**
- * drm_framebuffer_init - initialize a framebuffer
- * @dev: DRM device
- * @fb: framebuffer to be initialized
- * @funcs: ... with these functions
- *
- * Allocates an ID for the framebuffer's parent mode object, sets its mode
- * functions & device file and adds it to the master fd list.
- *
- * IMPORTANT:
- * This functions publishes the fb and makes it available for concurrent access
- * by other users. Which means by this point the fb _must_ be fully set up -
- * since all the fb attributes are invariant over its lifetime, no further
- * locking but only correct reference counting is required.
+ * Note: This should only be used by non-atomic legacy drivers. For an atomic
+ * version look at drm_atomic_helper_shutdown().
  *
  * Returns:
  * Zero on success, error code on failure.
  */
-int drm_framebuffer_init(struct drm_device *dev, struct drm_framebuffer *fb,
-			 const struct drm_framebuffer_funcs *funcs)
+int drm_crtc_force_disable_all(struct drm_device *dev)
 {
-	int ret;
+	struct drm_crtc *crtc;
+	int ret = 0;
 
-	mutex_lock(&dev->mode_config.fb_lock);
-	kref_init(&fb->refcount);
-	INIT_LIST_HEAD(&fb->filp_head);
-	fb->dev = dev;
-	fb->funcs = funcs;
-
-	ret = drm_mode_object_get(dev, &fb->base, DRM_MODE_OBJECT_FB);
-	if (ret)
-		goto out;
-
-	dev->mode_config.num_fb++;
-	list_add(&fb->head, &dev->mode_config.fb_list);
+	drm_modeset_lock_all(dev);
+	drm_for_each_crtc(crtc, dev)
+		if (crtc->enabled) {
+			ret = drm_crtc_force_disable(crtc);
+			if (ret)
+				goto out;
+		}
 out:
-	mutex_unlock(&dev->mode_config.fb_lock);
-
+	drm_modeset_unlock_all(dev);
 	return ret;
 }
-EXPORT_SYMBOL(drm_framebuffer_init);
+EXPORT_SYMBOL(drm_crtc_force_disable_all);
 
-/* dev->mode_config.fb_lock must be held! */
-static void __drm_framebuffer_unregister(struct drm_device *dev,
-					 struct drm_framebuffer *fb)
+static unsigned int drm_num_crtcs(struct drm_device *dev)
 {
-	mutex_lock(&dev->mode_config.idr_mutex);
-	idr_remove(&dev->mode_config.crtc_idr, fb->base.id);
-	mutex_unlock(&dev->mode_config.idr_mutex);
+	unsigned int num = 0;
+	struct drm_crtc *tmp;
 
-	fb->base.id = 0;
-}
-
-static void drm_framebuffer_free(struct kref *kref)
-{
-	struct drm_framebuffer *fb =
-			container_of(kref, struct drm_framebuffer, refcount);
-	struct drm_device *dev = fb->dev;
-
-	/*
-	 * The lookup idr holds a weak reference, which has not necessarily been
-	 * removed at this point. Check for that.
-	 */
-	mutex_lock(&dev->mode_config.fb_lock);
-	if (fb->base.id) {
-		/* Mark fb as reaped and drop idr ref. */
-		__drm_framebuffer_unregister(dev, fb);
+	drm_for_each_crtc(tmp, dev) {
+		num++;
 	}
-	mutex_unlock(&dev->mode_config.fb_lock);
 
-	fb->funcs->destroy(fb);
+	return num;
 }
 
-static struct drm_framebuffer *__drm_framebuffer_lookup(struct drm_device *dev,
-							uint32_t id)
+int drm_crtc_register_all(struct drm_device *dev)
 {
-	struct drm_mode_object *obj = NULL;
-	struct drm_framebuffer *fb;
-
-	mutex_lock(&dev->mode_config.idr_mutex);
-	obj = idr_find(&dev->mode_config.crtc_idr, id);
-	if (!obj || (obj->type != DRM_MODE_OBJECT_FB) || (obj->id != id))
-		fb = NULL;
-	else
-		fb = obj_to_fb(obj);
-	mutex_unlock(&dev->mode_config.idr_mutex);
-
-	return fb;
-}
-
-/**
- * drm_framebuffer_lookup - look up a drm framebuffer and grab a reference
- * @dev: drm device
- * @id: id of the fb object
- *
- * If successful, this grabs an additional reference to the framebuffer -
- * callers need to make sure to eventually unreference the returned framebuffer
- * again, using @drm_framebuffer_unreference.
- */
-struct drm_framebuffer *drm_framebuffer_lookup(struct drm_device *dev,
-					       uint32_t id)
-{
-	struct drm_framebuffer *fb;
-
-	mutex_lock(&dev->mode_config.fb_lock);
-	fb = __drm_framebuffer_lookup(dev, id);
-	if (fb) {
-		if (!kref_get_unless_zero(&fb->refcount))
-			fb = NULL;
-	}
-	mutex_unlock(&dev->mode_config.fb_lock);
-
-	return fb;
-}
-EXPORT_SYMBOL(drm_framebuffer_lookup);
-
-/**
- * drm_framebuffer_unreference - unref a framebuffer
- * @fb: framebuffer to unref
- *
- * This functions decrements the fb's refcount and frees it if it drops to zero.
- */
-void drm_framebuffer_unreference(struct drm_framebuffer *fb)
-{
-	DRM_DEBUG("%p: FB ID: %d (%d)\n", fb, fb->base.id, atomic_read(&fb->refcount.refcount));
-	kref_put(&fb->refcount, drm_framebuffer_free);
-}
-EXPORT_SYMBOL(drm_framebuffer_unreference);
-
-/**
- * drm_framebuffer_reference - incr the fb refcnt
- * @fb: framebuffer
- *
- * This functions increments the fb's refcount.
- */
-void drm_framebuffer_reference(struct drm_framebuffer *fb)
-{
-	DRM_DEBUG("%p: FB ID: %d (%d)\n", fb, fb->base.id, atomic_read(&fb->refcount.refcount));
-	kref_get(&fb->refcount);
-}
-EXPORT_SYMBOL(drm_framebuffer_reference);
-
-/**
- * drm_framebuffer_unregister_private - unregister a private fb from the lookup idr
- * @fb: fb to unregister
- *
- * Drivers need to call this when cleaning up driver-private framebuffers, e.g.
- * those used for fbdev. Note that the caller must hold a reference of it's own,
- * i.e. the object may not be destroyed through this call (since it'll lead to a
- * locking inversion).
- */
-void drm_framebuffer_unregister_private(struct drm_framebuffer *fb)
-{
-	struct drm_device *dev;
-
-	if (!fb)
-		return;
-
-	dev = fb->dev;
-
-	mutex_lock(&dev->mode_config.fb_lock);
-	/* Mark fb as reaped and drop idr ref. */
-	__drm_framebuffer_unregister(dev, fb);
-	mutex_unlock(&dev->mode_config.fb_lock);
-}
-EXPORT_SYMBOL(drm_framebuffer_unregister_private);
-
-/**
- * drm_framebuffer_cleanup - remove a framebuffer object
- * @fb: framebuffer to remove
- *
- * Cleanup framebuffer. This function is intended to be used from the drivers
- * ->destroy callback. It can also be used to clean up driver private
- *  framebuffers embedded into a larger structure.
- *
- * Note that this function does not remove the fb from active usuage - if it is
- * still used anywhere, hilarity can ensue since userspace could call getfb on
- * the id and get back -EINVAL. Obviously no concern at driver unload time.
- *
- * Also, the framebuffer will not be removed from the lookup idr - for
- * user-created framebuffers this will happen in in the rmfb ioctl. For
- * driver-private objects (e.g. for fbdev) drivers need to explicitly call
- * drm_framebuffer_unregister_private.
- */
-void drm_framebuffer_cleanup(struct drm_framebuffer *fb)
-{
-	struct drm_device *dev = fb->dev;
-
-	mutex_lock(&dev->mode_config.fb_lock);
-	list_del(&fb->head);
-	dev->mode_config.num_fb--;
-	mutex_unlock(&dev->mode_config.fb_lock);
-}
-EXPORT_SYMBOL(drm_framebuffer_cleanup);
-
-/**
- * drm_framebuffer_remove - remove and unreference a framebuffer object
- * @fb: framebuffer to remove
- *
- * Scans all the CRTCs and planes in @dev's mode_config.  If they're
- * using @fb, removes it, setting it to NULL. Then drops the reference to the
- * passed-in framebuffer. Might take the modeset locks.
- *
- * Note that this function optimizes the cleanup away if the caller holds the
- * last reference to the framebuffer. It is also guaranteed to not take the
- * modeset locks in this case.
- */
-void drm_framebuffer_remove(struct drm_framebuffer *fb)
-{
-	struct drm_device *dev;
 	struct drm_crtc *crtc;
-	struct drm_plane *plane;
-	struct drm_mode_set set;
-	int ret;
+	int ret = 0;
 
-	if (!fb)
-		return;
+	drm_for_each_crtc(crtc, dev) {
+		if (drm_debugfs_crtc_add(crtc))
+			DRM_ERROR("Failed to initialize debugfs entry for CRTC '%s'.\n",
+				  crtc->name);
 
-	dev = fb->dev;
-
-	WARN_ON(!list_empty(&fb->filp_head));
-
-	/*
-	 * drm ABI mandates that we remove any deleted framebuffers from active
-	 * useage. But since most sane clients only remove framebuffers they no
-	 * longer need, try to optimize this away.
-	 *
-	 * Since we're holding a reference ourselves, observing a refcount of 1
-	 * means that we're the last holder and can skip it. Also, the refcount
-	 * can never increase from 1 again, so we don't need any barriers or
-	 * locks.
-	 *
-	 * Note that userspace could try to race with use and instate a new
-	 * usage _after_ we've cleared all current ones. End result will be an
-	 * in-use fb with fb-id == 0. Userspace is allowed to shoot its own foot
-	 * in this manner.
-	 */
-	if (atomic_read(&fb->refcount.refcount) > 1) {
-		drm_modeset_lock_all(dev);
-		/* remove from any CRTC */
-		drm_for_each_crtc(crtc, dev) {
-			if (crtc->primary->fb == fb) {
-				/* should turn off the crtc */
-				memset(&set, 0, sizeof(struct drm_mode_set));
-				set.crtc = crtc;
-				set.fb = NULL;
-				ret = drm_mode_set_config_internal(&set);
-				if (ret)
-					DRM_ERROR("failed to reset crtc %p when fb was deleted\n", crtc);
-			}
-		}
-
-		drm_for_each_plane(plane, dev) {
-			if (plane->fb == fb)
-				drm_plane_force_disable(plane);
-		}
-		drm_modeset_unlock_all(dev);
+		if (crtc->funcs->late_register)
+			ret = crtc->funcs->late_register(crtc);
+		if (ret)
+			return ret;
 	}
 
-	drm_framebuffer_unreference(fb);
+	return 0;
 }
-EXPORT_SYMBOL(drm_framebuffer_remove);
 
-DEFINE_WW_CLASS(crtc_ww_class);
+void drm_crtc_unregister_all(struct drm_device *dev)
+{
+	struct drm_crtc *crtc;
+
+	drm_for_each_crtc(crtc, dev) {
+		if (crtc->funcs->early_unregister)
+			crtc->funcs->early_unregister(crtc);
+		drm_debugfs_crtc_remove(crtc);
+	}
+}
+
+static int drm_crtc_crc_init(struct drm_crtc *crtc)
+{
+#ifdef CONFIG_DEBUG_FS
+	spin_lock_init(&crtc->crc.lock);
+	init_waitqueue_head(&crtc->crc.wq);
+	crtc->crc.source = kstrdup("auto", GFP_KERNEL);
+	if (!crtc->crc.source)
+		return -ENOMEM;
+#endif
+	return 0;
+}
+
+static void drm_crtc_crc_fini(struct drm_crtc *crtc)
+{
+#ifdef CONFIG_DEBUG_FS
+	kfree(crtc->crc.source);
+#endif
+}
+
+static const struct dma_fence_ops drm_crtc_fence_ops;
+
+static struct drm_crtc *fence_to_crtc(struct dma_fence *fence)
+{
+	BUG_ON(fence->ops != &drm_crtc_fence_ops);
+	return container_of(fence->lock, struct drm_crtc, fence_lock);
+}
+
+static const char *drm_crtc_fence_get_driver_name(struct dma_fence *fence)
+{
+	struct drm_crtc *crtc = fence_to_crtc(fence);
+
+	return crtc->dev->driver->name;
+}
+
+static const char *drm_crtc_fence_get_timeline_name(struct dma_fence *fence)
+{
+	struct drm_crtc *crtc = fence_to_crtc(fence);
+
+	return crtc->timeline_name;
+}
+
+static bool drm_crtc_fence_enable_signaling(struct dma_fence *fence)
+{
+	return true;
+}
+
+static const struct dma_fence_ops drm_crtc_fence_ops = {
+	.get_driver_name = drm_crtc_fence_get_driver_name,
+	.get_timeline_name = drm_crtc_fence_get_timeline_name,
+	.enable_signaling = drm_crtc_fence_enable_signaling,
+	.wait = dma_fence_default_wait,
+};
+
+struct dma_fence *drm_crtc_create_fence(struct drm_crtc *crtc)
+{
+	struct dma_fence *fence;
+
+	fence = kzalloc(sizeof(*fence), GFP_KERNEL);
+	if (!fence)
+		return NULL;
+
+	dma_fence_init(fence, &drm_crtc_fence_ops, &crtc->fence_lock,
+		       crtc->fence_context, ++crtc->fence_seqno);
+
+	return fence;
+}
 
 /**
  * drm_crtc_init_with_planes - Initialise a new CRTC object with
@@ -657,8 +259,13 @@ DEFINE_WW_CLASS(crtc_ww_class);
  * @primary: Primary plane for CRTC
  * @cursor: Cursor plane for CRTC
  * @funcs: callbacks for the new CRTC
+ * @name: printf style format string for the CRTC name, or NULL for default name
  *
- * Inits a new object created as base part of a driver crtc object.
+ * Inits a new object created as base part of a driver crtc object. Drivers
+ * should use this function instead of drm_crtc_init(), which is only provided
+ * for backwards compatibility with drivers which do not yet support universal
+ * planes). For really simple hardware which has only 1 plane look at
+ * drm_simple_display_pipe_init() instead.
  *
  * Returns:
  * Zero on success, error code on failure.
@@ -666,7 +273,8 @@ DEFINE_WW_CLASS(crtc_ww_class);
 int drm_crtc_init_with_planes(struct drm_device *dev, struct drm_crtc *crtc,
 			      struct drm_plane *primary,
 			      struct drm_plane *cursor,
-			      const struct drm_crtc_funcs *funcs)
+			      const struct drm_crtc_funcs *funcs,
+			      const char *name, ...)
 {
 	struct drm_mode_config *config = &dev->mode_config;
 	int ret;
@@ -677,26 +285,57 @@ int drm_crtc_init_with_planes(struct drm_device *dev, struct drm_crtc *crtc,
 	crtc->dev = dev;
 	crtc->funcs = funcs;
 
+	INIT_LIST_HEAD(&crtc->commit_list);
+	spin_lock_init(&crtc->commit_lock);
+
 	drm_modeset_lock_init(&crtc->mutex);
-	ret = drm_mode_object_get(dev, &crtc->base, DRM_MODE_OBJECT_CRTC);
+	ret = drm_mode_object_add(dev, &crtc->base, DRM_MODE_OBJECT_CRTC);
 	if (ret)
 		return ret;
+
+	if (name) {
+		va_list ap;
+
+		va_start(ap, name);
+		crtc->name = kvasprintf(GFP_KERNEL, name, ap);
+		va_end(ap);
+	} else {
+		crtc->name = kasprintf(GFP_KERNEL, "crtc-%d",
+				       drm_num_crtcs(dev));
+	}
+	if (!crtc->name) {
+		drm_mode_object_unregister(dev, &crtc->base);
+		return -ENOMEM;
+	}
+
+	crtc->fence_context = dma_fence_context_alloc(1);
+	spin_lock_init(&crtc->fence_lock);
+	snprintf(crtc->timeline_name, sizeof(crtc->timeline_name),
+		 "CRTC:%d-%s", crtc->base.id, crtc->name);
 
 	crtc->base.properties = &crtc->properties;
 
 	list_add_tail(&crtc->head, &config->crtc_list);
-	config->num_crtc++;
+	crtc->index = config->num_crtc++;
 
 	crtc->primary = primary;
 	crtc->cursor = cursor;
-	if (primary)
+	if (primary && !primary->possible_crtcs)
 		primary->possible_crtcs = 1 << drm_crtc_index(crtc);
-	if (cursor)
+	if (cursor && !cursor->possible_crtcs)
 		cursor->possible_crtcs = 1 << drm_crtc_index(crtc);
+
+	ret = drm_crtc_crc_init(crtc);
+	if (ret) {
+		drm_mode_object_unregister(dev, &crtc->base);
+		return ret;
+	}
 
 	if (drm_core_check_feature(dev, DRIVER_ATOMIC)) {
 		drm_object_attach_property(&crtc->base, config->prop_active, 0);
 		drm_object_attach_property(&crtc->base, config->prop_mode_id, 0);
+		drm_object_attach_property(&crtc->base,
+					   config->prop_out_fence_ptr, 0);
 	}
 
 	return 0;
@@ -715,12 +354,19 @@ void drm_crtc_cleanup(struct drm_crtc *crtc)
 {
 	struct drm_device *dev = crtc->dev;
 
+	/* Note that the crtc_list is considered to be static; should we
+	 * remove the drm_crtc at runtime we would have to decrement all
+	 * the indices on the drm_crtc after us in the crtc_list.
+	 */
+
+	drm_crtc_crc_fini(crtc);
+
 	kfree(crtc->gamma_store);
 	crtc->gamma_store = NULL;
 
 	drm_modeset_lock_fini(&crtc->mutex);
 
-	drm_mode_object_put(dev, &crtc->base);
+	drm_mode_object_unregister(dev, &crtc->base);
 	list_del(&crtc->head);
 	dev->mode_config.num_crtc--;
 
@@ -728,81 +374,80 @@ void drm_crtc_cleanup(struct drm_crtc *crtc)
 	if (crtc->state && crtc->funcs->atomic_destroy_state)
 		crtc->funcs->atomic_destroy_state(crtc, crtc->state);
 
+	kfree(crtc->name);
+
 	memset(crtc, 0, sizeof(*crtc));
 }
 EXPORT_SYMBOL(drm_crtc_cleanup);
 
 /**
- * drm_crtc_index - find the index of a registered CRTC
- * @crtc: CRTC to find index for
+ * drm_mode_getcrtc - get CRTC configuration
+ * @dev: drm device for the ioctl
+ * @data: data pointer for the ioctl
+ * @file_priv: drm file for the ioctl call
  *
- * Given a registered CRTC, return the index of that CRTC within a DRM
- * device's list of CRTCs.
- */
-unsigned int drm_crtc_index(struct drm_crtc *crtc)
-{
-	unsigned int index = 0;
-	struct drm_crtc *tmp;
-
-	drm_for_each_crtc(tmp, crtc->dev) {
-		if (tmp == crtc)
-			return index;
-
-		index++;
-	}
-
-	BUG();
-}
-EXPORT_SYMBOL(drm_crtc_index);
-
-/*
- * drm_mode_remove - remove and free a mode
- * @connector: connector list to modify
- * @mode: mode to remove
+ * Construct a CRTC configuration structure to return to the user.
  *
- * Remove @mode from @connector's mode list, then free it.
- */
-static void drm_mode_remove(struct drm_connector *connector,
-			    struct drm_display_mode *mode)
-{
-	list_del(&mode->head);
-	drm_mode_destroy(connector->dev, mode);
-}
-
-/**
- * drm_display_info_set_bus_formats - set the supported bus formats
- * @info: display info to store bus formats in
- * @formats: array containing the supported bus formats
- * @num_formats: the number of entries in the fmts array
+ * Called by the user via ioctl.
  *
- * Store the supported bus formats in display info structure.
- * See MEDIA_BUS_FMT_* definitions in include/uapi/linux/media-bus-format.h for
- * a full list of available formats.
+ * Returns:
+ * Zero on success, negative errno on failure.
  */
-int drm_display_info_set_bus_formats(struct drm_display_info *info,
-				     const u32 *formats,
-				     unsigned int num_formats)
+int drm_mode_getcrtc(struct drm_device *dev,
+		     void *data, struct drm_file *file_priv)
 {
-	u32 *fmts = NULL;
+	struct drm_mode_crtc *crtc_resp = data;
+	struct drm_crtc *crtc;
 
-	if (!formats && num_formats)
+	if (!drm_core_check_feature(dev, DRIVER_MODESET))
 		return -EINVAL;
 
-	if (formats && num_formats) {
-		fmts = kmemdup(formats, sizeof(*formats) * num_formats,
-			       GFP_KERNEL);
-		if (!fmts)
-			return -ENOMEM;
-	}
+	crtc = drm_crtc_find(dev, file_priv, crtc_resp->crtc_id);
+	if (!crtc)
+		return -ENOENT;
 
-	kfree(info->bus_formats);
-	info->bus_formats = fmts;
-	info->num_bus_formats = num_formats;
+	crtc_resp->gamma_size = crtc->gamma_size;
+
+	drm_modeset_lock(&crtc->primary->mutex, NULL);
+	if (crtc->primary->state && crtc->primary->state->fb)
+		crtc_resp->fb_id = crtc->primary->state->fb->base.id;
+	else if (!crtc->primary->state && crtc->primary->fb)
+		crtc_resp->fb_id = crtc->primary->fb->base.id;
+	else
+		crtc_resp->fb_id = 0;
+
+	if (crtc->primary->state) {
+		crtc_resp->x = crtc->primary->state->src_x >> 16;
+		crtc_resp->y = crtc->primary->state->src_y >> 16;
+	}
+	drm_modeset_unlock(&crtc->primary->mutex);
+
+	drm_modeset_lock(&crtc->mutex, NULL);
+	if (crtc->state) {
+		if (crtc->state->enable) {
+			drm_mode_convert_to_umode(&crtc_resp->mode, &crtc->state->mode);
+			crtc_resp->mode_valid = 1;
+
+		} else {
+			crtc_resp->mode_valid = 0;
+		}
+	} else {
+		crtc_resp->x = crtc->x;
+		crtc_resp->y = crtc->y;
+		if (crtc->enabled) {
+			drm_mode_convert_to_umode(&crtc_resp->mode, &crtc->mode);
+			crtc_resp->mode_valid = 1;
+
+		} else {
+			crtc_resp->mode_valid = 0;
+		}
+	}
+	drm_modeset_unlock(&crtc->mutex);
 
 	return 0;
 }
-EXPORT_SYMBOL(drm_display_info_set_bus_formats);
 
+<<<<<<< HEAD
 /**
  * drm_connector_get_cmdline_mode - reads the user's cmdline mode
  * @connector: connector to quwery
@@ -1355,113 +1000,33 @@ EXPORT_SYMBOL(drm_plane_from_index);
  * and when restoring fbdev mode.
  */
 void drm_plane_force_disable(struct drm_plane *plane)
+=======
+static int __drm_mode_set_config_internal(struct drm_mode_set *set,
+					  struct drm_modeset_acquire_ctx *ctx)
+>>>>>>> temp
 {
+	struct drm_crtc *crtc = set->crtc;
+	struct drm_framebuffer *fb;
+	struct drm_crtc *tmp;
 	int ret;
 
-	if (!plane->fb)
-		return;
-
-	plane->old_fb = plane->fb;
-	ret = plane->funcs->disable_plane(plane);
-	if (ret) {
-		DRM_ERROR("failed to disable plane with busy fb\n");
-		plane->old_fb = NULL;
-		return;
-	}
-	/* disconnect the plane from the fb and crtc: */
-	drm_framebuffer_unreference(plane->old_fb);
-	plane->old_fb = NULL;
-	plane->fb = NULL;
-	plane->crtc = NULL;
-}
-EXPORT_SYMBOL(drm_plane_force_disable);
-
-static int drm_mode_create_standard_properties(struct drm_device *dev)
-{
-	struct drm_property *prop;
-
 	/*
-	 * Standard properties (apply to all connectors)
+	 * NOTE: ->set_config can also disable other crtcs (if we steal all
+	 * connectors from it), hence we need to refcount the fbs across all
+	 * crtcs. Atomic modeset will have saner semantics ...
 	 */
-	prop = drm_property_create(dev, DRM_MODE_PROP_BLOB |
-				   DRM_MODE_PROP_IMMUTABLE,
-				   "EDID", 0);
-	if (!prop)
-		return -ENOMEM;
-	dev->mode_config.edid_property = prop;
+	drm_for_each_crtc(tmp, crtc->dev)
+		tmp->primary->old_fb = tmp->primary->fb;
 
-	prop = drm_property_create_enum(dev, 0,
-				   "DPMS", drm_dpms_enum_list,
-				   ARRAY_SIZE(drm_dpms_enum_list));
-	if (!prop)
-		return -ENOMEM;
-	dev->mode_config.dpms_property = prop;
+	fb = set->fb;
 
-	prop = drm_property_create(dev,
-				   DRM_MODE_PROP_BLOB |
-				   DRM_MODE_PROP_IMMUTABLE,
-				   "PATH", 0);
-	if (!prop)
-		return -ENOMEM;
-	dev->mode_config.path_property = prop;
+	ret = crtc->funcs->set_config(set, ctx);
+	if (ret == 0) {
+		crtc->primary->crtc = crtc;
+		crtc->primary->fb = fb;
+	}
 
-	prop = drm_property_create(dev,
-				   DRM_MODE_PROP_BLOB |
-				   DRM_MODE_PROP_IMMUTABLE,
-				   "TILE", 0);
-	if (!prop)
-		return -ENOMEM;
-	dev->mode_config.tile_property = prop;
-
-	prop = drm_property_create_enum(dev, DRM_MODE_PROP_IMMUTABLE,
-					"type", drm_plane_type_enum_list,
-					ARRAY_SIZE(drm_plane_type_enum_list));
-	if (!prop)
-		return -ENOMEM;
-	dev->mode_config.plane_type_property = prop;
-
-	prop = drm_property_create_range(dev, DRM_MODE_PROP_ATOMIC,
-			"SRC_X", 0, UINT_MAX);
-	if (!prop)
-		return -ENOMEM;
-	dev->mode_config.prop_src_x = prop;
-
-	prop = drm_property_create_range(dev, DRM_MODE_PROP_ATOMIC,
-			"SRC_Y", 0, UINT_MAX);
-	if (!prop)
-		return -ENOMEM;
-	dev->mode_config.prop_src_y = prop;
-
-	prop = drm_property_create_range(dev, DRM_MODE_PROP_ATOMIC,
-			"SRC_W", 0, UINT_MAX);
-	if (!prop)
-		return -ENOMEM;
-	dev->mode_config.prop_src_w = prop;
-
-	prop = drm_property_create_range(dev, DRM_MODE_PROP_ATOMIC,
-			"SRC_H", 0, UINT_MAX);
-	if (!prop)
-		return -ENOMEM;
-	dev->mode_config.prop_src_h = prop;
-
-	prop = drm_property_create_signed_range(dev, DRM_MODE_PROP_ATOMIC,
-			"CRTC_X", INT_MIN, INT_MAX);
-	if (!prop)
-		return -ENOMEM;
-	dev->mode_config.prop_crtc_x = prop;
-
-	prop = drm_property_create_signed_range(dev, DRM_MODE_PROP_ATOMIC,
-			"CRTC_Y", INT_MIN, INT_MAX);
-	if (!prop)
-		return -ENOMEM;
-	dev->mode_config.prop_crtc_y = prop;
-
-	prop = drm_property_create_range(dev, DRM_MODE_PROP_ATOMIC,
-			"CRTC_W", 0, INT_MAX);
-	if (!prop)
-		return -ENOMEM;
-	dev->mode_config.prop_crtc_w = prop;
-
+<<<<<<< HEAD
 	prop = drm_property_create_range(dev, DRM_MODE_PROP_ATOMIC,
 			"CRTC_H", 0, INT_MAX);
 	if (!prop)
@@ -5381,637 +4946,276 @@ int drm_mode_page_flip_ioctl(struct drm_device *dev,
 		crtc->primary->fb = fb;
 		/* Unref only the old framebuffer. */
 		fb = NULL;
+=======
+	drm_for_each_crtc(tmp, crtc->dev) {
+		if (tmp->primary->fb)
+			drm_framebuffer_get(tmp->primary->fb);
+		if (tmp->primary->old_fb)
+			drm_framebuffer_put(tmp->primary->old_fb);
+		tmp->primary->old_fb = NULL;
+>>>>>>> temp
 	}
+
+	return ret;
+}
+/**
+ * drm_mode_set_config_internal - helper to call &drm_mode_config_funcs.set_config
+ * @set: modeset config to set
+ *
+ * This is a little helper to wrap internal calls to the
+ * &drm_mode_config_funcs.set_config driver interface. The only thing it adds is
+ * correct refcounting dance.
+ *
+ * This should only be used by non-atomic legacy drivers.
+ *
+ * Returns:
+ * Zero on success, negative errno on failure.
+ */
+int drm_mode_set_config_internal(struct drm_mode_set *set)
+{
+	WARN_ON(drm_drv_uses_atomic_modeset(set->crtc->dev));
+
+	return __drm_mode_set_config_internal(set, NULL);
+}
+EXPORT_SYMBOL(drm_mode_set_config_internal);
+
+/**
+ * drm_crtc_check_viewport - Checks that a framebuffer is big enough for the
+ *     CRTC viewport
+ * @crtc: CRTC that framebuffer will be displayed on
+ * @x: x panning
+ * @y: y panning
+ * @mode: mode that framebuffer will be displayed under
+ * @fb: framebuffer to check size of
+ */
+int drm_crtc_check_viewport(const struct drm_crtc *crtc,
+			    int x, int y,
+			    const struct drm_display_mode *mode,
+			    const struct drm_framebuffer *fb)
+
+{
+	int hdisplay, vdisplay;
+
+	drm_mode_get_hv_timing(mode, &hdisplay, &vdisplay);
+
+	if (crtc->state &&
+	    drm_rotation_90_or_270(crtc->primary->state->rotation))
+		swap(hdisplay, vdisplay);
+
+	return drm_framebuffer_check_src_coords(x << 16, y << 16,
+						hdisplay << 16, vdisplay << 16,
+						fb);
+}
+EXPORT_SYMBOL(drm_crtc_check_viewport);
+
+/**
+ * drm_mode_setcrtc - set CRTC configuration
+ * @dev: drm device for the ioctl
+ * @data: data pointer for the ioctl
+ * @file_priv: drm file for the ioctl call
+ *
+ * Build a new CRTC configuration based on user request.
+ *
+ * Called by the user via ioctl.
+ *
+ * Returns:
+ * Zero on success, negative errno on failure.
+ */
+int drm_mode_setcrtc(struct drm_device *dev, void *data,
+		     struct drm_file *file_priv)
+{
+	struct drm_mode_config *config = &dev->mode_config;
+	struct drm_mode_crtc *crtc_req = data;
+	struct drm_crtc *crtc;
+	struct drm_connector **connector_set = NULL, *connector;
+	struct drm_framebuffer *fb = NULL;
+	struct drm_display_mode *mode = NULL;
+	struct drm_mode_set set;
+	uint32_t __user *set_connectors_ptr;
+	struct drm_modeset_acquire_ctx ctx;
+	int ret;
+	int i;
+
+	if (!drm_core_check_feature(dev, DRIVER_MODESET))
+		return -EINVAL;
+
+	/*
+	 * Universal plane src offsets are only 16.16, prevent havoc for
+	 * drivers using universal plane code internally.
+	 */
+	if (crtc_req->x & 0xffff0000 || crtc_req->y & 0xffff0000)
+		return -ERANGE;
+
+	crtc = drm_crtc_find(dev, file_priv, crtc_req->crtc_id);
+	if (!crtc) {
+		DRM_DEBUG_KMS("Unknown CRTC ID %d\n", crtc_req->crtc_id);
+		return -ENOENT;
+	}
+	DRM_DEBUG_KMS("[CRTC:%d:%s]\n", crtc->base.id, crtc->name);
+
+	mutex_lock(&crtc->dev->mode_config.mutex);
+	drm_modeset_acquire_init(&ctx, DRM_MODESET_ACQUIRE_INTERRUPTIBLE);
+retry:
+	ret = drm_modeset_lock_all_ctx(crtc->dev, &ctx);
+	if (ret)
+		goto out;
+	if (crtc_req->mode_valid) {
+		/* If we have a mode we need a framebuffer. */
+		/* If we pass -1, set the mode with the currently bound fb */
+		if (crtc_req->fb_id == -1) {
+			if (!crtc->primary->fb) {
+				DRM_DEBUG_KMS("CRTC doesn't have current FB\n");
+				ret = -EINVAL;
+				goto out;
+			}
+			fb = crtc->primary->fb;
+			/* Make refcounting symmetric with the lookup path. */
+			drm_framebuffer_get(fb);
+		} else {
+			fb = drm_framebuffer_lookup(dev, file_priv, crtc_req->fb_id);
+			if (!fb) {
+				DRM_DEBUG_KMS("Unknown FB ID%d\n",
+						crtc_req->fb_id);
+				ret = -ENOENT;
+				goto out;
+			}
+		}
+
+		mode = drm_mode_create(dev);
+		if (!mode) {
+			ret = -ENOMEM;
+			goto out;
+		}
+
+		ret = drm_mode_convert_umode(mode, &crtc_req->mode);
+		if (ret) {
+			DRM_DEBUG_KMS("Invalid mode\n");
+			goto out;
+		}
+
+		/*
+		 * Check whether the primary plane supports the fb pixel format.
+		 * Drivers not implementing the universal planes API use a
+		 * default formats list provided by the DRM core which doesn't
+		 * match real hardware capabilities. Skip the check in that
+		 * case.
+		 */
+		if (!crtc->primary->format_default) {
+			ret = drm_plane_check_pixel_format(crtc->primary,
+							   fb->format->format);
+			if (ret) {
+				struct drm_format_name_buf format_name;
+				DRM_DEBUG_KMS("Invalid pixel format %s\n",
+				              drm_get_format_name(fb->format->format,
+				                                  &format_name));
+				goto out;
+			}
+		}
+
+		ret = drm_crtc_check_viewport(crtc, crtc_req->x, crtc_req->y,
+					      mode, fb);
+		if (ret)
+			goto out;
+
+	}
+
+	if (crtc_req->count_connectors == 0 && mode) {
+		DRM_DEBUG_KMS("Count connectors is 0 but mode set\n");
+		ret = -EINVAL;
+		goto out;
+	}
+
+	if (crtc_req->count_connectors > 0 && (!mode || !fb)) {
+		DRM_DEBUG_KMS("Count connectors is %d but no mode or fb set\n",
+			  crtc_req->count_connectors);
+		ret = -EINVAL;
+		goto out;
+	}
+
+	if (crtc_req->count_connectors > 0) {
+		u32 out_id;
+
+		/* Avoid unbounded kernel memory allocation */
+		if (crtc_req->count_connectors > config->num_connector) {
+			ret = -EINVAL;
+			goto out;
+		}
+
+		connector_set = kmalloc_array(crtc_req->count_connectors,
+					      sizeof(struct drm_connector *),
+					      GFP_KERNEL);
+		if (!connector_set) {
+			ret = -ENOMEM;
+			goto out;
+		}
+
+		for (i = 0; i < crtc_req->count_connectors; i++) {
+			connector_set[i] = NULL;
+			set_connectors_ptr = (uint32_t __user *)(unsigned long)crtc_req->set_connectors_ptr;
+			if (get_user(out_id, &set_connectors_ptr[i])) {
+				ret = -EFAULT;
+				goto out;
+			}
+
+			connector = drm_connector_lookup(dev, file_priv, out_id);
+			if (!connector) {
+				DRM_DEBUG_KMS("Connector id %d unknown\n",
+						out_id);
+				ret = -ENOENT;
+				goto out;
+			}
+			DRM_DEBUG_KMS("[CONNECTOR:%d:%s]\n",
+					connector->base.id,
+					connector->name);
+
+			connector_set[i] = connector;
+		}
+	}
+
+	set.crtc = crtc;
+	set.x = crtc_req->x;
+	set.y = crtc_req->y;
+	set.mode = mode;
+	set.connectors = connector_set;
+	set.num_connectors = crtc_req->count_connectors;
+	set.fb = fb;
+	ret = __drm_mode_set_config_internal(&set, &ctx);
 
 out:
 	if (fb)
-		drm_framebuffer_unreference(fb);
-	if (crtc->primary->old_fb)
-		drm_framebuffer_unreference(crtc->primary->old_fb);
-	crtc->primary->old_fb = NULL;
-	drm_modeset_unlock_crtc(crtc);
+		drm_framebuffer_put(fb);
+
+	if (connector_set) {
+		for (i = 0; i < crtc_req->count_connectors; i++) {
+			if (connector_set[i])
+				drm_connector_put(connector_set[i]);
+		}
+	}
+	kfree(connector_set);
+	drm_mode_destroy(dev, mode);
+	if (ret == -EDEADLK) {
+		ret = drm_modeset_backoff(&ctx);
+		if (!ret)
+			goto retry;
+	}
+	drm_modeset_drop_locks(&ctx);
+	drm_modeset_acquire_fini(&ctx);
+	mutex_unlock(&crtc->dev->mode_config.mutex);
 
 	return ret;
 }
 
-/**
- * drm_mode_config_reset - call ->reset callbacks
- * @dev: drm device
- *
- * This functions calls all the crtc's, encoder's and connector's ->reset
- * callback. Drivers can use this in e.g. their driver load or resume code to
- * reset hardware and software state.
- */
-void drm_mode_config_reset(struct drm_device *dev)
+int drm_mode_crtc_set_obj_prop(struct drm_mode_object *obj,
+			       struct drm_property *property,
+			       uint64_t value)
 {
-	struct drm_crtc *crtc;
-	struct drm_plane *plane;
-	struct drm_encoder *encoder;
-	struct drm_connector *connector;
+	int ret = -EINVAL;
+	struct drm_crtc *crtc = obj_to_crtc(obj);
 
-	drm_for_each_plane(plane, dev)
-		if (plane->funcs->reset)
-			plane->funcs->reset(plane);
+	if (crtc->funcs->set_property)
+		ret = crtc->funcs->set_property(crtc, property, value);
+	if (!ret)
+		drm_object_property_set_value(obj, property, value);
 
-	drm_for_each_crtc(crtc, dev)
-		if (crtc->funcs->reset)
-			crtc->funcs->reset(crtc);
-
-	drm_for_each_encoder(encoder, dev)
-		if (encoder->funcs->reset)
-			encoder->funcs->reset(encoder);
-
-	mutex_lock(&dev->mode_config.mutex);
-	drm_for_each_connector(connector, dev)
-		if (connector->funcs->reset)
-			connector->funcs->reset(connector);
-	mutex_unlock(&dev->mode_config.mutex);
+	return ret;
 }
-EXPORT_SYMBOL(drm_mode_config_reset);
-
-/**
- * drm_mode_create_dumb_ioctl - create a dumb backing storage buffer
- * @dev: DRM device
- * @data: ioctl data
- * @file_priv: DRM file info
- *
- * This creates a new dumb buffer in the driver's backing storage manager (GEM,
- * TTM or something else entirely) and returns the resulting buffer handle. This
- * handle can then be wrapped up into a framebuffer modeset object.
- *
- * Note that userspace is not allowed to use such objects for render
- * acceleration - drivers must create their own private ioctls for such a use
- * case.
- *
- * Called by the user via ioctl.
- *
- * Returns:
- * Zero on success, negative errno on failure.
- */
-int drm_mode_create_dumb_ioctl(struct drm_device *dev,
-			       void *data, struct drm_file *file_priv)
-{
-	struct drm_mode_create_dumb *args = data;
-	u32 cpp, stride, size;
-
-	if (!dev->driver->dumb_create)
-		return -ENOSYS;
-	if (!args->width || !args->height || !args->bpp)
-		return -EINVAL;
-
-	/* overflow checks for 32bit size calculations */
-	/* NOTE: DIV_ROUND_UP() can overflow */
-	cpp = DIV_ROUND_UP(args->bpp, 8);
-	if (!cpp || cpp > 0xffffffffU / args->width)
-		return -EINVAL;
-	stride = cpp * args->width;
-	if (args->height > 0xffffffffU / stride)
-		return -EINVAL;
-
-	/* test for wrap-around */
-	size = args->height * stride;
-	if (PAGE_ALIGN(size) == 0)
-		return -EINVAL;
-
-	/*
-	 * handle, pitch and size are output parameters. Zero them out to
-	 * prevent drivers from accidentally using uninitialized data. Since
-	 * not all existing userspace is clearing these fields properly we
-	 * cannot reject IOCTL with garbage in them.
-	 */
-	args->handle = 0;
-	args->pitch = 0;
-	args->size = 0;
-
-	return dev->driver->dumb_create(file_priv, dev, args);
-}
-
-/**
- * drm_mode_mmap_dumb_ioctl - create an mmap offset for a dumb backing storage buffer
- * @dev: DRM device
- * @data: ioctl data
- * @file_priv: DRM file info
- *
- * Allocate an offset in the drm device node's address space to be able to
- * memory map a dumb buffer.
- *
- * Called by the user via ioctl.
- *
- * Returns:
- * Zero on success, negative errno on failure.
- */
-int drm_mode_mmap_dumb_ioctl(struct drm_device *dev,
-			     void *data, struct drm_file *file_priv)
-{
-	struct drm_mode_map_dumb *args = data;
-
-	/* call driver ioctl to get mmap offset */
-	if (!dev->driver->dumb_map_offset)
-		return -ENOSYS;
-
-	return dev->driver->dumb_map_offset(file_priv, dev, args->handle, &args->offset);
-}
-
-/**
- * drm_mode_destroy_dumb_ioctl - destroy a dumb backing strage buffer
- * @dev: DRM device
- * @data: ioctl data
- * @file_priv: DRM file info
- *
- * This destroys the userspace handle for the given dumb backing storage buffer.
- * Since buffer objects must be reference counted in the kernel a buffer object
- * won't be immediately freed if a framebuffer modeset object still uses it.
- *
- * Called by the user via ioctl.
- *
- * Returns:
- * Zero on success, negative errno on failure.
- */
-int drm_mode_destroy_dumb_ioctl(struct drm_device *dev,
-				void *data, struct drm_file *file_priv)
-{
-	struct drm_mode_destroy_dumb *args = data;
-
-	if (!dev->driver->dumb_destroy)
-		return -ENOSYS;
-
-	return dev->driver->dumb_destroy(file_priv, dev, args->handle);
-}
-
-/**
- * drm_fb_get_bpp_depth - get the bpp/depth values for format
- * @format: pixel format (DRM_FORMAT_*)
- * @depth: storage for the depth value
- * @bpp: storage for the bpp value
- *
- * This only supports RGB formats here for compat with code that doesn't use
- * pixel formats directly yet.
- */
-void drm_fb_get_bpp_depth(uint32_t format, unsigned int *depth,
-			  int *bpp)
-{
-	switch (format) {
-	case DRM_FORMAT_C8:
-	case DRM_FORMAT_RGB332:
-	case DRM_FORMAT_BGR233:
-		*depth = 8;
-		*bpp = 8;
-		break;
-	case DRM_FORMAT_XRGB1555:
-	case DRM_FORMAT_XBGR1555:
-	case DRM_FORMAT_RGBX5551:
-	case DRM_FORMAT_BGRX5551:
-	case DRM_FORMAT_ARGB1555:
-	case DRM_FORMAT_ABGR1555:
-	case DRM_FORMAT_RGBA5551:
-	case DRM_FORMAT_BGRA5551:
-		*depth = 15;
-		*bpp = 16;
-		break;
-	case DRM_FORMAT_RGB565:
-	case DRM_FORMAT_BGR565:
-		*depth = 16;
-		*bpp = 16;
-		break;
-	case DRM_FORMAT_RGB888:
-	case DRM_FORMAT_BGR888:
-		*depth = 24;
-		*bpp = 24;
-		break;
-	case DRM_FORMAT_XRGB8888:
-	case DRM_FORMAT_XBGR8888:
-	case DRM_FORMAT_RGBX8888:
-	case DRM_FORMAT_BGRX8888:
-		*depth = 24;
-		*bpp = 32;
-		break;
-	case DRM_FORMAT_XRGB2101010:
-	case DRM_FORMAT_XBGR2101010:
-	case DRM_FORMAT_RGBX1010102:
-	case DRM_FORMAT_BGRX1010102:
-	case DRM_FORMAT_ARGB2101010:
-	case DRM_FORMAT_ABGR2101010:
-	case DRM_FORMAT_RGBA1010102:
-	case DRM_FORMAT_BGRA1010102:
-		*depth = 30;
-		*bpp = 32;
-		break;
-	case DRM_FORMAT_ARGB8888:
-	case DRM_FORMAT_ABGR8888:
-	case DRM_FORMAT_RGBA8888:
-	case DRM_FORMAT_BGRA8888:
-		*depth = 32;
-		*bpp = 32;
-		break;
-	default:
-		DRM_DEBUG_KMS("unsupported pixel format %s\n",
-			      drm_get_format_name(format));
-		*depth = 0;
-		*bpp = 0;
-		break;
-	}
-}
-EXPORT_SYMBOL(drm_fb_get_bpp_depth);
-
-/**
- * drm_format_num_planes - get the number of planes for format
- * @format: pixel format (DRM_FORMAT_*)
- *
- * Returns:
- * The number of planes used by the specified pixel format.
- */
-int drm_format_num_planes(uint32_t format)
-{
-	switch (format) {
-	case DRM_FORMAT_YUV410:
-	case DRM_FORMAT_YVU410:
-	case DRM_FORMAT_YUV411:
-	case DRM_FORMAT_YVU411:
-	case DRM_FORMAT_YUV420:
-	case DRM_FORMAT_YVU420:
-	case DRM_FORMAT_YUV422:
-	case DRM_FORMAT_YVU422:
-	case DRM_FORMAT_YUV444:
-	case DRM_FORMAT_YVU444:
-		return 3;
-	case DRM_FORMAT_NV12:
-	case DRM_FORMAT_NV21:
-	case DRM_FORMAT_NV16:
-	case DRM_FORMAT_NV61:
-	case DRM_FORMAT_NV24:
-	case DRM_FORMAT_NV42:
-		return 2;
-	default:
-		return 1;
-	}
-}
-EXPORT_SYMBOL(drm_format_num_planes);
-
-/**
- * drm_format_plane_cpp - determine the bytes per pixel value
- * @format: pixel format (DRM_FORMAT_*)
- * @plane: plane index
- *
- * Returns:
- * The bytes per pixel value for the specified plane.
- */
-int drm_format_plane_cpp(uint32_t format, int plane)
-{
-	unsigned int depth;
-	int bpp;
-
-	if (plane >= drm_format_num_planes(format))
-		return 0;
-
-	switch (format) {
-	case DRM_FORMAT_YUYV:
-	case DRM_FORMAT_YVYU:
-	case DRM_FORMAT_UYVY:
-	case DRM_FORMAT_VYUY:
-		return 2;
-	case DRM_FORMAT_NV12:
-	case DRM_FORMAT_NV21:
-	case DRM_FORMAT_NV16:
-	case DRM_FORMAT_NV61:
-	case DRM_FORMAT_NV24:
-	case DRM_FORMAT_NV42:
-		return plane ? 2 : 1;
-	case DRM_FORMAT_YUV410:
-	case DRM_FORMAT_YVU410:
-	case DRM_FORMAT_YUV411:
-	case DRM_FORMAT_YVU411:
-	case DRM_FORMAT_YUV420:
-	case DRM_FORMAT_YVU420:
-	case DRM_FORMAT_YUV422:
-	case DRM_FORMAT_YVU422:
-	case DRM_FORMAT_YUV444:
-	case DRM_FORMAT_YVU444:
-		return 1;
-	default:
-		drm_fb_get_bpp_depth(format, &depth, &bpp);
-		return bpp >> 3;
-	}
-}
-EXPORT_SYMBOL(drm_format_plane_cpp);
-
-/**
- * drm_format_horz_chroma_subsampling - get the horizontal chroma subsampling factor
- * @format: pixel format (DRM_FORMAT_*)
- *
- * Returns:
- * The horizontal chroma subsampling factor for the
- * specified pixel format.
- */
-int drm_format_horz_chroma_subsampling(uint32_t format)
-{
-	switch (format) {
-	case DRM_FORMAT_YUV411:
-	case DRM_FORMAT_YVU411:
-	case DRM_FORMAT_YUV410:
-	case DRM_FORMAT_YVU410:
-		return 4;
-	case DRM_FORMAT_YUYV:
-	case DRM_FORMAT_YVYU:
-	case DRM_FORMAT_UYVY:
-	case DRM_FORMAT_VYUY:
-	case DRM_FORMAT_NV12:
-	case DRM_FORMAT_NV21:
-	case DRM_FORMAT_NV16:
-	case DRM_FORMAT_NV61:
-	case DRM_FORMAT_YUV422:
-	case DRM_FORMAT_YVU422:
-	case DRM_FORMAT_YUV420:
-	case DRM_FORMAT_YVU420:
-		return 2;
-	default:
-		return 1;
-	}
-}
-EXPORT_SYMBOL(drm_format_horz_chroma_subsampling);
-
-/**
- * drm_format_vert_chroma_subsampling - get the vertical chroma subsampling factor
- * @format: pixel format (DRM_FORMAT_*)
- *
- * Returns:
- * The vertical chroma subsampling factor for the
- * specified pixel format.
- */
-int drm_format_vert_chroma_subsampling(uint32_t format)
-{
-	switch (format) {
-	case DRM_FORMAT_YUV410:
-	case DRM_FORMAT_YVU410:
-		return 4;
-	case DRM_FORMAT_YUV420:
-	case DRM_FORMAT_YVU420:
-	case DRM_FORMAT_NV12:
-	case DRM_FORMAT_NV21:
-		return 2;
-	default:
-		return 1;
-	}
-}
-EXPORT_SYMBOL(drm_format_vert_chroma_subsampling);
-
-/**
- * drm_rotation_simplify() - Try to simplify the rotation
- * @rotation: Rotation to be simplified
- * @supported_rotations: Supported rotations
- *
- * Attempt to simplify the rotation to a form that is supported.
- * Eg. if the hardware supports everything except DRM_REFLECT_X
- * one could call this function like this:
- *
- * drm_rotation_simplify(rotation, BIT(DRM_ROTATE_0) |
- *                       BIT(DRM_ROTATE_90) | BIT(DRM_ROTATE_180) |
- *                       BIT(DRM_ROTATE_270) | BIT(DRM_REFLECT_Y));
- *
- * to eliminate the DRM_ROTATE_X flag. Depending on what kind of
- * transforms the hardware supports, this function may not
- * be able to produce a supported transform, so the caller should
- * check the result afterwards.
- */
-unsigned int drm_rotation_simplify(unsigned int rotation,
-				   unsigned int supported_rotations)
-{
-	if (rotation & ~supported_rotations) {
-		rotation ^= BIT(DRM_REFLECT_X) | BIT(DRM_REFLECT_Y);
-		rotation = (rotation & DRM_REFLECT_MASK) |
-		           BIT((ffs(rotation & DRM_ROTATE_MASK) + 1) % 4);
-	}
-
-	return rotation;
-}
-EXPORT_SYMBOL(drm_rotation_simplify);
-
-/**
- * drm_mode_config_init - initialize DRM mode_configuration structure
- * @dev: DRM device
- *
- * Initialize @dev's mode_config structure, used for tracking the graphics
- * configuration of @dev.
- *
- * Since this initializes the modeset locks, no locking is possible. Which is no
- * problem, since this should happen single threaded at init time. It is the
- * driver's problem to ensure this guarantee.
- *
- */
-void drm_mode_config_init(struct drm_device *dev)
-{
-	mutex_init(&dev->mode_config.mutex);
-	drm_modeset_lock_init(&dev->mode_config.connection_mutex);
-	mutex_init(&dev->mode_config.idr_mutex);
-	mutex_init(&dev->mode_config.fb_lock);
-	mutex_init(&dev->mode_config.blob_lock);
-	INIT_LIST_HEAD(&dev->mode_config.fb_list);
-	INIT_LIST_HEAD(&dev->mode_config.crtc_list);
-	INIT_LIST_HEAD(&dev->mode_config.connector_list);
-	INIT_LIST_HEAD(&dev->mode_config.encoder_list);
-	INIT_LIST_HEAD(&dev->mode_config.property_list);
-	INIT_LIST_HEAD(&dev->mode_config.property_blob_list);
-	INIT_LIST_HEAD(&dev->mode_config.plane_list);
-	idr_init(&dev->mode_config.crtc_idr);
-	idr_init(&dev->mode_config.tile_idr);
-
-	drm_modeset_lock_all(dev);
-	drm_mode_create_standard_properties(dev);
-	drm_modeset_unlock_all(dev);
-
-	/* Just to be sure */
-	dev->mode_config.num_fb = 0;
-	dev->mode_config.num_connector = 0;
-	dev->mode_config.num_crtc = 0;
-	dev->mode_config.num_encoder = 0;
-	dev->mode_config.num_overlay_plane = 0;
-	dev->mode_config.num_total_plane = 0;
-}
-EXPORT_SYMBOL(drm_mode_config_init);
-
-/**
- * drm_mode_config_cleanup - free up DRM mode_config info
- * @dev: DRM device
- *
- * Free up all the connectors and CRTCs associated with this DRM device, then
- * free up the framebuffers and associated buffer objects.
- *
- * Note that since this /should/ happen single-threaded at driver/device
- * teardown time, no locking is required. It's the driver's job to ensure that
- * this guarantee actually holds true.
- *
- * FIXME: cleanup any dangling user buffer objects too
- */
-void drm_mode_config_cleanup(struct drm_device *dev)
-{
-	struct drm_connector *connector, *ot;
-	struct drm_crtc *crtc, *ct;
-	struct drm_encoder *encoder, *enct;
-	struct drm_framebuffer *fb, *fbt;
-	struct drm_property *property, *pt;
-	struct drm_property_blob *blob, *bt;
-	struct drm_plane *plane, *plt;
-
-	list_for_each_entry_safe(encoder, enct, &dev->mode_config.encoder_list,
-				 head) {
-		encoder->funcs->destroy(encoder);
-	}
-
-	list_for_each_entry_safe(connector, ot,
-				 &dev->mode_config.connector_list, head) {
-		connector->funcs->destroy(connector);
-	}
-
-	list_for_each_entry_safe(property, pt, &dev->mode_config.property_list,
-				 head) {
-		drm_property_destroy(dev, property);
-	}
-
-	list_for_each_entry_safe(blob, bt, &dev->mode_config.property_blob_list,
-				 head_global) {
-		drm_property_unreference_blob(blob);
-	}
-
-	/*
-	 * Single-threaded teardown context, so it's not required to grab the
-	 * fb_lock to protect against concurrent fb_list access. Contrary, it
-	 * would actually deadlock with the drm_framebuffer_cleanup function.
-	 *
-	 * Also, if there are any framebuffers left, that's a driver leak now,
-	 * so politely WARN about this.
-	 */
-	WARN_ON(!list_empty(&dev->mode_config.fb_list));
-	list_for_each_entry_safe(fb, fbt, &dev->mode_config.fb_list, head) {
-		drm_framebuffer_free(&fb->refcount);
-	}
-
-	list_for_each_entry_safe(plane, plt, &dev->mode_config.plane_list,
-				 head) {
-		plane->funcs->destroy(plane);
-	}
-
-	list_for_each_entry_safe(crtc, ct, &dev->mode_config.crtc_list, head) {
-		crtc->funcs->destroy(crtc);
-	}
-
-	idr_destroy(&dev->mode_config.tile_idr);
-	idr_destroy(&dev->mode_config.crtc_idr);
-	drm_modeset_lock_fini(&dev->mode_config.connection_mutex);
-}
-EXPORT_SYMBOL(drm_mode_config_cleanup);
-
-struct drm_property *drm_mode_create_rotation_property(struct drm_device *dev,
-						       unsigned int supported_rotations)
-{
-	static const struct drm_prop_enum_list props[] = {
-		{ DRM_ROTATE_0,   "rotate-0" },
-		{ DRM_ROTATE_90,  "rotate-90" },
-		{ DRM_ROTATE_180, "rotate-180" },
-		{ DRM_ROTATE_270, "rotate-270" },
-		{ DRM_REFLECT_X,  "reflect-x" },
-		{ DRM_REFLECT_Y,  "reflect-y" },
-	};
-
-	return drm_property_create_bitmask(dev, 0, "rotation",
-					   props, ARRAY_SIZE(props),
-					   supported_rotations);
-}
-EXPORT_SYMBOL(drm_mode_create_rotation_property);
-
-/**
- * DOC: Tile group
- *
- * Tile groups are used to represent tiled monitors with a unique
- * integer identifier. Tiled monitors using DisplayID v1.3 have
- * a unique 8-byte handle, we store this in a tile group, so we
- * have a common identifier for all tiles in a monitor group.
- */
-static void drm_tile_group_free(struct kref *kref)
-{
-	struct drm_tile_group *tg = container_of(kref, struct drm_tile_group, refcount);
-	struct drm_device *dev = tg->dev;
-	mutex_lock(&dev->mode_config.idr_mutex);
-	idr_remove(&dev->mode_config.tile_idr, tg->id);
-	mutex_unlock(&dev->mode_config.idr_mutex);
-	kfree(tg);
-}
-
-/**
- * drm_mode_put_tile_group - drop a reference to a tile group.
- * @dev: DRM device
- * @tg: tile group to drop reference to.
- *
- * drop reference to tile group and free if 0.
- */
-void drm_mode_put_tile_group(struct drm_device *dev,
-			     struct drm_tile_group *tg)
-{
-	kref_put(&tg->refcount, drm_tile_group_free);
-}
-
-/**
- * drm_mode_get_tile_group - get a reference to an existing tile group
- * @dev: DRM device
- * @topology: 8-bytes unique per monitor.
- *
- * Use the unique bytes to get a reference to an existing tile group.
- *
- * RETURNS:
- * tile group or NULL if not found.
- */
-struct drm_tile_group *drm_mode_get_tile_group(struct drm_device *dev,
-					       char topology[8])
-{
-	struct drm_tile_group *tg;
-	int id;
-	mutex_lock(&dev->mode_config.idr_mutex);
-	idr_for_each_entry(&dev->mode_config.tile_idr, tg, id) {
-		if (!memcmp(tg->group_data, topology, 8)) {
-			if (!kref_get_unless_zero(&tg->refcount))
-				tg = NULL;
-			mutex_unlock(&dev->mode_config.idr_mutex);
-			return tg;
-		}
-	}
-	mutex_unlock(&dev->mode_config.idr_mutex);
-	return NULL;
-}
-EXPORT_SYMBOL(drm_mode_get_tile_group);
-
-/**
- * drm_mode_create_tile_group - create a tile group from a displayid description
- * @dev: DRM device
- * @topology: 8-bytes unique per monitor.
- *
- * Create a tile group for the unique monitor, and get a unique
- * identifier for the tile group.
- *
- * RETURNS:
- * new tile group or error.
- */
-struct drm_tile_group *drm_mode_create_tile_group(struct drm_device *dev,
-						  char topology[8])
-{
-	struct drm_tile_group *tg;
-	int ret;
-
-	tg = kzalloc(sizeof(*tg), GFP_KERNEL);
-	if (!tg)
-		return ERR_PTR(-ENOMEM);
-
-	kref_init(&tg->refcount);
-	memcpy(tg->group_data, topology, 8);
-	tg->dev = dev;
-
-	mutex_lock(&dev->mode_config.idr_mutex);
-	ret = idr_alloc(&dev->mode_config.tile_idr, tg, 1, 0, GFP_KERNEL);
-	if (ret >= 0) {
-		tg->id = ret;
-	} else {
-		kfree(tg);
-		tg = ERR_PTR(ret);
-	}
-
-	mutex_unlock(&dev->mode_config.idr_mutex);
-	return tg;
-}
-EXPORT_SYMBOL(drm_mode_create_tile_group);

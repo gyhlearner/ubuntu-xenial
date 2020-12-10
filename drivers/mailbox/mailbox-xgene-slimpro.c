@@ -174,7 +174,11 @@ static void slimpro_mbox_shutdown(struct mbox_chan *chan)
 	devm_free_irq(mb_chan->dev, mb_chan->irq, mb_chan);
 }
 
+<<<<<<< HEAD
 static struct mbox_chan_ops slimpro_mbox_ops = {
+=======
+static const struct mbox_chan_ops slimpro_mbox_ops = {
+>>>>>>> temp
 	.send_data = slimpro_mbox_send_data,
 	.startup = slimpro_mbox_startup,
 	.shutdown = slimpro_mbox_shutdown,

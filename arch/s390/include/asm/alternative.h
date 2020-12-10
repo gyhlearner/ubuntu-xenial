@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+/* SPDX-License-Identifier: GPL-2.0 */
+>>>>>>> temp
 #ifndef _ASM_S390_ALTERNATIVE_H
 #define _ASM_S390_ALTERNATIVE_H
 

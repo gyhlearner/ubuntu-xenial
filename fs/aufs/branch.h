@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright (C) 2005-2015 Junjiro R. Okajima
+=======
+ * Copyright (C) 2005-2017 Junjiro R. Okajima
+>>>>>>> temp
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,6 +29,10 @@
 #ifdef __KERNEL__
 
 #include <linux/mount.h>
+<<<<<<< HEAD
+=======
+#include "dirren.h"
+>>>>>>> temp
 #include "dynop.h"
 #include "rwsem.h"
 #include "super.h"
@@ -34,7 +42,18 @@
 /* a xino file */
 struct au_xino_file {
 	struct file		*xi_file;
+<<<<<<< HEAD
 	struct mutex		xi_nondir_mtx;
+=======
+	struct {
+		spinlock_t		spin;
+		ino_t			*array;
+		int			total;
+		/* reserved for future use */
+		/* unsigned long	*bitmap; */
+		wait_queue_head_t	wqh;
+	} xi_nondir;
+>>>>>>> temp
 
 	/* todo: make xino files an array to support huge inode number */
 
@@ -99,7 +118,11 @@ struct au_branch {
 	struct path		br_path;
 	spinlock_t		br_dykey_lock;
 	struct au_dykey		*br_dykey[AuBrDynOp];
+<<<<<<< HEAD
 	atomic_t		br_count;
+=======
+	struct percpu_counter	br_count;
+>>>>>>> temp
 
 	struct au_wbr		*br_wbr;
 	struct au_br_fhsm	*br_fhsm;
@@ -115,6 +138,11 @@ struct au_branch {
 	/* entries under sysfs per mount-point */
 	struct au_brsysfs	br_sysfs[AuBrSysfs_Last];
 #endif
+<<<<<<< HEAD
+=======
+
+	struct au_dr_br		br_dirren;
+>>>>>>> temp
 };
 
 /* ---------------------------------------------------------------------- */
@@ -134,9 +162,40 @@ static inline struct super_block *au_br_sb(struct au_branch *br)
 	return au_br_mnt(br)->mnt_sb;
 }
 
+<<<<<<< HEAD
 static inline int au_br_rdonly(struct au_branch *br)
 {
 	return ((au_br_sb(br)->s_flags & MS_RDONLY)
+=======
+static inline void au_br_get(struct au_branch *br)
+{
+	percpu_counter_inc(&br->br_count);
+}
+
+static inline void au_br_put(struct au_branch *br)
+{
+	percpu_counter_dec(&br->br_count);
+}
+
+static inline s64 au_br_count(struct au_branch *br)
+{
+	return percpu_counter_sum(&br->br_count);
+}
+
+static inline void au_br_count_init(struct au_branch *br)
+{
+	percpu_counter_init(&br->br_count, 0, GFP_NOFS);
+}
+
+static inline void au_br_count_fin(struct au_branch *br)
+{
+	percpu_counter_destroy(&br->br_count);
+}
+
+static inline int au_br_rdonly(struct au_branch *br)
+{
+	return (sb_rdonly(au_br_sb(br))
+>>>>>>> temp
 		|| !au_br_writable(br->br_perm))
 		? -EROFS : 0;
 }
@@ -208,6 +267,14 @@ void au_xino_clr(struct super_block *sb);
 struct file *au_xino_def(struct super_block *sb);
 int au_xino_path(struct seq_file *seq, struct file *file);
 
+<<<<<<< HEAD
+=======
+void au_xinondir_leave(struct super_block *sb, aufs_bindex_t bindex,
+		       ino_t h_ino, int idx);
+int au_xinondir_enter(struct super_block *sb, aufs_bindex_t bindex, ino_t h_ino,
+		      int *idx);
+
+>>>>>>> temp
 /* ---------------------------------------------------------------------- */
 
 /* Superblock to branch */
@@ -229,9 +296,20 @@ struct super_block *au_sbr_sb(struct super_block *sb, aufs_bindex_t bindex)
 	return au_br_sb(au_sbr(sb, bindex));
 }
 
+<<<<<<< HEAD
 static inline void au_sbr_put(struct super_block *sb, aufs_bindex_t bindex)
 {
 	atomic_dec(&au_sbr(sb, bindex)->br_count);
+=======
+static inline void au_sbr_get(struct super_block *sb, aufs_bindex_t bindex)
+{
+	au_br_get(au_sbr(sb, bindex));
+}
+
+static inline void au_sbr_put(struct super_block *sb, aufs_bindex_t bindex)
+{
+	au_br_put(au_sbr(sb, bindex));
+>>>>>>> temp
 }
 
 static inline int au_sbr_perm(struct super_block *sb, aufs_bindex_t bindex)
@@ -246,6 +324,7 @@ static inline int au_sbr_whable(struct super_block *sb, aufs_bindex_t bindex)
 
 /* ---------------------------------------------------------------------- */
 
+<<<<<<< HEAD
 /*
  * wbr_wh_read_lock, wbr_wh_write_lock
  * wbr_wh_read_unlock, wbr_wh_write_unlock, wbr_wh_downgrade_lock
@@ -255,6 +334,26 @@ AuSimpleRwsemFuncs(wbr_wh, struct au_wbr *wbr, &wbr->wbr_wh_rwsem);
 #define WbrWhMustNoWaiters(wbr)	AuRwMustNoWaiters(&wbr->wbr_wh_rwsem)
 #define WbrWhMustAnyLock(wbr)	AuRwMustAnyLock(&wbr->wbr_wh_rwsem)
 #define WbrWhMustWriteLock(wbr)	AuRwMustWriteLock(&wbr->wbr_wh_rwsem)
+=======
+#define wbr_wh_read_lock(wbr)	au_rw_read_lock(&(wbr)->wbr_wh_rwsem)
+#define wbr_wh_write_lock(wbr)	au_rw_write_lock(&(wbr)->wbr_wh_rwsem)
+#define wbr_wh_read_trylock(wbr)	au_rw_read_trylock(&(wbr)->wbr_wh_rwsem)
+#define wbr_wh_write_trylock(wbr) au_rw_write_trylock(&(wbr)->wbr_wh_rwsem)
+/*
+#define wbr_wh_read_trylock_nested(wbr) \
+	au_rw_read_trylock_nested(&(wbr)->wbr_wh_rwsem)
+#define wbr_wh_write_trylock_nested(wbr) \
+	au_rw_write_trylock_nested(&(wbr)->wbr_wh_rwsem)
+*/
+
+#define wbr_wh_read_unlock(wbr)	au_rw_read_unlock(&(wbr)->wbr_wh_rwsem)
+#define wbr_wh_write_unlock(wbr)	au_rw_write_unlock(&(wbr)->wbr_wh_rwsem)
+#define wbr_wh_downgrade_lock(wbr)	au_rw_dgrade_lock(&(wbr)->wbr_wh_rwsem)
+
+#define WbrWhMustNoWaiters(wbr)	AuRwMustNoWaiters(&(wbr)->wbr_wh_rwsem)
+#define WbrWhMustAnyLock(wbr)	AuRwMustAnyLock(&(wbr)->wbr_wh_rwsem)
+#define WbrWhMustWriteLock(wbr)	AuRwMustWriteLock(&(wbr)->wbr_wh_rwsem)
+>>>>>>> temp
 
 /* ---------------------------------------------------------------------- */
 

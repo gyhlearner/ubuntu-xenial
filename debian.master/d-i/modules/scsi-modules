@@ -4,6 +4,10 @@ scsi_transport_spi ?
 scsi_transport_fc ?
 scsi_transport_iscsi ?
 scsi_transport_sas ?
+<<<<<<< HEAD
+=======
+sr_mod ?
+>>>>>>> temp
 iscsi_tcp ?
 libiscsi ?
 amiga7xx ?
@@ -84,7 +88,10 @@ sun3x_esp ?
 fcal ?
 lasi700 ?
 nsp32 ?
+<<<<<<< HEAD
 ipr ?
+=======
+>>>>>>> temp
 hptiop ?
 stex ?
 osst ?
@@ -123,9 +130,20 @@ isci ?
 mlx4_ib ?
 mlx5_ib ?
 zfcp ?
+<<<<<<< HEAD
+=======
+sd_mod ?
+hisi_sas_v2_hw ?
+hisi_sas_v3_hw ?
+>>>>>>> temp
 
 # device handlers
 scsi_dh_alua ?
 scsi_dh_emc ?
 scsi_dh_rdac ?
 scsi_dh_hp_sw ?
+<<<<<<< HEAD
+=======
+
+smartpqi ?
+>>>>>>> temp

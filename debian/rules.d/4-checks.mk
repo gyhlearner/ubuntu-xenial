@@ -1,22 +1,33 @@
 # Check ABI for package against last release (if not same abinum)
+<<<<<<< HEAD
 abi-check-%: $(stampdir)/stamp-build-%
 	@echo Debug: $@
 	install -d $(abidir)
 	sed -e 's/^\(.\+\)[[:space:]]\+\(.\+\)[[:space:]]\(.\+\)$$/\3 \2 \1/'	\
 		$(builddir)/build-$*/Module.symvers | sort > $(abidir)/$*
+=======
+abi-check-%: install-%
+	@echo Debug: $@
+>>>>>>> temp
 	@perl -f $(DROOT)/scripts/abi-check "$*" "$(prev_abinum)" "$(abinum)" \
 		"$(prev_abidir)" "$(abidir)" "$(skipabi)"
 
 # Check the module list against the last release (always)
+<<<<<<< HEAD
 module-check-%: $(stampdir)/stamp-build-%
 	@echo Debug: $@
 	install -d $(abidir)
 	find $(builddir)/build-$*/ -name \*.ko | \
 		sed -e 's/.*\/\([^\/]*\)\.ko/\1/' | sort > $(abidir)/$*.modules
+=======
+module-check-%: install-%
+	@echo Debug: $@
+>>>>>>> temp
 	@perl -f $(DROOT)/scripts/module-check "$*" \
 		"$(prev_abidir)" "$(abidir)" $(skipmodule)
 
 # Check the reptoline jmp/call functions against the last release.
+<<<<<<< HEAD
 retpoline-check-%: $(stampdir)/stamp-build-%
 	@echo Debug: $@
 	install -d $(abidir)
@@ -26,6 +37,10 @@ retpoline-check-%: $(stampdir)/stamp-build-%
 	else \
 		echo "# RETPOLINE NOT ENABLED" >$(abidir)/$*.retpoline; \
 	fi
+=======
+retpoline-check-%: install-%
+	@echo Debug: $@
+>>>>>>> temp
 	$(SHELL) $(DROOT)/scripts/retpoline-check "$*" \
 		"$(prev_abidir)" "$(abidir)" "$(skipretpoline)" "$(builddir)/build-$*"
 

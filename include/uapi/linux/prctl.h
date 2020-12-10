@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
 #ifndef _LINUX_PRCTL_H
 #define _LINUX_PRCTL_H
 
@@ -197,6 +198,18 @@ struct prctl_mm_map {
 # define PR_CAP_AMBIENT_LOWER		3
 # define PR_CAP_AMBIENT_CLEAR_ALL	4
 
+<<<<<<< HEAD
+=======
+/* arm64 Scalable Vector Extension controls */
+/* Flag values must be kept in sync with ptrace NT_ARM_SVE interface */
+#define PR_SVE_SET_VL			50	/* set task vector length */
+# define PR_SVE_SET_VL_ONEXEC		(1 << 18) /* defer effect until exec */
+#define PR_SVE_GET_VL			51	/* get task vector length */
+/* Bits common to PR_SVE_SET_VL and PR_SVE_GET_VL */
+# define PR_SVE_VL_LEN_MASK		0xffff
+# define PR_SVE_VL_INHERIT		(1 << 17) /* inherit across exec */
+
+>>>>>>> temp
 /* Per task speculation control */
 #define PR_GET_SPECULATION_CTRL		52
 #define PR_SET_SPECULATION_CTRL		53
@@ -209,4 +222,17 @@ struct prctl_mm_map {
 # define PR_SPEC_DISABLE		(1UL << 2)
 # define PR_SPEC_FORCE_DISABLE		(1UL << 3)
 
+<<<<<<< HEAD
+=======
+/*
+ * Control the LSM specific peer information
+ *
+ * The Ubuntu kernel provides an early preview of LSM Stacking. Use these
+ * PRCTLs at your own risk. Their values are not guaranteed to be stable in the
+ * case of colliding with an upstream PRCTL.
+ */
+#define	PR_GET_DISPLAY_LSM	1000000
+#define	PR_SET_DISPLAY_LSM	1000001
+
+>>>>>>> temp
 #endif /* _LINUX_PRCTL_H */

@@ -1,12 +1,9 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 #ifndef __SCORE_UACCESS_H
 #define __SCORE_UACCESS_H
 
 #include <linux/kernel.h>
-#include <linux/errno.h>
-#include <linux/thread_info.h>
-
-#define VERIFY_READ		0
-#define VERIFY_WRITE		1
+#include <asm/extable.h>
 
 #define get_ds()		(KERNEL_DS)
 #define get_fs()		(current_thread_info()->addr_limit)
@@ -299,6 +296,7 @@ extern void __put_user_unknown(void);
 extern int __copy_tofrom_user(void *to, const void *from, unsigned long len);
 
 static inline unsigned long
+<<<<<<< HEAD
 copy_from_user(void *to, const void *from, unsigned long len)
 {
 	unsigned long res = len;
@@ -335,13 +333,17 @@ __copy_from_user(void *to, const void *from, unsigned long len)
 
 static inline unsigned long
 __copy_to_user_inatomic(void *to, const void *from, unsigned long len)
+=======
+raw_copy_from_user(void *to, const void __user *from, unsigned long len)
+>>>>>>> temp
 {
-	return __copy_to_user(to, from, len);
+	return __copy_tofrom_user(to, (__force const void *)from, len);
 }
 
 static inline unsigned long
-__copy_from_user_inatomic(void *to, const void *from, unsigned long len)
+raw_copy_to_user(void __user *to, const void *from, unsigned long len)
 {
+<<<<<<< HEAD
 	return __copy_tofrom_user(to, from, len);
 }
 
@@ -354,6 +356,13 @@ copy_in_user(void *to, const void *from, unsigned long len)
 		      access_ok(VERFITY_WRITE, to, len))
 		return __copy_tofrom_user(to, from, len);
 }
+=======
+	return __copy_tofrom_user((__force void *)to, from, len);
+}
+
+#define INLINE_COPY_FROM_USER
+#define INLINE_COPY_TO_USER
+>>>>>>> temp
 
 /*
  * __clear_user: - Zero a block of memory in user space, with less checking.
@@ -405,12 +414,6 @@ static inline int strncpy_from_user(char *dst, const char *src, long len)
 	return -EFAULT;
 }
 
-extern int __strlen_user(const char *src);
-static inline long strlen_user(const char __user *src)
-{
-	return __strlen_user(src);
-}
-
 extern int __strnlen_user(const char *str, long len);
 static inline long strnlen_user(const char __user *str, long len)
 {
@@ -419,13 +422,6 @@ static inline long strnlen_user(const char __user *str, long len)
 	else		
 		return __strnlen_user(str, len);
 }
-
-struct exception_table_entry {
-	unsigned long insn;
-	unsigned long fixup;
-};
-
-extern int fixup_exception(struct pt_regs *regs);
 
 #endif /* __SCORE_UACCESS_H */
 

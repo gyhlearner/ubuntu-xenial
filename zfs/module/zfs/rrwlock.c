@@ -313,8 +313,13 @@ rrw_tsd_destroy(void *arg)
  * The idea is to split single busy lock into array of locks, so that
  * each reader can lock only one of them for read, depending on result
  * of simple hash function.  That proportionally reduces lock congestion.
+<<<<<<< HEAD
  * Writer same time has to sequentially aquire write on all the locks.
  * That makes write aquisition proportionally slower, but in places where
+=======
+ * Writer at the same time has to sequentially acquire write on all the locks.
+ * That makes write acquisition proportionally slower, but in places where
+>>>>>>> temp
  * it is used (filesystem unmount) performance is not critical.
  *
  * All the functions below are direct wrappers around functions above.

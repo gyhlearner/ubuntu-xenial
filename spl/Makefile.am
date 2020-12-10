@@ -20,7 +20,11 @@ nodist_kernel_HEADERS = spl.release spl_config.h module/$(LINUX_SYMBOLS)
 endif
 
 AUTOMAKE_OPTIONS = foreign
+<<<<<<< HEAD
 EXTRA_DIST  = autogen.sh META DISCLAIMER copy-builtin COPYING
+=======
+EXTRA_DIST  = autogen.sh META DISCLAIMER copy-builtin
+>>>>>>> temp
 EXTRA_DIST += config/config.awk config/rpm.am config/deb.am config/tgz.am
 
 distclean-local::
@@ -50,5 +54,9 @@ etags:
 tags: ctags etags
 
 pkg: @DEFAULT_PACKAGE@
+<<<<<<< HEAD
+=======
+pkg-dkms: @DEFAULT_PACKAGE@-dkms
+>>>>>>> temp
 pkg-kmod: @DEFAULT_PACKAGE@-kmod
 pkg-utils: @DEFAULT_PACKAGE@-utils

@@ -1,6 +1,11 @@
 human_arch	= 32 bit x86
+<<<<<<< HEAD
 build_arch	= i386
 header_arch	= x86_64
+=======
+build_arch	= x86
+header_arch	= $(build_arch)
+>>>>>>> temp
 defconfig	= defconfig
 flavours        = generic lowlatency
 build_image	= bzImage

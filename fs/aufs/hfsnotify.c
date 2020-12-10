@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright (C) 2005-2015 Junjiro R. Okajima
+=======
+ * Copyright (C) 2005-2017 Junjiro R. Okajima
+>>>>>>> temp
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,9 +35,15 @@ static void au_hfsn_free_mark(struct fsnotify_mark *mark)
 {
 	struct au_hnotify *hn = container_of(mark, struct au_hnotify,
 					     hn_mark);
+<<<<<<< HEAD
 	AuDbg("here\n");
 	au_cache_free_hnotify(hn);
 	smp_mb__before_atomic();
+=======
+	/* AuDbg("here\n"); */
+	au_cache_free_hnotify(hn);
+	smp_mb__before_atomic(); /* for atomic64_dec */
+>>>>>>> temp
 	if (atomic64_dec_and_test(&au_hfsn_ifree))
 		wake_up(&au_hfsn_wq);
 }
@@ -54,17 +64,26 @@ static int au_hfsn_alloc(struct au_hinode *hinode)
 	AuDebugOn(!br->br_hfsn);
 
 	mark = &hn->hn_mark;
+<<<<<<< HEAD
 	fsnotify_init_mark(mark, au_hfsn_free_mark);
+=======
+	fsnotify_init_mark(mark, br->br_hfsn->hfsn_group);
+>>>>>>> temp
 	mark->mask = AuHfsnMask;
 	/*
 	 * by udba rename or rmdir, aufs assign a new inode to the known
 	 * h_inode, so specify 1 to allow dups.
 	 */
 	lockdep_off();
+<<<<<<< HEAD
 	err = fsnotify_add_mark(mark, br->br_hfsn->hfsn_group, hinode->hi_inode,
 				 /*mnt*/NULL, /*allow_dups*/1);
 	/* even if err */
 	fsnotify_put_mark(mark);
+=======
+	err = fsnotify_add_mark(mark, hinode->hi_inode, /*mnt*/NULL,
+				/*allow_dups*/1);
+>>>>>>> temp
 	lockdep_on();
 
 	return err;
@@ -86,6 +105,10 @@ static int au_hfsn_free(struct au_hinode *hinode, struct au_hnotify *hn)
 	spin_unlock(&mark->lock);
 	lockdep_off();
 	fsnotify_destroy_mark(mark, group);
+<<<<<<< HEAD
+=======
+	fsnotify_put_mark(mark);
+>>>>>>> temp
 	fsnotify_put_group(group);
 	lockdep_on();
 
@@ -156,7 +179,11 @@ static void au_hfsn_free_group(struct fsnotify_group *group)
 {
 	struct au_br_hfsnotify *hfsn = group->private;
 
+<<<<<<< HEAD
 	AuDbg("here\n");
+=======
+	/* AuDbg("here\n"); */
+>>>>>>> temp
 	kfree(hfsn);
 }
 
@@ -164,8 +191,14 @@ static int au_hfsn_handle_event(struct fsnotify_group *group,
 				struct inode *inode,
 				struct fsnotify_mark *inode_mark,
 				struct fsnotify_mark *vfsmount_mark,
+<<<<<<< HEAD
 				u32 mask, void *data, int data_type,
 				const unsigned char *file_name, u32 cookie)
+=======
+				u32 mask, const void *data, int data_type,
+				const unsigned char *file_name, u32 cookie,
+				struct fsnotify_iter_info *iter_info)
+>>>>>>> temp
 {
 	int err;
 	struct au_hnotify *hnotify;
@@ -204,7 +237,12 @@ out:
 
 static struct fsnotify_ops au_hfsn_ops = {
 	.handle_event		= au_hfsn_handle_event,
+<<<<<<< HEAD
 	.free_group_priv	= au_hfsn_free_group
+=======
+	.free_group_priv	= au_hfsn_free_group,
+	.free_mark		= au_hfsn_free_mark
+>>>>>>> temp
 };
 
 /* ---------------------------------------------------------------------- */

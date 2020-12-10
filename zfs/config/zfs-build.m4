@@ -37,6 +37,7 @@ AC_DEFUN([ZFS_AC_DEBUG], [
 	AC_MSG_RESULT([$enable_debug])
 ])
 
+<<<<<<< HEAD
 AC_DEFUN([ZFS_AC_DEBUG_DMU_TX], [
 	AC_ARG_ENABLE([debug-dmu-tx],
 		[AS_HELP_STRING([--enable-debug-dmu-tx],
@@ -69,6 +70,16 @@ AC_DEFUN([ZFS_AC_CONFIG], [
 	TARGET_ASM_DIR=asm-generic
 	AC_SUBST(TARGET_ASM_DIR)
 
+=======
+AC_DEFUN([ZFS_AC_CONFIG_ALWAYS], [
+	ZFS_AC_CONFIG_ALWAYS_NO_UNUSED_BUT_SET_VARIABLE
+	ZFS_AC_CONFIG_ALWAYS_NO_BOOL_COMPARE
+	ZFS_AC_CONFIG_ALWAYS_TOOLCHAIN_SIMD
+	ZFS_AC_CONFIG_ALWAYS_ARCH
+])
+
+AC_DEFUN([ZFS_AC_CONFIG], [
+>>>>>>> temp
 	ZFS_CONFIG=all
 	AC_ARG_WITH([config],
 		AS_HELP_STRING([--with-config=CONFIG],
@@ -87,10 +98,17 @@ AC_DEFUN([ZFS_AC_CONFIG], [
 	ZFS_AC_CONFIG_ALWAYS
 
 	case "$ZFS_CONFIG" in
+<<<<<<< HEAD
 		user)	ZFS_AC_CONFIG_USER   ;;
 		kernel) ZFS_AC_CONFIG_KERNEL ;;
 		all)    ZFS_AC_CONFIG_KERNEL
 			ZFS_AC_CONFIG_USER   ;;
+=======
+		kernel) ZFS_AC_CONFIG_KERNEL ;;
+		user)	ZFS_AC_CONFIG_USER   ;;
+		all)    ZFS_AC_CONFIG_USER
+			ZFS_AC_CONFIG_KERNEL ;;
+>>>>>>> temp
 		srpm)                        ;;
 		*)
 		AC_MSG_RESULT([Error!])
@@ -99,10 +117,20 @@ AC_DEFUN([ZFS_AC_CONFIG], [
 	esac
 
 	AM_CONDITIONAL([CONFIG_USER],
+<<<<<<< HEAD
 		       [test "$ZFS_CONFIG" = user -o "$ZFS_CONFIG" = all])
 	AM_CONDITIONAL([CONFIG_KERNEL],
 		       [test "$ZFS_CONFIG" = kernel -o "$ZFS_CONFIG" = all] &&
 		       [test "x$enable_linux_builtin" != xyes ])
+=======
+	    [test "$ZFS_CONFIG" = user -o "$ZFS_CONFIG" = all])
+	AM_CONDITIONAL([CONFIG_KERNEL],
+	    [test "$ZFS_CONFIG" = kernel -o "$ZFS_CONFIG" = all] &&
+	    [test "x$enable_linux_builtin" != xyes ])
+	AM_CONDITIONAL([CONFIG_QAT],
+	    [test "$ZFS_CONFIG" = kernel -o "$ZFS_CONFIG" = all] &&
+	    [test "x$qatsrc" != x ])
+>>>>>>> temp
 	AM_CONDITIONAL([WANT_DEVNAME2DEVID], [test "x$user_libudev" = xyes ])
 	AM_CONDITIONAL([WANT_MMAP_LIBAIO], [test "x$user_libaio" = xyes ])
 ])
@@ -141,7 +169,11 @@ AC_DEFUN([ZFS_AC_RPM], [
 		AC_MSG_RESULT([$HAVE_RPMBUILD])
 	])
 
+<<<<<<< HEAD
 	RPM_DEFINE_COMMON='--define "$(DEBUG_ZFS) 1" --define "$(DEBUG_DMU_TX) 1"'
+=======
+	RPM_DEFINE_COMMON='--define "$(DEBUG_ZFS) 1"'
+>>>>>>> temp
 	RPM_DEFINE_UTIL='--define "_dracutdir $(dracutdir)" --define "_udevdir $(udevdir)" --define "_udevruledir $(udevruledir)" --define "_initconfdir $(DEFAULT_INITCONF_DIR)" $(DEFINE_INITRAMFS)'
 	RPM_DEFINE_KMOD='--define "kernels $(LINUX_VERSION)" --define "require_spldir $(SPL)" --define "require_splobj $(SPL_OBJ)" --define "ksrc $(LINUX)" --define "kobj $(LINUX_OBJ)"'
 	RPM_DEFINE_DKMS=
@@ -268,6 +300,11 @@ AC_DEFUN([ZFS_AC_DEFAULT_PACKAGE], [
 		VENDOR=ubuntu ;
 	elif test -f /etc/debian_version ; then
 		VENDOR=debian ;
+<<<<<<< HEAD
+=======
+	elif test -f /etc/alpine-release ; then
+		VENDOR=alpine ;
+>>>>>>> temp
 	else
 		VENDOR= ;
 	fi
@@ -280,6 +317,10 @@ AC_DEFUN([ZFS_AC_DEFAULT_PACKAGE], [
 		redhat)     DEFAULT_PACKAGE=rpm  ;;
 		fedora)     DEFAULT_PACKAGE=rpm  ;;
 		gentoo)     DEFAULT_PACKAGE=tgz  ;;
+<<<<<<< HEAD
+=======
+		alpine)     DEFAULT_PACKAGE=tgz  ;;
+>>>>>>> temp
 		arch)       DEFAULT_PACKAGE=tgz  ;;
 		sles)       DEFAULT_PACKAGE=rpm  ;;
 		slackware)  DEFAULT_PACKAGE=tgz  ;;
@@ -301,7 +342,12 @@ AC_DEFUN([ZFS_AC_DEFAULT_PACKAGE], [
 		toss)       DEFAULT_INIT_SCRIPT=redhat ;;
 		redhat)     DEFAULT_INIT_SCRIPT=redhat ;;
 		fedora)     DEFAULT_INIT_SCRIPT=fedora ;;
+<<<<<<< HEAD
 		gentoo)     DEFAULT_INIT_SCRIPT=gentoo ;;
+=======
+		gentoo)     DEFAULT_INIT_SCRIPT=openrc ;;
+		alpine)     DEFAULT_INIT_SCRIPT=openrc ;;
+>>>>>>> temp
 		arch)       DEFAULT_INIT_SCRIPT=lsb    ;;
 		sles)       DEFAULT_INIT_SCRIPT=lsb    ;;
 		slackware)  DEFAULT_INIT_SCRIPT=lsb    ;;
@@ -315,6 +361,10 @@ AC_DEFUN([ZFS_AC_DEFAULT_PACKAGE], [
 
 	AC_MSG_CHECKING([default init config direectory])
 	case "$VENDOR" in
+<<<<<<< HEAD
+=======
+		alpine)     DEFAULT_INITCONF_DIR=/etc/conf.d    ;;
+>>>>>>> temp
 		gentoo)     DEFAULT_INITCONF_DIR=/etc/conf.d    ;;
 		toss)       DEFAULT_INITCONF_DIR=/etc/sysconfig ;;
 		redhat)     DEFAULT_INITCONF_DIR=/etc/sysconfig ;;

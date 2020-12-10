@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * security/tomoyo/securityfs_if.c
  *
@@ -43,13 +44,9 @@ static ssize_t tomoyo_write_self(struct file *file, const char __user *buf,
 	int error;
 	if (!count || count >= TOMOYO_EXEC_TMPSIZE - 10)
 		return -ENOMEM;
-	data = kzalloc(count + 1, GFP_NOFS);
-	if (!data)
-		return -ENOMEM;
-	if (copy_from_user(data, buf, count)) {
-		error = -EFAULT;
-		goto out;
-	}
+	data = memdup_user_nul(buf, count);
+	if (IS_ERR(data))
+		return PTR_ERR(data);
 	tomoyo_normalize_line(data);
 	if (tomoyo_correct_domain(data)) {
 		const int idx = tomoyo_read_lock();
@@ -74,9 +71,12 @@ static ssize_t tomoyo_write_self(struct file *file, const char __user *buf,
 				if (!cred) {
 					error = -ENOMEM;
 				} else {
-					struct tomoyo_domain_info *old_domain =
-						cred->security;
-					cred->security = new_domain;
+					struct tomoyo_domain_info **blob;
+					struct tomoyo_domain_info *old_domain;
+
+					blob = tomoyo_cred(cred);
+					old_domain = *blob;
+					*blob = new_domain;
 					atomic_inc(&new_domain->users);
 					atomic_dec(&old_domain->users);
 					commit_creds(cred);
@@ -87,7 +87,6 @@ static ssize_t tomoyo_write_self(struct file *file, const char __user *buf,
 		tomoyo_read_unlock(idx);
 	} else
 		error = -EINVAL;
-out:
 	kfree(data);
 	return error ? error : count;
 }
@@ -238,10 +237,14 @@ static void __init tomoyo_create_entry(const char *name, const umode_t mode,
  */
 static int __init tomoyo_initerface_init(void)
 {
+	struct tomoyo_domain_info *domain;
 	struct dentry *tomoyo_dir;
 
+	if (!tomoyo_enabled)
+		return 0;
+	domain = tomoyo_domain();
 	/* Don't create securityfs entries unless registered. */
-	if (current_cred()->security != &tomoyo_kernel_domain)
+	if (domain != &tomoyo_kernel_domain)
 		return 0;
 
 	tomoyo_dir = securityfs_create_dir("tomoyo", NULL);

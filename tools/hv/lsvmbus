@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+<<<<<<< HEAD
+=======
+# SPDX-License-Identifier: GPL-2.0
+>>>>>>> temp
 
 import os
 from optparse import OptionParser

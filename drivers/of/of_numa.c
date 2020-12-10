@@ -16,6 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+<<<<<<< HEAD
+=======
+#define pr_fmt(fmt) "OF: NUMA: " fmt
+
+>>>>>>> temp
 #include <linux/of.h>
 #include <linux/of_address.h>
 #include <linux/nodemask.h>
@@ -49,6 +54,7 @@ static void __init of_numa_parse_cpu_nodes(void)
 		if (r)
 			continue;
 
+<<<<<<< HEAD
 		pr_debug("NUMA: CPU on %u\n", nid);
 		if (nid >= MAX_NUMNODES)
 			pr_warn("NUMA: Node id %u exceeds maximum value\n",
@@ -56,6 +62,16 @@ static void __init of_numa_parse_cpu_nodes(void)
 		else
 			node_set(nid, numa_nodes_parsed);
 	}
+=======
+		pr_debug("CPU on %u\n", nid);
+		if (nid >= MAX_NUMNODES)
+			pr_warn("Node id %u exceeds maximum value\n", nid);
+		else
+			node_set(nid, numa_nodes_parsed);
+	}
+
+	of_node_put(cpus);
+>>>>>>> temp
 }
 
 static int __init of_numa_parse_memory_nodes(void)
@@ -63,6 +79,7 @@ static int __init of_numa_parse_memory_nodes(void)
 	struct device_node *np = NULL;
 	struct resource rsrc;
 	u32 nid;
+<<<<<<< HEAD
 	int r = 0;
 
 	for (;;) {
@@ -70,6 +87,11 @@ static int __init of_numa_parse_memory_nodes(void)
 		if (!np)
 			break;
 
+=======
+	int i, r;
+
+	for_each_node_by_type(np, "memory") {
+>>>>>>> temp
 		r = of_property_read_u32(np, "numa-node-id", &nid);
 		if (r == -EINVAL)
 			/*
@@ -78,6 +100,7 @@ static int __init of_numa_parse_memory_nodes(void)
 			 * "numa-node-id" property
 			 */
 			continue;
+<<<<<<< HEAD
 		else if (r)
 			/* some other error */
 			break;
@@ -99,6 +122,25 @@ static int __init of_numa_parse_memory_nodes(void)
 	of_node_put(np);
 
 	return r;
+=======
+
+		if (nid >= MAX_NUMNODES) {
+			pr_warn("Node id %u exceeds maximum value\n", nid);
+			r = -EINVAL;
+		}
+
+		for (i = 0; !r && !of_address_to_resource(np, i, &rsrc); i++)
+			r = numa_add_memblk(nid, rsrc.start, rsrc.end + 1);
+
+		if (!i || r) {
+			of_node_put(np);
+			pr_err("bad property in memory node\n");
+			return r ? : -EINVAL;
+		}
+	}
+
+	return 0;
+>>>>>>> temp
 }
 
 static int __init of_numa_parse_distance_map_v1(struct device_node *map)
@@ -107,17 +149,29 @@ static int __init of_numa_parse_distance_map_v1(struct device_node *map)
 	int entry_count;
 	int i;
 
+<<<<<<< HEAD
 	pr_info("NUMA: parsing numa-distance-map-v1\n");
 
 	matrix = of_get_property(map, "distance-matrix", NULL);
 	if (!matrix) {
 		pr_err("NUMA: No distance-matrix property in distance-map\n");
+=======
+	pr_info("parsing numa-distance-map-v1\n");
+
+	matrix = of_get_property(map, "distance-matrix", NULL);
+	if (!matrix) {
+		pr_err("No distance-matrix property in distance-map\n");
+>>>>>>> temp
 		return -EINVAL;
 	}
 
 	entry_count = of_property_count_u32_elems(map, "distance-matrix");
 	if (entry_count <= 0) {
+<<<<<<< HEAD
 		pr_err("NUMA: Invalid distance-matrix\n");
+=======
+		pr_err("Invalid distance-matrix\n");
+>>>>>>> temp
 		return -EINVAL;
 	}
 
@@ -132,7 +186,11 @@ static int __init of_numa_parse_distance_map_v1(struct device_node *map)
 		matrix++;
 
 		numa_set_distance(nodea, nodeb, distance);
+<<<<<<< HEAD
 		pr_debug("NUMA:  distance[node%d -> node%d] = %d\n",
+=======
+		pr_debug("distance[node%d -> node%d] = %d\n",
+>>>>>>> temp
 			 nodea, nodeb, distance);
 
 		/* Set default distance of node B->A same as A->B */
@@ -166,8 +224,11 @@ int of_node_to_nid(struct device_node *device)
 	np = of_node_get(device);
 
 	while (np) {
+<<<<<<< HEAD
 		struct device_node *parent;
 
+=======
+>>>>>>> temp
 		r = of_property_read_u32(np, "numa-node-id", &nid);
 		/*
 		 * -EINVAL indicates the property was not found, and
@@ -178,6 +239,7 @@ int of_node_to_nid(struct device_node *device)
 		if (r != -EINVAL)
 			break;
 
+<<<<<<< HEAD
 		parent = of_get_parent(np);
 		of_node_put(np);
 		np = parent;
@@ -194,6 +256,22 @@ int of_node_to_nid(struct device_node *device)
 		else
 			return nid;
 	}
+=======
+		np = of_get_next_parent(np);
+	}
+	if (np && r)
+		pr_warn("Invalid \"numa-node-id\" property in node %s\n",
+			np->name);
+	of_node_put(np);
+
+	/*
+	 * If numa=off passed on command line, or with a defective
+	 * device tree, the nid may not be in the set of possible
+	 * nodes.  Check for this case and return NUMA_NO_NODE.
+	 */
+	if (!r && nid < MAX_NUMNODES && node_possible(nid))
+		return nid;
+>>>>>>> temp
 
 	return NUMA_NO_NODE;
 }

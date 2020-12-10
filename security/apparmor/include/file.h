@@ -19,7 +19,10 @@
 
 #include "domain.h"
 #include "match.h"
+<<<<<<< HEAD
 #include "label.h"
+=======
+>>>>>>> temp
 #include "perms.h"
 
 struct aa_profile;
@@ -33,7 +36,11 @@ struct path;
 				 AA_MAY_CHMOD | AA_MAY_CHOWN | AA_MAY_LOCK | \
 				 AA_EXEC_MMAP | AA_MAY_LINK)
 
+<<<<<<< HEAD
 #define file_ctx(X) ((struct aa_file_ctx *)(X)->f_security)
+=======
+#define file_ctx(X) apparmor_file(X)
+>>>>>>> temp
 
 /* struct aa_file_ctx - the AppArmor context the file was opened in
  * @lock: lock to update the ctx
@@ -53,7 +60,12 @@ struct aa_file_ctx {
  *
  * Returns: file_ctx or NULL on failure
  */
+<<<<<<< HEAD
 static inline struct aa_file_ctx *aa_alloc_file_ctx(struct aa_label *label, gfp_t gfp)
+=======
+static inline struct aa_file_ctx *aa_alloc_file_ctx(struct aa_label *label,
+						    gfp_t gfp)
+>>>>>>> temp
 {
 	struct aa_file_ctx *ctx;
 
@@ -82,8 +94,11 @@ static inline struct aa_label *aa_get_file_label(struct aa_file_ctx *ctx)
 	return aa_get_label_rcu(&ctx->label);
 }
 
+<<<<<<< HEAD
 #define inode_ctx(X) (X)->i_security
 
+=======
+>>>>>>> temp
 /*
  * The xindex is broken into 3 parts
  * - index - an index into either the exec name table or the variable table
@@ -102,9 +117,6 @@ static inline struct aa_label *aa_get_file_label(struct aa_file_ctx *ctx)
 #define AA_X_CHILD		0x2000	/* make >AA_X_NONE apply to children */
 #define AA_X_INHERIT		0x4000
 #define AA_X_UNCONFINED		0x8000
-
-/* AA_SECURE_X_NEEDED - is passed in the bprm->unsafe field */
-#define AA_SECURE_X_NEEDED	0x8000
 
 /* need to make conditional which ones are being set */
 struct path_cond {
@@ -163,8 +175,14 @@ static inline u16 dfa_map_xindex(u16 mask)
 	dfa_map_xindex((ACCEPT_TABLE(dfa)[state] >> 14) & 0x3fff)
 
 int aa_audit_file(struct aa_profile *profile, struct aa_perms *perms,
+<<<<<<< HEAD
 		  const char *op, u32 request, const char *name, const char *target, struct aa_label *tlabel,
 		  kuid_t ouid, const char *info, int error);
+=======
+		  const char *op, u32 request, const char *name,
+		  const char *target, struct aa_label *tlabel, kuid_t ouid,
+		  const char *info, int error);
+>>>>>>> temp
 
 /**
  * struct aa_file_rules - components used for file rule permissions

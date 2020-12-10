@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright (C) 2005-2015 Junjiro R. Okajima
+=======
+ * Copyright (C) 2005-2017 Junjiro R. Okajima
+>>>>>>> temp
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,6 +49,10 @@ int au_plink_maint(struct super_block *sb, int flags)
 {
 	int err;
 	pid_t pid, ppid;
+<<<<<<< HEAD
+=======
+	struct task_struct *parent, *prev;
+>>>>>>> temp
 	struct au_sbinfo *sbi;
 
 	SiMustAnyLock(sb);
@@ -59,11 +67,30 @@ int au_plink_maint(struct super_block *sb, int flags)
 		goto out;
 
 	/* todo: it highly depends upon /sbin/mount.aufs */
+<<<<<<< HEAD
 	rcu_read_lock();
 	ppid = task_pid_vnr(rcu_dereference(current->real_parent));
 	rcu_read_unlock();
 	if (pid == ppid)
 		goto out;
+=======
+	prev = NULL;
+	parent = current;
+	ppid = 0;
+	rcu_read_lock();
+	while (1) {
+		parent = rcu_dereference(parent->real_parent);
+		if (parent == prev)
+			break;
+		ppid = task_pid_vnr(parent);
+		if (pid == ppid) {
+			rcu_read_unlock();
+			goto out;
+		}
+		prev = parent;
+	}
+	rcu_read_unlock();
+>>>>>>> temp
 
 	if (au_ftest_lock(flags, NOPLMW)) {
 		/* if there is no i_mutex lock in VFS, we don't need to wait */
@@ -123,8 +150,14 @@ void au_plink_list(struct super_block *sb)
 {
 	int i;
 	struct au_sbinfo *sbinfo;
+<<<<<<< HEAD
 	struct hlist_head *plink_hlist;
 	struct pseudo_link *plink;
+=======
+	struct hlist_bl_head *hbl;
+	struct hlist_bl_node *pos;
+	struct au_icntnr *icntnr;
+>>>>>>> temp
 
 	SiMustAnyLock(sb);
 
@@ -133,11 +166,19 @@ void au_plink_list(struct super_block *sb)
 	AuDebugOn(au_plink_maint(sb, AuLock_NOPLM));
 
 	for (i = 0; i < AuPlink_NHASH; i++) {
+<<<<<<< HEAD
 		plink_hlist = &sbinfo->si_plink[i].head;
 		rcu_read_lock();
 		hlist_for_each_entry_rcu(plink, plink_hlist, hlist)
 			AuDbg("%lu\n", plink->inode->i_ino);
 		rcu_read_unlock();
+=======
+		hbl = sbinfo->si_plink + i;
+		hlist_bl_lock(hbl);
+		hlist_bl_for_each_entry(icntnr, pos, hbl, plink)
+			AuDbg("%lu\n", icntnr->vfs_inode.i_ino);
+		hlist_bl_unlock(hbl);
+>>>>>>> temp
 	}
 }
 #endif
@@ -147,8 +188,14 @@ int au_plink_test(struct inode *inode)
 {
 	int found, i;
 	struct au_sbinfo *sbinfo;
+<<<<<<< HEAD
 	struct hlist_head *plink_hlist;
 	struct pseudo_link *plink;
+=======
+	struct hlist_bl_head *hbl;
+	struct hlist_bl_node *pos;
+	struct au_icntnr *icntnr;
+>>>>>>> temp
 
 	sbinfo = au_sbi(inode->i_sb);
 	AuRwMustAnyLock(&sbinfo->si_rwsem);
@@ -157,6 +204,7 @@ int au_plink_test(struct inode *inode)
 
 	found = 0;
 	i = au_plink_hash(inode->i_ino);
+<<<<<<< HEAD
 	plink_hlist = &sbinfo->si_plink[i].head;
 	rcu_read_lock();
 	hlist_for_each_entry_rcu(plink, plink_hlist, hlist)
@@ -165,6 +213,16 @@ int au_plink_test(struct inode *inode)
 			break;
 		}
 	rcu_read_unlock();
+=======
+	hbl =  sbinfo->si_plink + i;
+	hlist_bl_lock(hbl);
+	hlist_bl_for_each_entry(icntnr, pos, hbl, plink)
+		if (&icntnr->vfs_inode == inode) {
+			found = 1;
+			break;
+		}
+	hlist_bl_unlock(hbl);
+>>>>>>> temp
 	return found;
 }
 
@@ -200,12 +258,21 @@ static struct dentry *au_do_plink_lkup(struct qstr *tgtname,
 				       struct au_branch *br)
 {
 	struct dentry *h_dentry;
+<<<<<<< HEAD
 	struct mutex *h_mtx;
 
 	h_mtx = &d_inode(h_parent)->i_mutex;
 	mutex_lock_nested(h_mtx, AuLsc_I_CHILD2);
 	h_dentry = vfsub_lkup_one(tgtname, h_parent);
 	mutex_unlock(h_mtx);
+=======
+	struct inode *h_inode;
+
+	h_inode = d_inode(h_parent);
+	vfsub_inode_lock_shared_nested(h_inode, AuLsc_I_CHILD2);
+	h_dentry = vfsub_lkup_one(tgtname, h_parent);
+	inode_unlock_shared(h_inode);
+>>>>>>> temp
 	return h_dentry;
 }
 
@@ -258,7 +325,11 @@ static int do_whplink(struct qstr *tgt, struct dentry *h_parent,
 	struct inode *h_dir, *delegated;
 
 	h_dir = d_inode(h_parent);
+<<<<<<< HEAD
 	mutex_lock_nested(&h_dir->i_mutex, AuLsc_I_CHILD2);
+=======
+	inode_lock_nested(h_dir, AuLsc_I_CHILD2);
+>>>>>>> temp
 again:
 	h_path.dentry = vfsub_lkup_one(tgt, h_parent);
 	err = PTR_ERR(h_path.dentry);
@@ -294,7 +365,11 @@ again:
 	dput(h_path.dentry);
 
 out:
+<<<<<<< HEAD
 	mutex_unlock(&h_dir->i_mutex);
+=======
+	inode_unlock(h_dir);
+>>>>>>> temp
 	return err;
 }
 
@@ -343,6 +418,7 @@ static int whplink(struct dentry *h_dentry, struct inode *inode,
 	return err;
 }
 
+<<<<<<< HEAD
 /* free a single plink */
 static void do_put_plink(struct pseudo_link *plink, int do_del)
 {
@@ -361,6 +437,8 @@ static void do_put_plink_rcu(struct rcu_head *rcu)
 	kfree(plink);
 }
 
+=======
+>>>>>>> temp
 /*
  * create a new pseudo-link for @h_dentry on @bindex.
  * the linked inode is held in aufs @inode.
@@ -370,9 +448,15 @@ void au_plink_append(struct inode *inode, aufs_bindex_t bindex,
 {
 	struct super_block *sb;
 	struct au_sbinfo *sbinfo;
+<<<<<<< HEAD
 	struct hlist_head *plink_hlist;
 	struct pseudo_link *plink, *tmp;
 	struct au_sphlhead *sphl;
+=======
+	struct hlist_bl_head *hbl;
+	struct hlist_bl_node *pos;
+	struct au_icntnr *icntnr;
+>>>>>>> temp
 	int found, err, cnt, i;
 
 	sb = inode->i_sb;
@@ -385,6 +469,7 @@ void au_plink_append(struct inode *inode, aufs_bindex_t bindex,
 		return;
 
 	i = au_plink_hash(inode->i_ino);
+<<<<<<< HEAD
 	sphl = sbinfo->si_plink + i;
 	plink_hlist = &sphl->head;
 	tmp = kmalloc(sizeof(*plink), GFP_NOFS);
@@ -398,20 +483,39 @@ void au_plink_append(struct inode *inode, aufs_bindex_t bindex,
 	spin_lock(&sphl->spin);
 	hlist_for_each_entry(plink, plink_hlist, hlist) {
 		if (plink->inode == inode) {
+=======
+	hbl = sbinfo->si_plink + i;
+	au_igrab(inode);
+
+	hlist_bl_lock(hbl);
+	hlist_bl_for_each_entry(icntnr, pos, hbl, plink) {
+		if (&icntnr->vfs_inode == inode) {
+>>>>>>> temp
 			found = 1;
 			break;
 		}
 	}
+<<<<<<< HEAD
 	if (!found)
 		hlist_add_head_rcu(&tmp->hlist, plink_hlist);
 	spin_unlock(&sphl->spin);
 	if (!found) {
 		cnt = au_sphl_count(sphl);
+=======
+	if (!found) {
+		icntnr = container_of(inode, struct au_icntnr, vfs_inode);
+		hlist_bl_add_head(&icntnr->plink, hbl);
+	}
+	hlist_bl_unlock(hbl);
+	if (!found) {
+		cnt = au_hbl_count(hbl);
+>>>>>>> temp
 #define msg "unexpectedly unblanced or too many pseudo-links"
 		if (cnt > AUFS_PLINK_WARN)
 			AuWarn1(msg ", %d\n", cnt);
 #undef msg
 		err = whplink(h_dentry, inode, bindex, au_sbr(sb, bindex));
+<<<<<<< HEAD
 	} else {
 		do_put_plink(tmp, 0);
 		return;
@@ -425,6 +529,15 @@ out:
 			call_rcu(&tmp->rcu, do_put_plink_rcu);
 		}
 	}
+=======
+		if (unlikely(err)) {
+			pr_warn("err %d, damaged pseudo link.\n", err);
+			au_hbl_del(&icntnr->plink, hbl);
+			iput(&icntnr->vfs_inode);
+		}
+	} else
+		iput(&icntnr->vfs_inode);
+>>>>>>> temp
 }
 
 /* free all plinks */
@@ -432,9 +545,15 @@ void au_plink_put(struct super_block *sb, int verbose)
 {
 	int i, warned;
 	struct au_sbinfo *sbinfo;
+<<<<<<< HEAD
 	struct hlist_head *plink_hlist;
 	struct hlist_node *tmp;
 	struct pseudo_link *plink;
+=======
+	struct hlist_bl_head *hbl;
+	struct hlist_bl_node *pos, *tmp;
+	struct au_icntnr *icntnr;
+>>>>>>> temp
 
 	SiMustWriteLock(sb);
 
@@ -445,6 +564,7 @@ void au_plink_put(struct super_block *sb, int verbose)
 	/* no spin_lock since sbinfo is write-locked */
 	warned = 0;
 	for (i = 0; i < AuPlink_NHASH; i++) {
+<<<<<<< HEAD
 		plink_hlist = &sbinfo->si_plink[i].head;
 		if (!warned && verbose && !hlist_empty(plink_hlist)) {
 			pr_warn("pseudo-link is not flushed");
@@ -453,6 +573,16 @@ void au_plink_put(struct super_block *sb, int verbose)
 		hlist_for_each_entry_safe(plink, tmp, plink_hlist, hlist)
 			do_put_plink(plink, 0);
 		INIT_HLIST_HEAD(plink_hlist);
+=======
+		hbl = sbinfo->si_plink + i;
+		if (!warned && verbose && !hlist_bl_empty(hbl)) {
+			pr_warn("pseudo-link is not flushed");
+			warned = 1;
+		}
+		hlist_bl_for_each_entry_safe(icntnr, pos, tmp, hbl, plink)
+			iput(&icntnr->vfs_inode);
+		INIT_HLIST_BL_HEAD(hbl);
+>>>>>>> temp
 	}
 }
 
@@ -470,6 +600,7 @@ void au_plink_clean(struct super_block *sb, int verbose)
 static int au_plink_do_half_refresh(struct inode *inode, aufs_bindex_t br_id)
 {
 	int do_put;
+<<<<<<< HEAD
 	aufs_bindex_t bstart, bend, bindex;
 
 	do_put = 0;
@@ -477,6 +608,15 @@ static int au_plink_do_half_refresh(struct inode *inode, aufs_bindex_t br_id)
 	bend = au_ibend(inode);
 	if (bstart >= 0) {
 		for (bindex = bstart; bindex <= bend; bindex++) {
+=======
+	aufs_bindex_t btop, bbot, bindex;
+
+	do_put = 0;
+	btop = au_ibtop(inode);
+	bbot = au_ibbot(inode);
+	if (btop >= 0) {
+		for (bindex = btop; bindex <= bbot; bindex++) {
+>>>>>>> temp
 			if (!au_h_iptr(inode, bindex)
 			    || au_ii_br_id(inode, bindex) != br_id)
 				continue;
@@ -485,7 +625,11 @@ static int au_plink_do_half_refresh(struct inode *inode, aufs_bindex_t br_id)
 			break;
 		}
 		if (do_put)
+<<<<<<< HEAD
 			for (bindex = bstart; bindex <= bend; bindex++)
+=======
+			for (bindex = btop; bindex <= bbot; bindex++)
+>>>>>>> temp
 				if (au_h_iptr(inode, bindex)) {
 					do_put = 0;
 					break;
@@ -500,9 +644,15 @@ static int au_plink_do_half_refresh(struct inode *inode, aufs_bindex_t br_id)
 void au_plink_half_refresh(struct super_block *sb, aufs_bindex_t br_id)
 {
 	struct au_sbinfo *sbinfo;
+<<<<<<< HEAD
 	struct hlist_head *plink_hlist;
 	struct hlist_node *tmp;
 	struct pseudo_link *plink;
+=======
+	struct hlist_bl_head *hbl;
+	struct hlist_bl_node *pos, *tmp;
+	struct au_icntnr *icntnr;
+>>>>>>> temp
 	struct inode *inode;
 	int i, do_put;
 
@@ -512,6 +662,7 @@ void au_plink_half_refresh(struct super_block *sb, aufs_bindex_t br_id)
 	AuDebugOn(!au_opt_test(au_mntflags(sb), PLINK));
 	AuDebugOn(au_plink_maint(sb, AuLock_NOPLM));
 
+<<<<<<< HEAD
 	/* no spin_lock since sbinfo is write-locked */
 	for (i = 0; i < AuPlink_NHASH; i++) {
 		plink_hlist = &sbinfo->si_plink[i].head;
@@ -521,6 +672,19 @@ void au_plink_half_refresh(struct super_block *sb, aufs_bindex_t br_id)
 			do_put = au_plink_do_half_refresh(inode, br_id);
 			if (do_put)
 				do_put_plink(plink, 1);
+=======
+	/* no bit_lock since sbinfo is write-locked */
+	for (i = 0; i < AuPlink_NHASH; i++) {
+		hbl = sbinfo->si_plink + i;
+		hlist_bl_for_each_entry_safe(icntnr, pos, tmp, hbl, plink) {
+			inode = au_igrab(&icntnr->vfs_inode);
+			ii_write_lock_child(inode);
+			do_put = au_plink_do_half_refresh(inode, br_id);
+			if (do_put) {
+				hlist_bl_del(&icntnr->plink);
+				iput(inode);
+			}
+>>>>>>> temp
 			ii_write_unlock(inode);
 			iput(inode);
 		}

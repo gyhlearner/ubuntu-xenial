@@ -54,7 +54,11 @@ extern "C" {
  * a DVA.  These are buffers that hold dirty block copies
  * before they are written to stable storage.  By definition,
  * they are "ref'd" and are considered part of arc_mru
+<<<<<<< HEAD
  * that cannot be freed.  Generally, they will aquire a DVA
+=======
+ * that cannot be freed.  Generally, they will acquire a DVA
+>>>>>>> temp
  * as they are written and migrate onto the arc_mru list.
  *
  * The ARC_l2c_only state is for buffers that are in the second
@@ -70,11 +74,19 @@ typedef struct arc_state {
 	/*
 	 * list of evictable buffers
 	 */
+<<<<<<< HEAD
 	multilist_t arcs_list[ARC_BUFC_NUMTYPES];
 	/*
 	 * total amount of evictable data in this state
 	 */
 	uint64_t arcs_lsize[ARC_BUFC_NUMTYPES];
+=======
+	multilist_t *arcs_list[ARC_BUFC_NUMTYPES];
+	/*
+	 * total amount of evictable data in this state
+	 */
+	refcount_t arcs_esize[ARC_BUFC_NUMTYPES];
+>>>>>>> temp
 	/*
 	 * total amount of data in this state; this includes: evictable,
 	 * non-evictable, ARC_BUFC_DATA, and ARC_BUFC_METADATA.
@@ -92,6 +104,10 @@ struct arc_callback {
 	void			*acb_private;
 	arc_done_func_t		*acb_done;
 	arc_buf_t		*acb_buf;
+<<<<<<< HEAD
+=======
+	boolean_t		acb_compressed;
+>>>>>>> temp
 	zio_t			*acb_zio_dummy;
 	arc_callback_t		*acb_next;
 };
@@ -101,6 +117,10 @@ typedef struct arc_write_callback arc_write_callback_t;
 struct arc_write_callback {
 	void		*awcb_private;
 	arc_done_func_t	*awcb_ready;
+<<<<<<< HEAD
+=======
+	arc_done_func_t	*awcb_children_ready;
+>>>>>>> temp
 	arc_done_func_t	*awcb_physdone;
 	arc_done_func_t	*awcb_done;
 	arc_buf_t	*awcb_buf;
@@ -139,11 +159,21 @@ struct arc_write_callback {
  */
 typedef struct l1arc_buf_hdr {
 	kmutex_t		b_freeze_lock;
+<<<<<<< HEAD
 
 	arc_buf_t		*b_buf;
 	uint32_t		b_datacnt;
 	/* for waiting on writes to complete */
 	kcondvar_t		b_cv;
+=======
+	zio_cksum_t		*b_freeze_cksum;
+
+	arc_buf_t		*b_buf;
+	uint32_t		b_bufcnt;
+	/* for waiting on writes to complete */
+	kcondvar_t		b_cv;
+	uint8_t			b_byteswap;
+>>>>>>> temp
 
 
 	/* protected by arc state mutex */
@@ -162,8 +192,12 @@ typedef struct l1arc_buf_hdr {
 	refcount_t		b_refcnt;
 
 	arc_callback_t		*b_acb;
+<<<<<<< HEAD
 	/* temporary buffer holder for in-flight compressed data */
 	void			*b_tmp_cdata;
+=======
+	abd_t			*b_pabd;
+>>>>>>> temp
 } l1arc_buf_hdr_t;
 
 typedef struct l2arc_dev {
@@ -184,10 +218,14 @@ typedef struct l2arc_buf_hdr {
 	/* protected by arc_buf_hdr mutex */
 	l2arc_dev_t		*b_dev;		/* L2ARC device */
 	uint64_t		b_daddr;	/* disk address, offset byte */
+<<<<<<< HEAD
 	/* real alloc'd buffer size depending on b_compress applied */
 	uint32_t		b_hits;
 	int32_t			b_asize;
 	uint8_t			b_compress;
+=======
+	uint32_t		b_hits;
+>>>>>>> temp
 
 	list_node_t		b_l2node;
 } l2arc_buf_hdr_t;
@@ -201,6 +239,7 @@ struct arc_buf_hdr {
 	/* protected by hash lock */
 	dva_t			b_dva;
 	uint64_t		b_birth;
+<<<<<<< HEAD
 	/*
 	 * Even though this checksum is only set/verified when a buffer is in
 	 * the L1 cache, it needs to be in the set of common fields because it
@@ -215,6 +254,39 @@ struct arc_buf_hdr {
 	/* immutable */
 	int32_t			b_size;
 	uint64_t		b_spa;
+=======
+
+	arc_buf_contents_t	b_type;
+	arc_buf_hdr_t		*b_hash_next;
+	arc_flags_t		b_flags;
+
+	/*
+	 * This field stores the size of the data buffer after
+	 * compression, and is set in the arc's zio completion handlers.
+	 * It is in units of SPA_MINBLOCKSIZE (e.g. 1 == 512 bytes).
+	 *
+	 * While the block pointers can store up to 32MB in their psize
+	 * field, we can only store up to 32MB minus 512B. This is due
+	 * to the bp using a bias of 1, whereas we use a bias of 0 (i.e.
+	 * a field of zeros represents 512B in the bp). We can't use a
+	 * bias of 1 since we need to reserve a psize of zero, here, to
+	 * represent holes and embedded blocks.
+	 *
+	 * This isn't a problem in practice, since the maximum size of a
+	 * buffer is limited to 16MB, so we never need to store 32MB in
+	 * this field. Even in the upstream illumos code base, the
+	 * maximum size of a buffer is limited to 16MB.
+	 */
+	uint16_t		b_psize;
+
+	/*
+	 * This field stores the size of the data buffer before
+	 * compression, and cannot change once set. It is in units
+	 * of SPA_MINBLOCKSIZE (e.g. 2 == 1024 bytes)
+	 */
+	uint16_t		b_lsize;	/* immutable */
+	uint64_t		b_spa;		/* immutable */
+>>>>>>> temp
 
 	/* L2ARC fields. Undefined when not in L2ARC. */
 	l2arc_buf_hdr_t		b_l2hdr;

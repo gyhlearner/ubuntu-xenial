@@ -27,6 +27,34 @@
 
 #include <linux/rwsem.h>
 
+<<<<<<< HEAD
+=======
+#if defined(CONFIG_PREEMPT_RT_FULL)
+#define	SPL_RWSEM_SINGLE_READER_VALUE	(1)
+#define	SPL_RWSEM_SINGLE_WRITER_VALUE	(0)
+#elif defined(CONFIG_RWSEM_GENERIC_SPINLOCK)
+#define	SPL_RWSEM_SINGLE_READER_VALUE	(1)
+#define	SPL_RWSEM_SINGLE_WRITER_VALUE	(-1)
+#else
+#define	SPL_RWSEM_SINGLE_READER_VALUE	(RWSEM_ACTIVE_READ_BIAS)
+#define	SPL_RWSEM_SINGLE_WRITER_VALUE	(RWSEM_ACTIVE_WRITE_BIAS)
+#endif
+
+/* Linux 3.16 changed activity to count for rwsem-spinlock */
+#if defined(CONFIG_PREEMPT_RT_FULL)
+#define	RWSEM_COUNT(sem)	sem->read_depth
+#elif defined(HAVE_RWSEM_ACTIVITY)
+#define	RWSEM_COUNT(sem)	sem->activity
+/* Linux 4.8 changed count to an atomic_long_t for !rwsem-spinlock */
+#elif defined(HAVE_RWSEM_ATOMIC_LONG_COUNT)
+#define	RWSEM_COUNT(sem)	atomic_long_read(&(sem)->count)
+#else
+#define	RWSEM_COUNT(sem)	sem->count
+#endif
+
+int rwsem_tryupgrade(struct rw_semaphore *rwsem);
+
+>>>>>>> temp
 #if defined(RWSEM_SPINLOCK_IS_RAW)
 #define spl_rwsem_lock_irqsave(lk, fl)       raw_spin_lock_irqsave(lk, fl)
 #define spl_rwsem_unlock_irqrestore(lk, fl)  raw_spin_unlock_irqrestore(lk, fl)

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-1.0+
 /* generic HDLC line discipline for Linux
  *
  * Written by Paul Fulghum paulkf@microgate.com
@@ -10,8 +11,6 @@
  *	Paul Mackerras <Paul.Mackerras@cs.anu.edu.au>
  *
  * Original release 01/11/99
- *
- * This code is released under the GNU General Public License (GPL)
  *
  * This module implements the tty line discipline N_HDLC for use with
  * tty device drivers that support bit-synchronous HDLC communications.
@@ -103,7 +102,7 @@
 #include <linux/bitops.h>
 
 #include <asm/termios.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 
 /*
  * Buffers for individual HDLC frames
@@ -651,7 +650,7 @@ static ssize_t n_hdlc_tty_write(struct tty_struct *tty, struct file *file,
 	struct n_hdlc_buf *tbuf;
 
 	if (debuglevel >= DEBUG_LEVEL_INFO)	
-		printk("%s(%d)n_hdlc_tty_write() called count=%Zd\n",
+		printk("%s(%d)n_hdlc_tty_write() called count=%zd\n",
 			__FILE__,__LINE__,count);
 		
 	/* Verify pointers */
@@ -939,11 +938,11 @@ static struct n_hdlc_buf *n_hdlc_buf_get(struct n_hdlc_buf_list *buf_list)
 	return buf;
 }	/* end of n_hdlc_buf_get() */
 
-static char hdlc_banner[] __initdata =
+static const char hdlc_banner[] __initconst =
 	KERN_INFO "HDLC line discipline maxframe=%u\n";
-static char hdlc_register_ok[] __initdata =
+static const char hdlc_register_ok[] __initconst =
 	KERN_INFO "N_HDLC line discipline registered.\n";
-static char hdlc_register_fail[] __initdata =
+static const char hdlc_register_fail[] __initconst =
 	KERN_ERR "error registering line discipline: %d\n";
 
 static int __init n_hdlc_init(void)
@@ -968,9 +967,9 @@ static int __init n_hdlc_init(void)
 	
 }	/* end of init_module() */
 
-static char hdlc_unregister_ok[] __exitdata =
+static const char hdlc_unregister_ok[] __exitdata =
 	KERN_INFO "N_HDLC: line discipline unregistered\n";
-static char hdlc_unregister_fail[] __exitdata =
+static const char hdlc_unregister_fail[] __exitdata =
 	KERN_ERR "N_HDLC: can't unregister line discipline (err = %d)\n";
 
 static void __exit n_hdlc_exit(void)

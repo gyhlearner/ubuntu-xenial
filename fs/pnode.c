@@ -72,49 +72,47 @@ int get_dominating_id(struct mount *mnt, const struct path *root)
 
 static int do_make_slave(struct mount *mnt)
 {
-	struct mount *peer_mnt = mnt, *master = mnt->mnt_master;
-	struct mount *slave_mnt;
+	struct mount *master, *slave_mnt;
 
-	/*
-	 * slave 'mnt' to a peer mount that has the
-	 * same root dentry. If none is available then
-	 * slave it to anything that is available.
-	 */
-	while ((peer_mnt = next_peer(peer_mnt)) != mnt &&
-	       peer_mnt->mnt.mnt_root != mnt->mnt.mnt_root) ;
-
-	if (peer_mnt == mnt) {
-		peer_mnt = next_peer(mnt);
-		if (peer_mnt == mnt)
-			peer_mnt = NULL;
-	}
-	if (mnt->mnt_group_id && IS_MNT_SHARED(mnt) &&
-	    list_empty(&mnt->mnt_share))
-		mnt_release_group_id(mnt);
-
-	list_del_init(&mnt->mnt_share);
-	mnt->mnt_group_id = 0;
-
-	if (peer_mnt)
-		master = peer_mnt;
-
-	if (master) {
-		list_for_each_entry(slave_mnt, &mnt->mnt_slave_list, mnt_slave)
-			slave_mnt->mnt_master = master;
-		list_move(&mnt->mnt_slave, &master->mnt_slave_list);
-		list_splice(&mnt->mnt_slave_list, master->mnt_slave_list.prev);
-		INIT_LIST_HEAD(&mnt->mnt_slave_list);
-	} else {
-		struct list_head *p = &mnt->mnt_slave_list;
-		while (!list_empty(p)) {
-                        slave_mnt = list_first_entry(p,
-					struct mount, mnt_slave);
-			list_del_init(&slave_mnt->mnt_slave);
-			slave_mnt->mnt_master = NULL;
+	if (list_empty(&mnt->mnt_share)) {
+		if (IS_MNT_SHARED(mnt)) {
+			mnt_release_group_id(mnt);
+			CLEAR_MNT_SHARED(mnt);
 		}
+		master = mnt->mnt_master;
+		if (!master) {
+			struct list_head *p = &mnt->mnt_slave_list;
+			while (!list_empty(p)) {
+				slave_mnt = list_first_entry(p,
+						struct mount, mnt_slave);
+				list_del_init(&slave_mnt->mnt_slave);
+				slave_mnt->mnt_master = NULL;
+			}
+			return 0;
+		}
+	} else {
+		struct mount *m;
+		/*
+		 * slave 'mnt' to a peer mount that has the
+		 * same root dentry. If none is available then
+		 * slave it to anything that is available.
+		 */
+		for (m = master = next_peer(mnt); m != mnt; m = next_peer(m)) {
+			if (m->mnt.mnt_root == mnt->mnt.mnt_root) {
+				master = m;
+				break;
+			}
+		}
+		list_del_init(&mnt->mnt_share);
+		mnt->mnt_group_id = 0;
+		CLEAR_MNT_SHARED(mnt);
 	}
+	list_for_each_entry(slave_mnt, &mnt->mnt_slave_list, mnt_slave)
+		slave_mnt->mnt_master = master;
+	list_move(&mnt->mnt_slave, &master->mnt_slave_list);
+	list_splice(&mnt->mnt_slave_list, master->mnt_slave_list.prev);
+	INIT_LIST_HEAD(&mnt->mnt_slave_list);
 	mnt->mnt_master = master;
-	CLEAR_MNT_SHARED(mnt);
 	return 0;
 }
 
@@ -498,7 +496,42 @@ static void umount_list(struct list_head *to_umount,
 				list_move_tail(&child->mnt_umounting, to_restore);
 			else
 				umount_one(child, to_umount);
+<<<<<<< HEAD
+=======
 		}
+	}
+}
+
+static void restore_mounts(struct list_head *to_restore)
+{
+	/* Restore mounts to a clean working state */
+	while (!list_empty(to_restore)) {
+		struct mount *mnt, *parent;
+		struct mountpoint *mp;
+
+		mnt = list_first_entry(to_restore, struct mount, mnt_umounting);
+		CLEAR_MNT_MARK(mnt);
+		list_del_init(&mnt->mnt_umounting);
+
+		/* Should this mount be reparented? */
+		mp = mnt->mnt_mp;
+		parent = mnt->mnt_parent;
+		while (parent->mnt.mnt_flags & MNT_UMOUNT) {
+			mp = parent->mnt_mp;
+			parent = parent->mnt_parent;
+>>>>>>> temp
+		}
+		if (parent != mnt->mnt_parent)
+			mnt_change_mountpoint(parent, mp, mnt);
+	}
+}
+
+static void cleanup_umount_visitations(struct list_head *visited)
+{
+	while (!list_empty(visited)) {
+		struct mount *mnt =
+			list_first_entry(visited, struct mount, mnt_umounting);
+		list_del_init(&mnt->mnt_umounting);
 	}
 }
 

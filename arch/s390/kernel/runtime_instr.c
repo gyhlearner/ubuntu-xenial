@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright IBM Corp. 2012
  * Author(s): Jan Glauber <jang@linux.vnet.ibm.com>
@@ -11,6 +12,8 @@
 #include <linux/init.h>
 #include <linux/errno.h>
 #include <linux/kernel_stat.h>
+#include <linux/sched/task_stack.h>
+
 #include <asm/runtime_instr.h>
 #include <asm/cpu_mf.h>
 #include <asm/irq.h>
@@ -47,13 +50,17 @@ static void disable_runtime_instr(void)
 
 static void init_runtime_instr_cb(struct runtime_instr_cb *cb)
 {
-	cb->buf_limit = 0xfff;
-	cb->pstate = 1;
-	cb->pstate_set_buf = 1;
-	cb->pstate_sample = 1;
-	cb->pstate_collect = 1;
+	cb->rla = 0xfff;
+	cb->s = 1;
+	cb->k = 1;
+	cb->ps = 1;
+	cb->pc = 1;
 	cb->key = PAGE_DEFAULT_KEY;
+<<<<<<< HEAD
 	cb->valid = 1;
+=======
+	cb->v = 1;
+>>>>>>> temp
 }
 
 SYSCALL_DEFINE1(s390_runtime_instr, int, command)

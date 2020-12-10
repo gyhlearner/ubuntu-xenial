@@ -1,8 +1,12 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 #ifndef _BCACHE_WRITEBACK_H
 #define _BCACHE_WRITEBACK_H
 
 #define CUTOFF_WRITEBACK	40
 #define CUTOFF_WRITEBACK_SYNC	70
+
+#define WRITEBACK_RATE_UPDATE_SECS_MAX		60
+#define WRITEBACK_RATE_UPDATE_SECS_DEFAULT	5
 
 static inline uint64_t bcache_dev_sectors_dirty(struct bcache_device *d)
 {
@@ -68,6 +72,9 @@ static inline bool should_writeback(struct cached_dev *dc, struct bio *bio,
 	    in_use > CUTOFF_WRITEBACK_SYNC)
 		return false;
 
+	if (bio_op(bio) == REQ_OP_DISCARD)
+		return false;
+
 	if (dc->partial_stripes_expensive &&
 	    bcache_dev_stripe_dirty(dc, bio->bi_iter.bi_sector,
 				    bio_sectors(bio)))
@@ -76,8 +83,9 @@ static inline bool should_writeback(struct cached_dev *dc, struct bio *bio,
 	if (would_skip)
 		return false;
 
-	return bio->bi_rw & REQ_SYNC ||
-		in_use <= CUTOFF_WRITEBACK;
+	return (op_is_sync(bio->bi_opf) ||
+		bio->bi_opf & (REQ_META|REQ_PRIO) ||
+		in_use <= CUTOFF_WRITEBACK);
 }
 
 static inline void bch_writeback_queue(struct cached_dev *dc)
@@ -90,8 +98,6 @@ static inline void bch_writeback_add(struct cached_dev *dc)
 {
 	if (!atomic_read(&dc->has_dirty) &&
 	    !atomic_xchg(&dc->has_dirty, 1)) {
-		atomic_inc(&dc->count);
-
 		if (BDEV_STATE(&dc->sb) != BDEV_STATE_DIRTY) {
 			SET_BDEV_STATE(&dc->sb, BDEV_STATE_DIRTY);
 			/* XXX: should do this synchronously */

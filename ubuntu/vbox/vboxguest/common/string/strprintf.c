@@ -4,7 +4,11 @@
  */
 
 /*
+<<<<<<< HEAD
  * Copyright (C) 2006-2015 Oracle Corporation
+=======
+ * Copyright (C) 2006-2017 Oracle Corporation
+>>>>>>> temp
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -66,20 +70,50 @@ static DECLCALLBACK(size_t) strbufoutput(void *pvArg, const char *pachChars, siz
 static DECLCALLBACK(size_t) strbufoutput(void *pvArg, const char *pachChars, size_t cbChars)
 {
     PSTRBUFARG  pArg = (PSTRBUFARG)pvArg;
+<<<<<<< HEAD
+=======
+    char *pszCur = pArg->psz; /* We actually have to spell this out for VS2010, or it will load for each case. */
+>>>>>>> temp
 
     cbChars = RT_MIN(pArg->cch, cbChars);
     if (cbChars)
     {
+<<<<<<< HEAD
         memcpy(pArg->psz, pachChars, cbChars);
         pArg->cch -= cbChars;
         pArg->psz += cbChars;
     }
     *pArg->psz = '\0';
+=======
+        pArg->cch -= cbChars;
+
+        /* Note! For VS2010/64 we need at least 7 case statements before it generates a jump table. */
+        switch (cbChars)
+        {
+            default:
+                memcpy(pszCur, pachChars, cbChars);
+                break;
+            case 8: pszCur[7] = pachChars[7]; RT_FALL_THRU();
+            case 7: pszCur[6] = pachChars[6]; RT_FALL_THRU();
+            case 6: pszCur[5] = pachChars[5]; RT_FALL_THRU();
+            case 5: pszCur[4] = pachChars[4]; RT_FALL_THRU();
+            case 4: pszCur[3] = pachChars[3]; RT_FALL_THRU();
+            case 3: pszCur[2] = pachChars[2]; RT_FALL_THRU();
+            case 2: pszCur[1] = pachChars[1]; RT_FALL_THRU();
+            case 1: pszCur[0] = pachChars[0]; RT_FALL_THRU();
+            case 0:
+                break;
+        }
+        pArg->psz = pszCur += cbChars;
+    }
+    *pszCur = '\0';
+>>>>>>> temp
 
     return cbChars;
 }
 
 
+<<<<<<< HEAD
 RTDECL(size_t) RTStrPrintfExV(PFNSTRFORMAT pfnFormat, void *pvArg, char *pszBuffer, size_t cchBuffer, const char *pszFormat, va_list args)
 {
     STRBUFARG Arg;
@@ -90,6 +124,32 @@ RTDECL(size_t) RTStrPrintfExV(PFNSTRFORMAT pfnFormat, void *pvArg, char *pszBuff
         return 0;
     }
 
+=======
+RTDECL(size_t) RTStrPrintf(char *pszBuffer, size_t cchBuffer, const char *pszFormat, ...)
+{
+    /* Explicitly inline RTStrPrintfV + RTStrPrintfExV here because this is a frequently use API. */
+    STRBUFARG Arg;
+    va_list args;
+    size_t cbRet;
+
+    AssertMsgReturn(cchBuffer, ("Excellent idea! Format a string with no space for the output!\n"), 0);
+    Arg.psz = pszBuffer;
+    Arg.cch = cchBuffer - 1;
+
+    va_start(args, pszFormat);
+    cbRet = RTStrFormatV(strbufoutput, &Arg, NULL, NULL, pszFormat, args);
+    va_end(args);
+
+    return cbRet;
+}
+RT_EXPORT_SYMBOL(RTStrPrintf);
+
+
+RTDECL(size_t) RTStrPrintfExV(PFNSTRFORMAT pfnFormat, void *pvArg, char *pszBuffer, size_t cchBuffer, const char *pszFormat, va_list args)
+{
+    STRBUFARG Arg;
+    AssertMsgReturn(cchBuffer, ("Excellent idea! Format a string with no space for the output!\n"), 0);
+>>>>>>> temp
     Arg.psz = pszBuffer;
     Arg.cch = cchBuffer - 1;
     return RTStrFormatV(strbufoutput, &Arg, pfnFormat, pvArg, pszFormat, args);
@@ -115,6 +175,7 @@ RTDECL(size_t) RTStrPrintfEx(PFNSTRFORMAT pfnFormat, void *pvArg, char *pszBuffe
 }
 RT_EXPORT_SYMBOL(RTStrPrintfEx);
 
+<<<<<<< HEAD
 
 RTDECL(size_t) RTStrPrintf(char *pszBuffer, size_t cchBuffer, const char *pszFormat, ...)
 {
@@ -127,3 +188,5 @@ RTDECL(size_t) RTStrPrintf(char *pszBuffer, size_t cchBuffer, const char *pszFor
 }
 RT_EXPORT_SYMBOL(RTStrPrintf);
 
+=======
+>>>>>>> temp

@@ -53,6 +53,7 @@ nv_free_spl(nv_alloc_t *nva, void *buf, size_t size)
 }
 
 const nv_alloc_ops_t spl_sleep_ops_def = {
+<<<<<<< HEAD
 	NULL,			/* nv_ao_init() */
 	NULL,			/* nv_ao_fini() */
 	nv_alloc_sleep_spl,	/* nv_ao_alloc() */
@@ -74,6 +75,29 @@ const nv_alloc_ops_t spl_nosleep_ops_def = {
 	nv_alloc_nosleep_spl,	/* nv_ao_alloc() */
 	nv_free_spl,		/* nv_ao_free() */
 	NULL			/* nv_ao_reset() */
+=======
+	.nv_ao_init = NULL,
+	.nv_ao_fini = NULL,
+	.nv_ao_alloc = nv_alloc_sleep_spl,
+	.nv_ao_free = nv_free_spl,
+	.nv_ao_reset = NULL
+};
+
+const nv_alloc_ops_t spl_pushpage_ops_def = {
+	.nv_ao_init = NULL,
+	.nv_ao_fini = NULL,
+	.nv_ao_alloc = nv_alloc_pushpage_spl,
+	.nv_ao_free = nv_free_spl,
+	.nv_ao_reset = NULL
+};
+
+const nv_alloc_ops_t spl_nosleep_ops_def = {
+	.nv_ao_init = NULL,
+	.nv_ao_fini = NULL,
+	.nv_ao_alloc = nv_alloc_nosleep_spl,
+	.nv_ao_free = nv_free_spl,
+	.nv_ao_reset = NULL
+>>>>>>> temp
 };
 
 nv_alloc_t nv_alloc_sleep_def = {

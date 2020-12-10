@@ -30,6 +30,10 @@
 #include <linux/types.h>
 #include <linux/list.h>
 #include <linux/string.h>
+<<<<<<< HEAD
+=======
+#include <linux/delay.h>
+>>>>>>> temp
 
 #include <target/target_core_base.h>
 #include <target/target_core_fabric.h>
@@ -154,6 +158,12 @@ static long ibmvscsis_unregister_command_q(struct scsi_info *vscsi)
 		qrc = h_free_crq(vscsi->dds.unit_id);
 		switch (qrc) {
 		case H_SUCCESS:
+<<<<<<< HEAD
+=======
+			spin_lock_bh(&vscsi->intr_lock);
+			vscsi->flags &= ~PREP_FOR_SUSPEND_FLAGS;
+			spin_unlock_bh(&vscsi->intr_lock);
+>>>>>>> temp
 			break;
 
 		case H_HARDWARE:
@@ -421,6 +431,12 @@ static void ibmvscsis_disconnect(struct work_struct *work)
 	new_state = vscsi->new_state;
 	vscsi->new_state = 0;
 
+<<<<<<< HEAD
+=======
+	vscsi->flags |= DISCONNECT_SCHEDULED;
+	vscsi->flags &= ~SCHEDULE_DISCONNECT;
+
+>>>>>>> temp
 	pr_debug("disconnect: flags 0x%x, state 0x%hx\n", vscsi->flags,
 		 vscsi->state);
 
@@ -801,6 +817,16 @@ static long ibmvscsis_establish_new_q(struct scsi_info *vscsi)
 	long rc = ADAPT_SUCCESS;
 	uint format;
 
+<<<<<<< HEAD
+=======
+	rc = h_vioctl(vscsi->dds.unit_id, H_ENABLE_PREPARE_FOR_SUSPEND, 30000,
+		      0, 0, 0, 0);
+	if (rc == H_SUCCESS)
+		vscsi->flags |= PREP_FOR_SUSPEND_ENABLED;
+	else if (rc != H_NOT_FOUND)
+		pr_err("Error from Enable Prepare for Suspend: %ld\n", rc);
+
+>>>>>>> temp
 	vscsi->flags &= PRESERVE_FLAG_FIELDS;
 	vscsi->rsp_q_timer.timer_pops = 0;
 	vscsi->debit = 0;
@@ -950,6 +976,66 @@ static void ibmvscsis_free_cmd_resources(struct scsi_info *vscsi,
 }
 
 /**
+<<<<<<< HEAD
+=======
+ * ibmvscsis_ready_for_suspend() - Helper function to call VIOCTL
+ * @vscsi:	Pointer to our adapter structure
+ * @idle:	Indicates whether we were called from adapter_idle.  This
+ *		is important to know if we need to do a disconnect, since if
+ *		we're called from adapter_idle, we're still processing the
+ *		current disconnect, so we can't just call post_disconnect.
+ *
+ * This function is called when the adapter is idle when phyp has sent
+ * us a Prepare for Suspend Transport Event.
+ *
+ * EXECUTION ENVIRONMENT:
+ *	Process or interrupt environment called with interrupt lock held
+ */
+static long ibmvscsis_ready_for_suspend(struct scsi_info *vscsi, bool idle)
+{
+	long rc = 0;
+	struct viosrp_crq *crq;
+
+	/* See if there is a Resume event in the queue */
+	crq = vscsi->cmd_q.base_addr + vscsi->cmd_q.index;
+
+	pr_debug("ready_suspend: flags 0x%x, state 0x%hx crq_valid:%x\n",
+		 vscsi->flags, vscsi->state, (int)crq->valid);
+
+	if (!(vscsi->flags & PREP_FOR_SUSPEND_ABORTED) && !(crq->valid)) {
+		rc = h_vioctl(vscsi->dds.unit_id, H_READY_FOR_SUSPEND, 0, 0, 0,
+			      0, 0);
+		if (rc) {
+			pr_err("Ready for Suspend Vioctl failed: %ld\n", rc);
+			rc = 0;
+		}
+	} else if (((vscsi->flags & PREP_FOR_SUSPEND_OVERWRITE) &&
+		    (vscsi->flags & PREP_FOR_SUSPEND_ABORTED)) ||
+		   ((crq->valid) && ((crq->valid != VALID_TRANS_EVENT) ||
+				     (crq->format != RESUME_FROM_SUSP)))) {
+		if (idle) {
+			vscsi->state = ERR_DISCONNECT_RECONNECT;
+			ibmvscsis_reset_queue(vscsi);
+			rc = -1;
+		} else if (vscsi->state == CONNECTED) {
+			ibmvscsis_post_disconnect(vscsi,
+						  ERR_DISCONNECT_RECONNECT, 0);
+		}
+
+		vscsi->flags &= ~PREP_FOR_SUSPEND_OVERWRITE;
+
+		if ((crq->valid) && ((crq->valid != VALID_TRANS_EVENT) ||
+				     (crq->format != RESUME_FROM_SUSP)))
+			pr_err("Invalid element in CRQ after Prepare for Suspend");
+	}
+
+	vscsi->flags &= ~(PREP_FOR_SUSPEND_PENDING | PREP_FOR_SUSPEND_ABORTED);
+
+	return rc;
+}
+
+/**
+>>>>>>> temp
  * ibmvscsis_trans_event() - Handle a Transport Event
  * @vscsi:	Pointer to our adapter structure
  * @crq:	Pointer to CRQ entry containing the Transport Event
@@ -973,6 +1059,7 @@ static long ibmvscsis_trans_event(struct scsi_info *vscsi,
 	case PARTNER_FAILED:
 	case PARTNER_DEREGISTER:
 		ibmvscsis_delete_client_info(vscsi, true);
+<<<<<<< HEAD
 		break;
 
 	default:
@@ -985,6 +1072,10 @@ static long ibmvscsis_trans_event(struct scsi_info *vscsi,
 	}
 
 	if (rc == ADAPT_SUCCESS) {
+=======
+		if (crq->format == MIGRATED)
+			vscsi->flags &= ~PREP_FOR_SUSPEND_OVERWRITE;
+>>>>>>> temp
 		switch (vscsi->state) {
 		case NO_QUEUE:
 		case ERR_DISCONNECTED:
@@ -1033,6 +1124,63 @@ static long ibmvscsis_trans_event(struct scsi_info *vscsi,
 			vscsi->flags |= (RESPONSE_Q_DOWN | TRANS_EVENT);
 			break;
 		}
+<<<<<<< HEAD
+=======
+		break;
+
+	case PREPARE_FOR_SUSPEND:
+		pr_debug("Prep for Suspend, crq status = 0x%x\n",
+			 (int)crq->status);
+		switch (vscsi->state) {
+		case ERR_DISCONNECTED:
+		case WAIT_CONNECTION:
+		case CONNECTED:
+			ibmvscsis_ready_for_suspend(vscsi, false);
+			break;
+		case SRP_PROCESSING:
+			vscsi->resume_state = vscsi->state;
+			vscsi->flags |= PREP_FOR_SUSPEND_PENDING;
+			if (crq->status == CRQ_ENTRY_OVERWRITTEN)
+				vscsi->flags |= PREP_FOR_SUSPEND_OVERWRITE;
+			ibmvscsis_post_disconnect(vscsi, WAIT_IDLE, 0);
+			break;
+		case NO_QUEUE:
+		case UNDEFINED:
+		case UNCONFIGURING:
+		case WAIT_ENABLED:
+		case ERR_DISCONNECT:
+		case ERR_DISCONNECT_RECONNECT:
+		case WAIT_IDLE:
+			pr_err("Invalid state for Prepare for Suspend Trans Event: 0x%x\n",
+			       vscsi->state);
+			break;
+		}
+		break;
+
+	case RESUME_FROM_SUSP:
+		pr_debug("Resume from Suspend, crq status = 0x%x\n",
+			 (int)crq->status);
+		if (vscsi->flags & PREP_FOR_SUSPEND_PENDING) {
+			vscsi->flags |= PREP_FOR_SUSPEND_ABORTED;
+		} else {
+			if ((crq->status == CRQ_ENTRY_OVERWRITTEN) ||
+			    (vscsi->flags & PREP_FOR_SUSPEND_OVERWRITE)) {
+				ibmvscsis_post_disconnect(vscsi,
+							  ERR_DISCONNECT_RECONNECT,
+							  0);
+				vscsi->flags &= ~PREP_FOR_SUSPEND_OVERWRITE;
+			}
+		}
+		break;
+
+	default:
+		rc = ERROR;
+		dev_err(&vscsi->dev, "trans_event: invalid format %d\n",
+			(uint)crq->format);
+		ibmvscsis_post_disconnect(vscsi, ERR_DISCONNECT,
+					  RESPONSE_Q_DOWN);
+		break;
+>>>>>>> temp
 	}
 
 	rc = vscsi->flags & SCHEDULE_DISCONNECT;
@@ -1169,6 +1317,12 @@ static struct ibmvscsis_cmd *ibmvscsis_get_free_cmd(struct scsi_info *vscsi)
 		cmd = list_first_entry_or_null(&vscsi->free_cmd,
 					       struct ibmvscsis_cmd, list);
 		if (cmd) {
+<<<<<<< HEAD
+=======
+			if (cmd->abort_cmd)
+				cmd->abort_cmd = NULL;
+			cmd->flags &= ~(DELAY_SEND);
+>>>>>>> temp
 			list_del(&cmd->list);
 			cmd->iue = iue;
 			cmd->type = UNSET_TYPE;
@@ -1197,6 +1351,10 @@ static struct ibmvscsis_cmd *ibmvscsis_get_free_cmd(struct scsi_info *vscsi)
 static void ibmvscsis_adapter_idle(struct scsi_info *vscsi)
 {
 	int free_qs = false;
+<<<<<<< HEAD
+=======
+	long rc = 0;
+>>>>>>> temp
 
 	pr_debug("adapter_idle: flags 0x%x, state 0x%hx\n", vscsi->flags,
 		 vscsi->state);
@@ -1236,7 +1394,18 @@ static void ibmvscsis_adapter_idle(struct scsi_info *vscsi)
 		vscsi->rsp_q_timer.timer_pops = 0;
 		vscsi->debit = 0;
 		vscsi->credit = 0;
+<<<<<<< HEAD
 		if (vscsi->flags & TRANS_EVENT) {
+=======
+		if (vscsi->flags & PREP_FOR_SUSPEND_PENDING) {
+			vscsi->state = vscsi->resume_state;
+			vscsi->resume_state = 0;
+			rc = ibmvscsis_ready_for_suspend(vscsi, true);
+			vscsi->flags &= ~DISCONNECT_SCHEDULED;
+			if (rc)
+				break;
+		} else if (vscsi->flags & TRANS_EVENT) {
+>>>>>>> temp
 			vscsi->state = WAIT_CONNECTION;
 			vscsi->flags &= PRESERVE_FLAG_FIELDS;
 		} else {
@@ -1694,7 +1863,11 @@ static void srp_snd_msg_failed(struct scsi_info *vscsi, long rc)
 		if (!vscsi->rsp_q_timer.started) {
 			if (vscsi->rsp_q_timer.timer_pops <
 			    MAX_TIMER_POPS) {
+<<<<<<< HEAD
 				kt = ktime_set(0, WAIT_NANO_SECONDS);
+=======
+				kt = WAIT_NANO_SECONDS;
+>>>>>>> temp
 			} else {
 				/*
 				 * slide the timeslice if the maximum
@@ -1748,13 +1921,18 @@ static void srp_snd_msg_failed(struct scsi_info *vscsi, long rc)
 static void ibmvscsis_send_messages(struct scsi_info *vscsi)
 {
 	u64 msg_hi = 0;
+<<<<<<< HEAD
 	/* note do not attmempt to access the IU_data_ptr with this pointer
+=======
+	/* note do not attempt to access the IU_data_ptr with this pointer
+>>>>>>> temp
 	 * it is not valid
 	 */
 	struct viosrp_crq *crq = (struct viosrp_crq *)&msg_hi;
 	struct ibmvscsis_cmd *cmd, *nxt;
 	struct iu_entry *iue;
 	long rc = ADAPT_SUCCESS;
+<<<<<<< HEAD
 
 	if (!(vscsi->flags & RESPONSE_Q_DOWN)) {
 		list_for_each_entry_safe(cmd, nxt, &vscsi->waiting_rsp, list) {
@@ -1787,6 +1965,94 @@ static void ibmvscsis_send_messages(struct scsi_info *vscsi)
 				break;
 			}
 		}
+=======
+	bool retry = false;
+
+	if (!(vscsi->flags & RESPONSE_Q_DOWN)) {
+		do {
+			retry = false;
+			list_for_each_entry_safe(cmd, nxt, &vscsi->waiting_rsp,
+						 list) {
+				/*
+				 * Check to make sure abort cmd gets processed
+				 * prior to the abort tmr cmd
+				 */
+				if (cmd->flags & DELAY_SEND)
+					continue;
+
+				if (cmd->abort_cmd) {
+					retry = true;
+					cmd->abort_cmd->flags &= ~(DELAY_SEND);
+					cmd->abort_cmd = NULL;
+				}
+
+				/*
+				 * If CMD_T_ABORTED w/o CMD_T_TAS scenarios and
+				 * the case where LIO issued a
+				 * ABORT_TASK: Sending TMR_TASK_DOES_NOT_EXIST
+				 * case then we dont send a response, since it
+				 * was already done.
+				 */
+				if (cmd->se_cmd.transport_state & CMD_T_ABORTED &&
+				    !(cmd->se_cmd.transport_state & CMD_T_TAS)) {
+					list_del(&cmd->list);
+					ibmvscsis_free_cmd_resources(vscsi,
+								     cmd);
+					/*
+					 * With a successfully aborted op
+					 * through LIO we want to increment the
+					 * the vscsi credit so that when we dont
+					 * send a rsp to the original scsi abort
+					 * op (h_send_crq), but the tm rsp to
+					 * the abort is sent, the credit is
+					 * correctly sent with the abort tm rsp.
+					 * We would need 1 for the abort tm rsp
+					 * and 1 credit for the aborted scsi op.
+					 * Thus we need to increment here.
+					 * Also we want to increment the credit
+					 * here because we want to make sure
+					 * cmd is actually released first
+					 * otherwise the client will think it
+					 * it can send a new cmd, and we could
+					 * find ourselves short of cmd elements.
+					 */
+					vscsi->credit += 1;
+				} else {
+					iue = cmd->iue;
+
+					crq->valid = VALID_CMD_RESP_EL;
+					crq->format = cmd->rsp.format;
+
+					if (cmd->flags & CMD_FAST_FAIL)
+						crq->status = VIOSRP_ADAPTER_FAIL;
+
+					crq->IU_length = cpu_to_be16(cmd->rsp.len);
+
+					rc = h_send_crq(vscsi->dma_dev->unit_address,
+							be64_to_cpu(msg_hi),
+							be64_to_cpu(cmd->rsp.tag));
+
+					pr_debug("send_messages: cmd %p, tag 0x%llx, rc %ld\n",
+						 cmd, be64_to_cpu(cmd->rsp.tag), rc);
+
+					/* if all ok free up the command
+					 * element resources
+					 */
+					if (rc == H_SUCCESS) {
+						/* some movement has occurred */
+						vscsi->rsp_q_timer.timer_pops = 0;
+						list_del(&cmd->list);
+
+						ibmvscsis_free_cmd_resources(vscsi,
+									     cmd);
+					} else {
+						srp_snd_msg_failed(vscsi, rc);
+						break;
+					}
+				}
+			}
+		} while (retry);
+>>>>>>> temp
 
 		if (!rc) {
 			/*
@@ -2707,6 +2973,10 @@ static int ibmvscsis_alloc_cmds(struct scsi_info *vscsi, int num)
 
 	for (i = 0, cmd = (struct ibmvscsis_cmd *)vscsi->cmd_pool; i < num;
 	     i++, cmd++) {
+<<<<<<< HEAD
+=======
+		cmd->abort_cmd = NULL;
+>>>>>>> temp
 		cmd->adapter = vscsi;
 		INIT_WORK(&cmd->work, ibmvscsis_scheduler);
 		list_add_tail(&cmd->list, &vscsi->free_cmd);
@@ -2925,10 +3195,14 @@ static long srp_build_response(struct scsi_info *vscsi,
 
 	rsp->opcode = SRP_RSP;
 
+<<<<<<< HEAD
 	if (vscsi->credit > 0 && vscsi->state == SRP_PROCESSING)
 		rsp->req_lim_delta = cpu_to_be32(vscsi->credit);
 	else
 		rsp->req_lim_delta = cpu_to_be32(1 + vscsi->credit);
+=======
+	rsp->req_lim_delta = cpu_to_be32(1 + vscsi->credit);
+>>>>>>> temp
 	rsp->tag = cmd->rsp.tag;
 	rsp->flags = 0;
 
@@ -3083,9 +3357,12 @@ static int ibmvscsis_rdma(struct ibmvscsis_cmd *cmd, struct scatterlist *sg,
 					 vscsi->dds.window[LOCAL].liobn,
 					 server_ioba);
 		} else {
+<<<<<<< HEAD
 			/* write to client */
 			struct srp_cmd *srp = (struct srp_cmd *)iue->sbuf->buf;
 
+=======
+>>>>>>> temp
 			/* The h_copy_rdma will cause phyp, running in another
 			 * partition, to read memory, so we need to make sure
 			 * the data has been written out, hence these syncs.
@@ -3350,6 +3627,10 @@ static int ibmvscsis_probe(struct vio_dev *vdev,
 	vscsi->map_ioba = dma_map_single(&vdev->dev, vscsi->map_buf, PAGE_SIZE,
 					 DMA_BIDIRECTIONAL);
 	if (dma_mapping_error(&vdev->dev, vscsi->map_ioba)) {
+<<<<<<< HEAD
+=======
+		rc = -ENOMEM;
+>>>>>>> temp
 		dev_err(&vscsi->dev, "probe: error mapping command buffer\n");
 		goto free_buf;
 	}
@@ -3566,8 +3847,12 @@ static void ibmvscsis_release_cmd(struct se_cmd *se_cmd)
 
 	spin_lock_bh(&vscsi->intr_lock);
 	/* Remove from active_q */
+<<<<<<< HEAD
 	list_del(&cmd->list);
 	list_add_tail(&cmd->list, &vscsi->waiting_rsp);
+=======
+	list_move_tail(&cmd->list, &vscsi->waiting_rsp);
+>>>>>>> temp
 	ibmvscsis_send_messages(vscsi);
 	spin_unlock_bh(&vscsi->intr_lock);
 }
@@ -3581,9 +3866,26 @@ static int ibmvscsis_write_pending(struct se_cmd *se_cmd)
 {
 	struct ibmvscsis_cmd *cmd = container_of(se_cmd, struct ibmvscsis_cmd,
 						 se_cmd);
+<<<<<<< HEAD
 	struct iu_entry *iue = cmd->iue;
 	int rc;
 
+=======
+	struct scsi_info *vscsi = cmd->adapter;
+	struct iu_entry *iue = cmd->iue;
+	int rc;
+
+	/*
+	 * If CLIENT_FAILED OR RESPONSE_Q_DOWN, then just return success
+	 * since LIO can't do anything about it, and we dont want to
+	 * attempt an srp_transfer_data.
+	 */
+	if ((vscsi->flags & (CLIENT_FAILED | RESPONSE_Q_DOWN))) {
+		pr_err("write_pending failed since: %d\n", vscsi->flags);
+		return -EIO;
+	}
+
+>>>>>>> temp
 	rc = srp_transfer_data(cmd, &vio_iu(iue)->srp.cmd, ibmvscsis_rdma,
 			       1, 1);
 	if (rc) {
@@ -3662,11 +3964,34 @@ static void ibmvscsis_queue_tm_rsp(struct se_cmd *se_cmd)
 	struct ibmvscsis_cmd *cmd = container_of(se_cmd, struct ibmvscsis_cmd,
 						 se_cmd);
 	struct scsi_info *vscsi = cmd->adapter;
+<<<<<<< HEAD
+=======
+	struct ibmvscsis_cmd *cmd_itr;
+	struct iu_entry *iue = iue = cmd->iue;
+	struct srp_tsk_mgmt *srp_tsk = &vio_iu(iue)->srp.tsk_mgmt;
+	u64 tag_to_abort = be64_to_cpu(srp_tsk->task_tag);
+>>>>>>> temp
 	uint len;
 
 	pr_debug("queue_tm_rsp %p, status %d\n",
 		 se_cmd, (int)se_cmd->se_tmr_req->response);
 
+<<<<<<< HEAD
+=======
+	if (srp_tsk->tsk_mgmt_func == SRP_TSK_ABORT_TASK &&
+	    cmd->se_cmd.se_tmr_req->response == TMR_TASK_DOES_NOT_EXIST) {
+		spin_lock_bh(&vscsi->intr_lock);
+		list_for_each_entry(cmd_itr, &vscsi->active_q, list) {
+			if (tag_to_abort == cmd_itr->se_cmd.tag) {
+				cmd_itr->abort_cmd = cmd;
+				cmd->flags |= DELAY_SEND;
+				break;
+			}
+		}
+		spin_unlock_bh(&vscsi->intr_lock);
+	}
+
+>>>>>>> temp
 	srp_build_response(vscsi, cmd, &len);
 	cmd->rsp.format = SRP_FORMAT;
 	cmd->rsp.len = len;
@@ -3674,8 +3999,13 @@ static void ibmvscsis_queue_tm_rsp(struct se_cmd *se_cmd)
 
 static void ibmvscsis_aborted_task(struct se_cmd *se_cmd)
 {
+<<<<<<< HEAD
 	/* TBD: What (if anything) should we do here? */
 	pr_debug("ibmvscsis_aborted_task %p\n", se_cmd);
+=======
+	pr_debug("ibmvscsis_aborted_task %p task_tag: %llu\n",
+		 se_cmd, se_cmd->tag);
+>>>>>>> temp
 }
 
 static struct se_wwn *ibmvscsis_make_tport(struct target_fabric_configfs *tf,
@@ -3711,8 +4041,21 @@ static struct se_portal_group *ibmvscsis_make_tpg(struct se_wwn *wwn,
 {
 	struct ibmvscsis_tport *tport =
 		container_of(wwn, struct ibmvscsis_tport, tport_wwn);
+<<<<<<< HEAD
 	int rc;
 
+=======
+	u16 tpgt;
+	int rc;
+
+	if (strstr(name, "tpgt_") != name)
+		return ERR_PTR(-EINVAL);
+	rc = kstrtou16(name + 5, 0, &tpgt);
+	if (rc)
+		return ERR_PTR(rc);
+	tport->tport_tpgt = tpgt;
+
+>>>>>>> temp
 	tport->releasing = false;
 
 	rc = core_tpg_register(&tport->tport_wwn, &tport->se_tpg,
@@ -3853,10 +4196,13 @@ static const struct target_core_fabric_ops ibmvscsis_ops = {
 
 static void ibmvscsis_dev_release(struct device *dev) {};
 
+<<<<<<< HEAD
 static struct class_attribute ibmvscsis_class_attrs[] = {
 	__ATTR_NULL,
 };
 
+=======
+>>>>>>> temp
 static struct device_attribute dev_attr_system_id =
 	__ATTR(system_id, S_IRUGO, system_id_show, NULL);
 
@@ -3876,11 +4222,18 @@ ATTRIBUTE_GROUPS(ibmvscsis_dev);
 static struct class ibmvscsis_class = {
 	.name		= "ibmvscsis",
 	.dev_release	= ibmvscsis_dev_release,
+<<<<<<< HEAD
 	.class_attrs	= ibmvscsis_class_attrs,
 	.dev_groups	= ibmvscsis_dev_groups,
 };
 
 static struct vio_device_id ibmvscsis_device_table[] = {
+=======
+	.dev_groups	= ibmvscsis_dev_groups,
+};
+
+static const struct vio_device_id ibmvscsis_device_table[] = {
+>>>>>>> temp
 	{ "v-scsi-host", "IBM,v-scsi-host" },
 	{ "", "" }
 };

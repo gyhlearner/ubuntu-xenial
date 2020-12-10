@@ -1,9 +1,20 @@
+<<<<<<< HEAD
 #
+=======
+# $Id: Makefile.include.footer $
+## @file
+>>>>>>> temp
 # VirtualBox Guest Additions kernel module Makefile, common parts.
 #
 # See Makefile.include.header for details of how to use this.
 #
+<<<<<<< HEAD
 # Copyright (C) 2006-2015 Oracle Corporation
+=======
+
+#
+# Copyright (C) 2006-2017 Oracle Corporation
+>>>>>>> temp
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -18,9 +29,14 @@
 override MODULE = $(MOD_NAME)
 OBJS   = $(MOD_OBJS)
 
+<<<<<<< HEAD
 ifneq ($(MAKECMDGOALS),clean)
 
 KBUILD_VERBOSE ?= 1
+=======
+KBUILD_VERBOSE ?= 1
+LINUX_VERBOSE = $(if $(KBUILD_VERBOSE),1,)
+>>>>>>> temp
 
 #
 # Compiler options
@@ -43,6 +59,14 @@ ifeq ($(KERN_VERSION), 24)
 # 2.4
 #
 
+<<<<<<< HEAD
+=======
+# Note: while 2.4 kernels could also do "proper" builds from kbuild, the make
+# script needed to support it was somewhat different from 2.6.  Since this
+# script works and 2.4 is not a moving target we will not try do do things the
+# "proper" way.
+
+>>>>>>> temp
 ifeq ($(BUILD_TARGET_ARCH),amd64)
  KFLAGS  += -mcmodel=kernel
 endif
@@ -58,7 +82,20 @@ $(MODULE).o: $(OBJS)
 all: $(MODULE)
 $(MODULE): $(MODULE).o
 
+<<<<<<< HEAD
 else
+=======
+install: $(MODULE)
+	@mkdir -p $(MODULE_DIR); \
+	install -m 0644 -o root -g root $(MODULE).$(MODULE_EXT) $(MODULE_DIR); \
+	PATH="$(PATH):/bin:/sbin" depmod -a;
+
+clean:
+	for f in $(sort $(dir $(OBJS))); do rm -f $$f/*.o $$f/.*.cmd $$f/.*.flags; done
+	rm -rf .$(MOD_NAME)* .tmp_ver* $(MOD_NAME).* Modules.symvers modules.order
+
+else  # ! $(KERN_VERSION), 24
+>>>>>>> temp
 #
 # 2.6 and later
 #
@@ -70,10 +107,15 @@ $(MODULE)-y  := $(OBJS)
 # build defs
 EXTRA_CFLAGS += $(MOD_CFLAGS) $(INCL) $(KFLAGS) $(MOD_EXTRA) $(KDEBUG)
 
+<<<<<<< HEAD
+=======
+.PHONY: $(MODULE)
+>>>>>>> temp
 all: $(MODULE)
 
 obj-m += $(MODULE).o
 
+<<<<<<< HEAD
 # OL/UEK: disable module signing for external modules -- we don't have any private key
 $(MODULE):
 	$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) CONFIG_MODULE_SIG= -C $(KERN_DIR) SUBDIRS=$(CURDIR) SRCROOT=$(CURDIR) modules
@@ -94,3 +136,24 @@ endif # eq($(MAKECMDGOALS),clean)
 clean:
 	for f in $(MOD_CLEAN); do rm -f $$f/*.o $$f/.*.cmd $$f/.*.flags; done
 	rm -rf .$(MOD_NAME)* .tmp_ver* $(MOD_NAME).* Modules.symvers modules.order
+=======
+JOBS := $(shell (getconf _NPROCESSORS_ONLN || grep -Ec '^processor|^CPU[0-9]' /proc/cpuinfo) 2>/dev/null)
+ifeq ($(JOBS),0)
+  JOBS := 1
+endif
+
+# OL/UEK: disable module signing for external modules -- we don't have any private key
+$(MODULE):
+	$(MAKE) V=$(LINUX_VERBOSE) CONFIG_MODULE_SIG= -C $(KERN_DIR) SUBDIRS=$(CURDIR) SRCROOT=$(CURDIR) $(if $(JOBS),-j$(JOBS),) modules
+
+install: $(MODULE)
+	$(MAKE) V=$(LINUX_VERBOSE) CONFIG_MODULE_SIG= -C $(KERN_DIR) SUBDIRS=$(CURDIR) SRCROOT=$(CURDIR) INSTALL_MOD_PATH=$(INSTALL_MOD_PATH) INSTALL_MOD_DIR=$(INSTALL_MOD_DIR) modules_install
+
+modules_install: install
+
+clean:
+	$(MAKE) V=$(LINUX_VERBOSE) CONFIG_MODULE_SIG= -C $(KERN_DIR) SUBDIRS=$(CURDIR) SRCROOT=$(CURDIR) clean
+
+.PHONY: $(MODULE) install modules_install clean
+endif
+>>>>>>> temp

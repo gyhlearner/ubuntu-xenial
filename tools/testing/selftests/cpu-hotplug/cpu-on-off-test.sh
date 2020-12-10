@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
 
 SYSFS=
 
@@ -28,6 +29,12 @@ prerequisite()
 	echo "CPU online/offline summary:"
 	online_cpus=`cat $SYSFS/devices/system/cpu/online`
 	online_max=${online_cpus##*-}
+
+	if [[ "$online_cpus" = "$online_max" ]]; then
+		echo "$msg: since there is only one cpu: $online_cpus"
+		exit 0
+	fi
+
 	echo -e "\t Cpus in online state: $online_cpus"
 
 	offline_cpus=`cat $SYSFS/devices/system/cpu/offline`

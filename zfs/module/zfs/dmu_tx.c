@@ -21,7 +21,11 @@
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2011 Nexenta Systems, Inc.  All rights reserved.
+<<<<<<< HEAD
  * Copyright (c) 2012, 2015 by Delphix. All rights reserved.
+=======
+ * Copyright (c) 2012, 2017 by Delphix. All rights reserved.
+>>>>>>> temp
  */
 
 #include <sys/dmu.h>
@@ -29,10 +33,17 @@
 #include <sys/dbuf.h>
 #include <sys/dmu_tx.h>
 #include <sys/dmu_objset.h>
+<<<<<<< HEAD
 #include <sys/dsl_dataset.h> /* for dsl_dataset_block_freeable() */
 #include <sys/dsl_dir.h> /* for dsl_dir_tempreserve_*() */
 #include <sys/dsl_pool.h>
 #include <sys/zap_impl.h> /* for fzap_default_block_shift */
+=======
+#include <sys/dsl_dataset.h>
+#include <sys/dsl_dir.h>
+#include <sys/dsl_pool.h>
+#include <sys/zap_impl.h>
+>>>>>>> temp
 #include <sys/spa.h>
 #include <sys/sa.h>
 #include <sys/sa_impl.h>
@@ -71,10 +82,13 @@ dmu_tx_create_dd(dsl_dir_t *dd)
 	list_create(&tx->tx_callbacks, sizeof (dmu_tx_callback_t),
 	    offsetof(dmu_tx_callback_t, dcb_node));
 	tx->tx_start = gethrtime();
+<<<<<<< HEAD
 #ifdef DEBUG_DMU_TX
 	refcount_create(&tx->tx_space_written);
 	refcount_create(&tx->tx_space_freed);
 #endif
+=======
+>>>>>>> temp
 	return (tx);
 }
 
@@ -83,7 +97,10 @@ dmu_tx_create(objset_t *os)
 {
 	dmu_tx_t *tx = dmu_tx_create_dd(os->os_dsl_dataset->ds_dir);
 	tx->tx_objset = os;
+<<<<<<< HEAD
 	tx->tx_lastsnap_txg = dsl_dataset_prev_snap_txg(os->os_dsl_dataset);
+=======
+>>>>>>> temp
 	return (tx);
 }
 
@@ -92,7 +109,11 @@ dmu_tx_create_assigned(struct dsl_pool *dp, uint64_t txg)
 {
 	dmu_tx_t *tx = dmu_tx_create_dd(NULL);
 
+<<<<<<< HEAD
 	ASSERT3U(txg, <=, dp->dp_tx.tx_open_txg);
+=======
+	txg_verify(dp->dp_spa, txg);
+>>>>>>> temp
 	tx->tx_pool = dp;
 	tx->tx_txg = txg;
 	tx->tx_anyobj = TRUE;
@@ -113,6 +134,7 @@ dmu_tx_private_ok(dmu_tx_t *tx)
 }
 
 static dmu_tx_hold_t *
+<<<<<<< HEAD
 dmu_tx_hold_object_impl(dmu_tx_t *tx, objset_t *os, uint64_t object,
     enum dmu_tx_hold_type type, uint64_t arg1, uint64_t arg2)
 {
@@ -128,6 +150,16 @@ dmu_tx_hold_object_impl(dmu_tx_t *tx, objset_t *os, uint64_t object,
 		}
 
 		if (err == 0 && tx->tx_txg != 0) {
+=======
+dmu_tx_hold_dnode_impl(dmu_tx_t *tx, dnode_t *dn, enum dmu_tx_hold_type type,
+    uint64_t arg1, uint64_t arg2)
+{
+	dmu_tx_hold_t *txh;
+
+	if (dn != NULL) {
+		(void) refcount_add(&dn->dn_holds, tx);
+		if (tx->tx_txg != 0) {
+>>>>>>> temp
 			mutex_enter(&dn->dn_mtx);
 			/*
 			 * dn->dn_assigned_txg == tx->tx_txg doesn't pose a
@@ -144,29 +176,98 @@ dmu_tx_hold_object_impl(dmu_tx_t *tx, objset_t *os, uint64_t object,
 	txh = kmem_zalloc(sizeof (dmu_tx_hold_t), KM_SLEEP);
 	txh->txh_tx = tx;
 	txh->txh_dnode = dn;
+<<<<<<< HEAD
 #ifdef DEBUG_DMU_TX
 	txh->txh_type = type;
 	txh->txh_arg1 = arg1;
 	txh->txh_arg2 = arg2;
 #endif
+=======
+	refcount_create(&txh->txh_space_towrite);
+	refcount_create(&txh->txh_memory_tohold);
+	txh->txh_type = type;
+	txh->txh_arg1 = arg1;
+	txh->txh_arg2 = arg2;
+>>>>>>> temp
 	list_insert_tail(&tx->tx_holds, txh);
 
 	return (txh);
 }
 
+<<<<<<< HEAD
 void
 dmu_tx_add_new_object(dmu_tx_t *tx, objset_t *os, uint64_t object)
+=======
+static dmu_tx_hold_t *
+dmu_tx_hold_object_impl(dmu_tx_t *tx, objset_t *os, uint64_t object,
+    enum dmu_tx_hold_type type, uint64_t arg1, uint64_t arg2)
+{
+	dnode_t *dn = NULL;
+	dmu_tx_hold_t *txh;
+	int err;
+
+	if (object != DMU_NEW_OBJECT) {
+		err = dnode_hold(os, object, FTAG, &dn);
+		if (err != 0) {
+			tx->tx_err = err;
+			return (NULL);
+		}
+	}
+	txh = dmu_tx_hold_dnode_impl(tx, dn, type, arg1, arg2);
+	if (dn != NULL)
+		dnode_rele(dn, FTAG);
+	return (txh);
+}
+
+void
+dmu_tx_add_new_object(dmu_tx_t *tx, dnode_t *dn)
+>>>>>>> temp
 {
 	/*
 	 * If we're syncing, they can manipulate any object anyhow, and
 	 * the hold on the dnode_t can cause problems.
 	 */
+<<<<<<< HEAD
 	if (!dmu_tx_is_syncing(tx)) {
 		(void) dmu_tx_hold_object_impl(tx, os,
 		    object, THT_NEWOBJECT, 0, 0);
 	}
 }
 
+=======
+	if (!dmu_tx_is_syncing(tx))
+		(void) dmu_tx_hold_dnode_impl(tx, dn, THT_NEWOBJECT, 0, 0);
+}
+
+/*
+ * This function reads specified data from disk.  The specified data will
+ * be needed to perform the transaction -- i.e, it will be read after
+ * we do dmu_tx_assign().  There are two reasons that we read the data now
+ * (before dmu_tx_assign()):
+ *
+ * 1. Reading it now has potentially better performance.  The transaction
+ * has not yet been assigned, so the TXG is not held open, and also the
+ * caller typically has less locks held when calling dmu_tx_hold_*() than
+ * after the transaction has been assigned.  This reduces the lock (and txg)
+ * hold times, thus reducing lock contention.
+ *
+ * 2. It is easier for callers (primarily the ZPL) to handle i/o errors
+ * that are detected before they start making changes to the DMU state
+ * (i.e. now).  Once the transaction has been assigned, and some DMU
+ * state has been changed, it can be difficult to recover from an i/o
+ * error (e.g. to undo the changes already made in memory at the DMU
+ * layer).  Typically code to do so does not exist in the caller -- it
+ * assumes that the data has already been cached and thus i/o errors are
+ * not possible.
+ *
+ * It has been observed that the i/o initiated here can be a performance
+ * problem, and it appears to be optional, because we don't look at the
+ * data which is read.  However, removing this read would only serve to
+ * move the work elsewhere (after the dmu_tx_assign()), where it may
+ * have a greater impact on performance (in addition to the impact on
+ * fault tolerance noted above).
+ */
+>>>>>>> temp
 static int
 dmu_tx_check_ioerr(zio_t *zio, dnode_t *dn, int level, uint64_t blkid)
 {
@@ -183,6 +284,7 @@ dmu_tx_check_ioerr(zio_t *zio, dnode_t *dn, int level, uint64_t blkid)
 	return (err);
 }
 
+<<<<<<< HEAD
 static void
 dmu_tx_count_twig(dmu_tx_hold_t *txh, dnode_t *dn, dmu_buf_impl_t *db,
     int level, uint64_t blkid, boolean_t freeable, uint64_t *history)
@@ -227,19 +329,26 @@ dmu_tx_count_twig(dmu_tx_hold_t *txh, dnode_t *dn, dmu_buf_impl_t *db,
 	    blkid >> epbs, freeable, history);
 }
 
+=======
+>>>>>>> temp
 /* ARGSUSED */
 static void
 dmu_tx_count_write(dmu_tx_hold_t *txh, uint64_t off, uint64_t len)
 {
 	dnode_t *dn = txh->txh_dnode;
+<<<<<<< HEAD
 	uint64_t start, end, i;
 	int min_bs, max_bs, min_ibs, max_ibs, epbs, bits;
 	int err = 0;
 	int l;
+=======
+	int err = 0;
+>>>>>>> temp
 
 	if (len == 0)
 		return;
 
+<<<<<<< HEAD
 	min_bs = SPA_MINBLOCKSHIFT;
 	max_bs = highbit64(txh->txh_tx->tx_objset->os_recordsize) - 1;
 	min_ibs = DN_MIN_INDBLKSHIFT;
@@ -400,11 +509,76 @@ out:
 
 	if (err)
 		txh->txh_tx->tx_err = err;
+=======
+	(void) refcount_add_many(&txh->txh_space_towrite, len, FTAG);
+
+	if (refcount_count(&txh->txh_space_towrite) > 2 * DMU_MAX_ACCESS)
+		err = SET_ERROR(EFBIG);
+
+	if (dn == NULL)
+		return;
+
+	/*
+	 * For i/o error checking, read the blocks that will be needed
+	 * to perform the write: the first and last level-0 blocks (if
+	 * they are not aligned, i.e. if they are partial-block writes),
+	 * and all the level-1 blocks.
+	 */
+	if (dn->dn_maxblkid == 0) {
+		if (off < dn->dn_datablksz &&
+		    (off > 0 || len < dn->dn_datablksz)) {
+			err = dmu_tx_check_ioerr(NULL, dn, 0, 0);
+			if (err != 0) {
+				txh->txh_tx->tx_err = err;
+			}
+		}
+	} else {
+		zio_t *zio = zio_root(dn->dn_objset->os_spa,
+		    NULL, NULL, ZIO_FLAG_CANFAIL);
+
+		/* first level-0 block */
+		uint64_t start = off >> dn->dn_datablkshift;
+		if (P2PHASE(off, dn->dn_datablksz) || len < dn->dn_datablksz) {
+			err = dmu_tx_check_ioerr(zio, dn, 0, start);
+			if (err != 0) {
+				txh->txh_tx->tx_err = err;
+			}
+		}
+
+		/* last level-0 block */
+		uint64_t end = (off + len - 1) >> dn->dn_datablkshift;
+		if (end != start && end <= dn->dn_maxblkid &&
+		    P2PHASE(off + len, dn->dn_datablksz)) {
+			err = dmu_tx_check_ioerr(zio, dn, 0, end);
+			if (err != 0) {
+				txh->txh_tx->tx_err = err;
+			}
+		}
+
+		/* level-1 blocks */
+		if (dn->dn_nlevels > 1) {
+			int shft = dn->dn_indblkshift - SPA_BLKPTRSHIFT;
+			for (uint64_t i = (start >> shft) + 1;
+			    i < end >> shft; i++) {
+				err = dmu_tx_check_ioerr(zio, dn, 1, i);
+				if (err != 0) {
+					txh->txh_tx->tx_err = err;
+				}
+			}
+		}
+
+		err = zio_wait(zio);
+		if (err != 0) {
+			txh->txh_tx->tx_err = err;
+		}
+	}
+>>>>>>> temp
 }
 
 static void
 dmu_tx_count_dnode(dmu_tx_hold_t *txh)
 {
+<<<<<<< HEAD
 	dnode_t *dn = txh->txh_dnode;
 	dnode_t *mdn = DMU_META_DNODE(txh->txh_tx->tx_objset);
 	uint64_t space = mdn->dn_datablksz +
@@ -420,6 +594,9 @@ dmu_tx_count_dnode(dmu_tx_hold_t *txh)
 		if (dn && dn->dn_dbuf->db_blkptr)
 			txh->txh_space_tounref += space;
 	}
+=======
+	(void) refcount_add_many(&txh->txh_space_towrite, DNODE_MIN_SIZE, FTAG);
+>>>>>>> temp
 }
 
 void
@@ -427,12 +604,18 @@ dmu_tx_hold_write(dmu_tx_t *tx, uint64_t object, uint64_t off, int len)
 {
 	dmu_tx_hold_t *txh;
 
+<<<<<<< HEAD
 	ASSERT(tx->tx_txg == 0);
 	ASSERT(len <= DMU_MAX_ACCESS);
+=======
+	ASSERT0(tx->tx_txg);
+	ASSERT3U(len, <=, DMU_MAX_ACCESS);
+>>>>>>> temp
 	ASSERT(len == 0 || UINT64_MAX - off >= len - 1);
 
 	txh = dmu_tx_hold_object_impl(tx, tx->tx_objset,
 	    object, THT_WRITE, off, len);
+<<<<<<< HEAD
 	if (txh == NULL)
 		return;
 
@@ -629,6 +812,59 @@ dmu_tx_hold_free(dmu_tx_t *tx, uint64_t object, uint64_t off, uint64_t len)
 		return;
 	if (len == DMU_OBJECT_END)
 		len = (dn->dn_maxblkid+1) * dn->dn_datablksz - off;
+=======
+	if (txh != NULL) {
+		dmu_tx_count_write(txh, off, len);
+		dmu_tx_count_dnode(txh);
+	}
+}
+
+void
+dmu_tx_hold_write_by_dnode(dmu_tx_t *tx, dnode_t *dn, uint64_t off, int len)
+{
+	dmu_tx_hold_t *txh;
+
+	ASSERT0(tx->tx_txg);
+	ASSERT3U(len, <=, DMU_MAX_ACCESS);
+	ASSERT(len == 0 || UINT64_MAX - off >= len - 1);
+
+	txh = dmu_tx_hold_dnode_impl(tx, dn, THT_WRITE, off, len);
+	if (txh != NULL) {
+		dmu_tx_count_write(txh, off, len);
+		dmu_tx_count_dnode(txh);
+	}
+}
+
+/*
+ * This function marks the transaction as being a "net free".  The end
+ * result is that refquotas will be disabled for this transaction, and
+ * this transaction will be able to use half of the pool space overhead
+ * (see dsl_pool_adjustedsize()).  Therefore this function should only
+ * be called for transactions that we expect will not cause a net increase
+ * in the amount of space used (but it's OK if that is occasionally not true).
+ */
+void
+dmu_tx_mark_netfree(dmu_tx_t *tx)
+{
+	tx->tx_netfree = B_TRUE;
+}
+
+static void
+dmu_tx_hold_free_impl(dmu_tx_hold_t *txh, uint64_t off, uint64_t len)
+{
+	dmu_tx_t *tx = txh->txh_tx;
+	dnode_t *dn = txh->txh_dnode;
+	int err;
+
+	ASSERT(tx->tx_txg == 0);
+
+	dmu_tx_count_dnode(txh);
+
+	if (off >= (dn->dn_maxblkid + 1) * dn->dn_datablksz)
+		return;
+	if (len == DMU_OBJECT_END)
+		len = (dn->dn_maxblkid + 1) * dn->dn_datablksz - off;
+>>>>>>> temp
 
 	dmu_tx_count_dnode(txh);
 
@@ -650,7 +886,11 @@ dmu_tx_hold_free(dmu_tx_t *tx, uint64_t object, uint64_t off, uint64_t len)
 			dmu_tx_count_write(txh, off, 1);
 		/* last block will be modified if it is not aligned */
 		if (!IS_P2ALIGNED(off + len, 1 << dn->dn_datablkshift))
+<<<<<<< HEAD
 			dmu_tx_count_write(txh, off+len, 1);
+=======
+			dmu_tx_count_write(txh, off + len, 1);
+>>>>>>> temp
 	}
 
 	/*
@@ -673,7 +913,11 @@ dmu_tx_hold_free(dmu_tx_t *tx, uint64_t object, uint64_t off, uint64_t len)
 		if (dn->dn_datablkshift == 0)
 			start = end = 0;
 
+<<<<<<< HEAD
 		zio = zio_root(tx->tx_pool->dp_spa,
+=======
+		zio_t *zio = zio_root(tx->tx_pool->dp_spa,
+>>>>>>> temp
 		    NULL, NULL, ZIO_FLAG_CANFAIL);
 		for (i = start; i <= end; i++) {
 			uint64_t ibyte = i << shift;
@@ -681,6 +925,7 @@ dmu_tx_hold_free(dmu_tx_t *tx, uint64_t object, uint64_t off, uint64_t len)
 			i = ibyte >> shift;
 			if (err == ESRCH || i > end)
 				break;
+<<<<<<< HEAD
 			if (err) {
 				tx->tx_err = err;
 				return;
@@ -689,15 +934,35 @@ dmu_tx_hold_free(dmu_tx_t *tx, uint64_t object, uint64_t off, uint64_t len)
 			err = dmu_tx_check_ioerr(zio, dn, 1, i);
 			if (err) {
 				tx->tx_err = err;
+=======
+			if (err != 0) {
+				tx->tx_err = err;
+				(void) zio_wait(zio);
+				return;
+			}
+
+			(void) refcount_add_many(&txh->txh_memory_tohold,
+			    1 << dn->dn_indblkshift, FTAG);
+
+			err = dmu_tx_check_ioerr(zio, dn, 1, i);
+			if (err != 0) {
+				tx->tx_err = err;
+				(void) zio_wait(zio);
+>>>>>>> temp
 				return;
 			}
 		}
 		err = zio_wait(zio);
+<<<<<<< HEAD
 		if (err) {
+=======
+		if (err != 0) {
+>>>>>>> temp
 			tx->tx_err = err;
 			return;
 		}
 	}
+<<<<<<< HEAD
 
 	dmu_tx_count_free(txh, off, len);
 }
@@ -788,6 +1053,105 @@ dmu_tx_hold_zap(dmu_tx_t *tx, uint64_t object, int add, const char *name)
 			txh->txh_space_towrite += 3 << dn->dn_indblkshift;
 		else
 			txh->txh_space_tooverwrite += 3 << dn->dn_indblkshift;
+=======
+}
+
+void
+dmu_tx_hold_free(dmu_tx_t *tx, uint64_t object, uint64_t off, uint64_t len)
+{
+	dmu_tx_hold_t *txh;
+
+	txh = dmu_tx_hold_object_impl(tx, tx->tx_objset,
+	    object, THT_FREE, off, len);
+	if (txh != NULL)
+		(void) dmu_tx_hold_free_impl(txh, off, len);
+}
+
+void
+dmu_tx_hold_free_by_dnode(dmu_tx_t *tx, dnode_t *dn, uint64_t off, uint64_t len)
+{
+	dmu_tx_hold_t *txh;
+
+	txh = dmu_tx_hold_dnode_impl(tx, dn, THT_FREE, off, len);
+	if (txh != NULL)
+		(void) dmu_tx_hold_free_impl(txh, off, len);
+}
+
+static void
+dmu_tx_hold_zap_impl(dmu_tx_hold_t *txh, const char *name)
+{
+	dmu_tx_t *tx = txh->txh_tx;
+	dnode_t *dn = txh->txh_dnode;
+	int err;
+
+	ASSERT(tx->tx_txg == 0);
+
+	dmu_tx_count_dnode(txh);
+
+	/*
+	 * Modifying a almost-full microzap is around the worst case (128KB)
+	 *
+	 * If it is a fat zap, the worst case would be 7*16KB=112KB:
+	 * - 3 blocks overwritten: target leaf, ptrtbl block, header block
+	 * - 4 new blocks written if adding:
+	 *    - 2 blocks for possibly split leaves,
+	 *    - 2 grown ptrtbl blocks
+	 */
+	(void) refcount_add_many(&txh->txh_space_towrite,
+	    MZAP_MAX_BLKSZ, FTAG);
+
+	if (dn == NULL)
+		return;
+
+	ASSERT3U(DMU_OT_BYTESWAP(dn->dn_type), ==, DMU_BSWAP_ZAP);
+
+	if (dn->dn_maxblkid == 0 || name == NULL) {
+		/*
+		 * This is a microzap (only one block), or we don't know
+		 * the name.  Check the first block for i/o errors.
+		 */
+		err = dmu_tx_check_ioerr(NULL, dn, 0, 0);
+		if (err != 0) {
+			tx->tx_err = err;
+		}
+	} else {
+		/*
+		 * Access the name so that we'll check for i/o errors to
+		 * the leaf blocks, etc.  We ignore ENOENT, as this name
+		 * may not yet exist.
+		 */
+		err = zap_lookup_by_dnode(dn, name, 8, 0, NULL);
+		if (err == EIO || err == ECKSUM || err == ENXIO) {
+			tx->tx_err = err;
+		}
+	}
+}
+
+void
+dmu_tx_hold_zap(dmu_tx_t *tx, uint64_t object, int add, const char *name)
+{
+	dmu_tx_hold_t *txh;
+
+	ASSERT0(tx->tx_txg);
+
+	txh = dmu_tx_hold_object_impl(tx, tx->tx_objset,
+	    object, THT_ZAP, add, (uintptr_t)name);
+	if (txh != NULL)
+		dmu_tx_hold_zap_impl(txh, name);
+}
+
+void
+dmu_tx_hold_zap_by_dnode(dmu_tx_t *tx, dnode_t *dn, int add, const char *name)
+{
+	dmu_tx_hold_t *txh;
+
+	ASSERT0(tx->tx_txg);
+	ASSERT(dn != NULL);
+
+	txh = dmu_tx_hold_dnode_impl(tx, dn, THT_ZAP, add, (uintptr_t)name);
+	if (txh != NULL)
+		dmu_tx_hold_zap_impl(txh, name);
+>>>>>>> temp
 }
 
 void
@@ -804,6 +1168,7 @@ dmu_tx_hold_bonus(dmu_tx_t *tx, uint64_t object)
 }
 
 void
+<<<<<<< HEAD
 dmu_tx_hold_space(dmu_tx_t *tx, uint64_t space)
 {
 	dmu_tx_hold_t *txh;
@@ -853,6 +1218,41 @@ dmu_tx_dirty_buf(dmu_tx_t *tx, dmu_buf_impl_t *db)
 	DB_DNODE_ENTER(db);
 	dn = DB_DNODE(db);
 	ASSERT(dn != NULL);
+=======
+dmu_tx_hold_bonus_by_dnode(dmu_tx_t *tx, dnode_t *dn)
+{
+	dmu_tx_hold_t *txh;
+
+	ASSERT0(tx->tx_txg);
+
+	txh = dmu_tx_hold_dnode_impl(tx, dn, THT_BONUS, 0, 0);
+	if (txh)
+		dmu_tx_count_dnode(txh);
+}
+
+void
+dmu_tx_hold_space(dmu_tx_t *tx, uint64_t space)
+{
+	dmu_tx_hold_t *txh;
+
+	ASSERT(tx->tx_txg == 0);
+
+	txh = dmu_tx_hold_object_impl(tx, tx->tx_objset,
+	    DMU_NEW_OBJECT, THT_SPACE, space, 0);
+	if (txh)
+		(void) refcount_add_many(&txh->txh_space_towrite, space, FTAG);
+}
+
+#ifdef ZFS_DEBUG
+void
+dmu_tx_dirty_buf(dmu_tx_t *tx, dmu_buf_impl_t *db)
+{
+	boolean_t match_object = B_FALSE;
+	boolean_t match_offset = B_FALSE;
+
+	DB_DNODE_ENTER(db);
+	dnode_t *dn = DB_DNODE(db);
+>>>>>>> temp
 	ASSERT(tx->tx_txg != 0);
 	ASSERT(tx->tx_objset == NULL || dn->dn_objset == tx->tx_objset);
 	ASSERT3U(dn->dn_object, ==, db->db.db_object);
@@ -868,7 +1268,11 @@ dmu_tx_dirty_buf(dmu_tx_t *tx, dmu_buf_impl_t *db)
 		return;
 	}
 
+<<<<<<< HEAD
 	for (txh = list_head(&tx->tx_holds); txh;
+=======
+	for (dmu_tx_hold_t *txh = list_head(&tx->tx_holds); txh != NULL;
+>>>>>>> temp
 	    txh = list_next(&tx->tx_holds, txh)) {
 		ASSERT3U(dn->dn_assigned_txg, ==, tx->tx_txg);
 		if (txh->txh_dnode == dn && txh->txh_type != THT_NEWOBJECT)
@@ -1087,6 +1491,7 @@ dmu_tx_delay(dmu_tx_t *tx, uint64_t dirty)
 	zfs_sleep_until(wakeup);
 }
 
+<<<<<<< HEAD
 static int
 dmu_tx_try_assign(dmu_tx_t *tx, txg_how_t txg_how)
 {
@@ -1094,6 +1499,51 @@ dmu_tx_try_assign(dmu_tx_t *tx, txg_how_t txg_how)
 	spa_t *spa = tx->tx_pool->dp_spa;
 	uint64_t memory, asize, fsize, usize;
 	uint64_t towrite, tofree, tooverwrite, tounref, tohold, fudge;
+=======
+/*
+ * This routine attempts to assign the transaction to a transaction group.
+ * To do so, we must determine if there is sufficient free space on disk.
+ *
+ * If this is a "netfree" transaction (i.e. we called dmu_tx_mark_netfree()
+ * on it), then it is assumed that there is sufficient free space,
+ * unless there's insufficient slop space in the pool (see the comment
+ * above spa_slop_shift in spa_misc.c).
+ *
+ * If it is not a "netfree" transaction, then if the data already on disk
+ * is over the allowed usage (e.g. quota), this will fail with EDQUOT or
+ * ENOSPC.  Otherwise, if the current rough estimate of pending changes,
+ * plus the rough estimate of this transaction's changes, may exceed the
+ * allowed usage, then this will fail with ERESTART, which will cause the
+ * caller to wait for the pending changes to be written to disk (by waiting
+ * for the next TXG to open), and then check the space usage again.
+ *
+ * The rough estimate of pending changes is comprised of the sum of:
+ *
+ *  - this transaction's holds' txh_space_towrite
+ *
+ *  - dd_tempreserved[], which is the sum of in-flight transactions'
+ *    holds' txh_space_towrite (i.e. those transactions that have called
+ *    dmu_tx_assign() but not yet called dmu_tx_commit()).
+ *
+ *  - dd_space_towrite[], which is the amount of dirtied dbufs.
+ *
+ * Note that all of these values are inflated by spa_get_worst_case_asize(),
+ * which means that we may get ERESTART well before we are actually in danger
+ * of running out of space, but this also mitigates any small inaccuracies
+ * in the rough estimate (e.g. txh_space_towrite doesn't take into account
+ * indirect blocks, and dd_space_towrite[] doesn't take into account changes
+ * to the MOS).
+ *
+ * Note that due to this algorithm, it is possible to exceed the allowed
+ * usage by one transaction.  Also, as we approach the allowed usage,
+ * we will allow a very limited amount of changes into each TXG, thus
+ * decreasing performance.
+ */
+static int
+dmu_tx_try_assign(dmu_tx_t *tx, txg_how_t txg_how)
+{
+	spa_t *spa = tx->tx_pool->dp_spa;
+>>>>>>> temp
 
 	ASSERT0(tx->tx_txg);
 
@@ -1137,8 +1587,14 @@ dmu_tx_try_assign(dmu_tx_t *tx, txg_how_t txg_how)
 	 * dmu_tx_unassign() logic.
 	 */
 
+<<<<<<< HEAD
 	towrite = tofree = tooverwrite = tounref = tohold = fudge = 0;
 	for (txh = list_head(&tx->tx_holds); txh;
+=======
+	uint64_t towrite = 0;
+	uint64_t tohold = 0;
+	for (dmu_tx_hold_t *txh = list_head(&tx->tx_holds); txh != NULL;
+>>>>>>> temp
 	    txh = list_next(&tx->tx_holds, txh)) {
 		dnode_t *dn = txh->txh_dnode;
 		if (dn != NULL) {
@@ -1155,6 +1611,7 @@ dmu_tx_try_assign(dmu_tx_t *tx, txg_how_t txg_how)
 			(void) refcount_add(&dn->dn_tx_holds, tx);
 			mutex_exit(&dn->dn_mtx);
 		}
+<<<<<<< HEAD
 		towrite += txh->txh_space_towrite;
 		tofree += txh->txh_space_tofree;
 		tooverwrite += txh->txh_space_tooverwrite;
@@ -1200,6 +1657,21 @@ dmu_tx_try_assign(dmu_tx_t *tx, txg_how_t txg_how)
 		int err = dsl_dir_tempreserve_space(tx->tx_dir, memory,
 		    asize, fsize, usize, &tx->tx_tempreserve_cookie, tx);
 		if (err)
+=======
+		towrite += refcount_count(&txh->txh_space_towrite);
+		tohold += refcount_count(&txh->txh_memory_tohold);
+	}
+
+	/* needed allocation: worst-case estimate of write space */
+	uint64_t asize = spa_get_worst_case_asize(tx->tx_pool->dp_spa, towrite);
+	/* calculate memory footprint estimate */
+	uint64_t memory = towrite + tohold;
+
+	if (tx->tx_dir != NULL && asize != 0) {
+		int err = dsl_dir_tempreserve_space(tx->tx_dir, memory,
+		    asize, tx->tx_netfree, &tx->tx_tempreserve_cookie, tx);
+		if (err != 0)
+>>>>>>> temp
 			return (err);
 	}
 
@@ -1211,8 +1683,11 @@ dmu_tx_try_assign(dmu_tx_t *tx, txg_how_t txg_how)
 static void
 dmu_tx_unassign(dmu_tx_t *tx)
 {
+<<<<<<< HEAD
 	dmu_tx_hold_t *txh;
 
+=======
+>>>>>>> temp
 	if (tx->tx_txg == 0)
 		return;
 
@@ -1222,7 +1697,12 @@ dmu_tx_unassign(dmu_tx_t *tx)
 	 * Walk the transaction's hold list, removing the hold on the
 	 * associated dnode, and notifying waiters if the refcount drops to 0.
 	 */
+<<<<<<< HEAD
 	for (txh = list_head(&tx->tx_holds); txh != tx->tx_needassign_txh;
+=======
+	for (dmu_tx_hold_t *txh = list_head(&tx->tx_holds);
+	    txh && txh != tx->tx_needassign_txh;
+>>>>>>> temp
 	    txh = list_next(&tx->tx_holds, txh)) {
 		dnode_t *dn = txh->txh_dnode;
 
@@ -1357,6 +1837,7 @@ dmu_tx_wait(dmu_tx_t *tx)
 	spa_tx_assign_add_nsecs(spa, gethrtime() - before);
 }
 
+<<<<<<< HEAD
 void
 dmu_tx_willuse_space(dmu_tx_t *tx, int64_t delta)
 {
@@ -1372,6 +1853,29 @@ dmu_tx_willuse_space(dmu_tx_t *tx, int64_t delta)
 		(void) refcount_add_many(&tx->tx_space_freed, -delta, NULL);
 	}
 #endif
+=======
+static void
+dmu_tx_destroy(dmu_tx_t *tx)
+{
+	dmu_tx_hold_t *txh;
+
+	while ((txh = list_head(&tx->tx_holds)) != NULL) {
+		dnode_t *dn = txh->txh_dnode;
+
+		list_remove(&tx->tx_holds, txh);
+		refcount_destroy_many(&txh->txh_space_towrite,
+		    refcount_count(&txh->txh_space_towrite));
+		refcount_destroy_many(&txh->txh_memory_tohold,
+		    refcount_count(&txh->txh_memory_tohold));
+		kmem_free(txh, sizeof (dmu_tx_hold_t));
+		if (dn != NULL)
+			dnode_rele(dn, tx);
+	}
+
+	list_destroy(&tx->tx_callbacks);
+	list_destroy(&tx->tx_holds);
+	kmem_free(tx, sizeof (dmu_tx_t));
+>>>>>>> temp
 }
 
 void
@@ -1385,6 +1889,7 @@ dmu_tx_commit(dmu_tx_t *tx)
 	 * Go through the transaction's hold list and remove holds on
 	 * associated dnodes, notifying waiters if no holds remain.
 	 */
+<<<<<<< HEAD
 	while ((txh = list_head(&tx->tx_holds))) {
 		dnode_t *dn = txh->txh_dnode;
 
@@ -1392,6 +1897,15 @@ dmu_tx_commit(dmu_tx_t *tx)
 		kmem_free(txh, sizeof (dmu_tx_hold_t));
 		if (dn == NULL)
 			continue;
+=======
+	for (txh = list_head(&tx->tx_holds); txh != NULL;
+	    txh = list_next(&tx->tx_holds, txh)) {
+		dnode_t *dn = txh->txh_dnode;
+
+		if (dn == NULL)
+			continue;
+
+>>>>>>> temp
 		mutex_enter(&dn->dn_mtx);
 		ASSERT3U(dn->dn_assigned_txg, ==, tx->tx_txg);
 
@@ -1400,7 +1914,10 @@ dmu_tx_commit(dmu_tx_t *tx)
 			cv_broadcast(&dn->dn_notxholds);
 		}
 		mutex_exit(&dn->dn_mtx);
+<<<<<<< HEAD
 		dnode_rele(dn, tx);
+=======
+>>>>>>> temp
 	}
 
 	if (tx->tx_tempreserve_cookie)
@@ -1412,6 +1929,7 @@ dmu_tx_commit(dmu_tx_t *tx)
 	if (tx->tx_anyobj == FALSE)
 		txg_rele_to_sync(&tx->tx_txgh);
 
+<<<<<<< HEAD
 	list_destroy(&tx->tx_callbacks);
 	list_destroy(&tx->tx_holds);
 #ifdef DEBUG_DMU_TX
@@ -1424,11 +1942,15 @@ dmu_tx_commit(dmu_tx_t *tx)
 	    refcount_count(&tx->tx_space_freed));
 #endif
 	kmem_free(tx, sizeof (dmu_tx_t));
+=======
+	dmu_tx_destroy(tx);
+>>>>>>> temp
 }
 
 void
 dmu_tx_abort(dmu_tx_t *tx)
 {
+<<<<<<< HEAD
 	dmu_tx_hold_t *txh;
 
 	ASSERT(tx->tx_txg == 0);
@@ -1442,12 +1964,17 @@ dmu_tx_abort(dmu_tx_t *tx)
 			dnode_rele(dn, tx);
 	}
 
+=======
+	ASSERT(tx->tx_txg == 0);
+
+>>>>>>> temp
 	/*
 	 * Call any registered callbacks with an error code.
 	 */
 	if (!list_is_empty(&tx->tx_callbacks))
 		dmu_tx_do_callbacks(&tx->tx_callbacks, ECANCELED);
 
+<<<<<<< HEAD
 	list_destroy(&tx->tx_callbacks);
 	list_destroy(&tx->tx_holds);
 #ifdef DEBUG_DMU_TX
@@ -1457,6 +1984,9 @@ dmu_tx_abort(dmu_tx_t *tx)
 	    refcount_count(&tx->tx_space_freed));
 #endif
 	kmem_free(tx, sizeof (dmu_tx_t));
+=======
+	dmu_tx_destroy(tx);
+>>>>>>> temp
 }
 
 uint64_t
@@ -1494,7 +2024,11 @@ dmu_tx_do_callbacks(list_t *cb_list, int error)
 {
 	dmu_tx_callback_t *dcb;
 
+<<<<<<< HEAD
 	while ((dcb = list_head(cb_list))) {
+=======
+	while ((dcb = list_tail(cb_list)) != NULL) {
+>>>>>>> temp
 		list_remove(cb_list, dcb);
 		dcb->dcb_func(dcb->dcb_data, error);
 		kmem_free(dcb, sizeof (dmu_tx_callback_t));
@@ -1518,12 +2052,19 @@ dmu_tx_do_callbacks(list_t *cb_list, int error)
 static void
 dmu_tx_sa_registration_hold(sa_os_t *sa, dmu_tx_t *tx)
 {
+<<<<<<< HEAD
 	int i;
 
 	if (!sa->sa_need_attr_registration)
 		return;
 
 	for (i = 0; i != sa->sa_num_attrs; i++) {
+=======
+	if (!sa->sa_need_attr_registration)
+		return;
+
+	for (int i = 0; i != sa->sa_num_attrs; i++) {
+>>>>>>> temp
 		if (!sa->sa_attr_table[i].sa_registered) {
 			if (sa->sa_reg_attr_obj)
 				dmu_tx_hold_zap(tx, sa->sa_reg_attr_obj,
@@ -1535,15 +2076,22 @@ dmu_tx_sa_registration_hold(sa_os_t *sa, dmu_tx_t *tx)
 	}
 }
 
+<<<<<<< HEAD
 
 void
 dmu_tx_hold_spill(dmu_tx_t *tx, uint64_t object)
 {
 	dnode_t *dn;
+=======
+void
+dmu_tx_hold_spill(dmu_tx_t *tx, uint64_t object)
+{
+>>>>>>> temp
 	dmu_tx_hold_t *txh;
 
 	txh = dmu_tx_hold_object_impl(tx, tx->tx_objset, object,
 	    THT_SPILL, 0, 0);
+<<<<<<< HEAD
 	if (txh == NULL)
 		return;
 
@@ -1567,6 +2115,11 @@ dmu_tx_hold_spill(dmu_tx_t *tx, uint64_t object)
 		if (!BP_IS_HOLE(bp))
 			txh->txh_space_tounref += SPA_OLD_MAXBLOCKSIZE;
 	}
+=======
+	if (txh != NULL)
+		(void) refcount_add_many(&txh->txh_space_towrite,
+		    SPA_OLD_MAXBLOCKSIZE, FTAG);
+>>>>>>> temp
 }
 
 void
@@ -1579,9 +2132,15 @@ dmu_tx_hold_sa_create(dmu_tx_t *tx, int attrsize)
 	if (tx->tx_objset->os_sa->sa_master_obj == 0)
 		return;
 
+<<<<<<< HEAD
 	if (tx->tx_objset->os_sa->sa_layout_attr_obj)
 		dmu_tx_hold_zap(tx, sa->sa_layout_attr_obj, B_TRUE, NULL);
 	else {
+=======
+	if (tx->tx_objset->os_sa->sa_layout_attr_obj) {
+		dmu_tx_hold_zap(tx, sa->sa_layout_attr_obj, B_TRUE, NULL);
+	} else {
+>>>>>>> temp
 		dmu_tx_hold_zap(tx, sa->sa_master_obj, B_TRUE, SA_LAYOUTS);
 		dmu_tx_hold_zap(tx, sa->sa_master_obj, B_TRUE, SA_REGISTRY);
 		dmu_tx_hold_zap(tx, DMU_NEW_OBJECT, B_TRUE, NULL);
@@ -1590,7 +2149,11 @@ dmu_tx_hold_sa_create(dmu_tx_t *tx, int attrsize)
 
 	dmu_tx_sa_registration_hold(sa, tx);
 
+<<<<<<< HEAD
 	if (attrsize <= DN_MAX_BONUSLEN && !sa->sa_force_spill)
+=======
+	if (attrsize <= DN_OLD_MAX_BONUSLEN && !sa->sa_force_spill)
+>>>>>>> temp
 		return;
 
 	(void) dmu_tx_hold_object_impl(tx, tx->tx_objset, DMU_NEW_OBJECT,
@@ -1676,13 +2239,27 @@ dmu_tx_fini(void)
 #if defined(_KERNEL) && defined(HAVE_SPL)
 EXPORT_SYMBOL(dmu_tx_create);
 EXPORT_SYMBOL(dmu_tx_hold_write);
+<<<<<<< HEAD
 EXPORT_SYMBOL(dmu_tx_hold_free);
 EXPORT_SYMBOL(dmu_tx_hold_zap);
 EXPORT_SYMBOL(dmu_tx_hold_bonus);
+=======
+EXPORT_SYMBOL(dmu_tx_hold_write_by_dnode);
+EXPORT_SYMBOL(dmu_tx_hold_free);
+EXPORT_SYMBOL(dmu_tx_hold_free_by_dnode);
+EXPORT_SYMBOL(dmu_tx_hold_zap);
+EXPORT_SYMBOL(dmu_tx_hold_zap_by_dnode);
+EXPORT_SYMBOL(dmu_tx_hold_bonus);
+EXPORT_SYMBOL(dmu_tx_hold_bonus_by_dnode);
+>>>>>>> temp
 EXPORT_SYMBOL(dmu_tx_abort);
 EXPORT_SYMBOL(dmu_tx_assign);
 EXPORT_SYMBOL(dmu_tx_wait);
 EXPORT_SYMBOL(dmu_tx_commit);
+<<<<<<< HEAD
+=======
+EXPORT_SYMBOL(dmu_tx_mark_netfree);
+>>>>>>> temp
 EXPORT_SYMBOL(dmu_tx_get_txg);
 EXPORT_SYMBOL(dmu_tx_callback_register);
 EXPORT_SYMBOL(dmu_tx_do_callbacks);

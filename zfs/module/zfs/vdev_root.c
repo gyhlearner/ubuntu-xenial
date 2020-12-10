@@ -120,6 +120,10 @@ vdev_ops_t vdev_root_ops = {
 	vdev_root_state_change,
 	NULL,
 	NULL,
+<<<<<<< HEAD
+=======
+	NULL,
+>>>>>>> temp
 	VDEV_TYPE_ROOT,		/* name of this vdev type */
 	B_FALSE			/* not a leaf vdev */
 };

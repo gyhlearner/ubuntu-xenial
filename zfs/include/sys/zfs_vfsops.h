@@ -39,6 +39,7 @@
 extern "C" {
 #endif
 
+<<<<<<< HEAD
 struct zfs_sb;
 struct znode;
 
@@ -69,6 +70,47 @@ typedef struct zfs_sb {
 	struct zfs_sb	*z_parent;	/* parent fs */
 	objset_t	*z_os;		/* objset reference */
 	zfs_mntopts_t	*z_mntopts;	/* passed mount options */
+=======
+typedef struct zfsvfs zfsvfs_t;
+struct znode;
+
+/*
+ * This structure emulates the vfs_t from other platforms.  It's purpose
+ * is to faciliate the handling of mount options and minimize structural
+ * differences between the platforms.
+ */
+typedef struct vfs {
+	struct zfsvfs	*vfs_data;
+	char		*vfs_mntpoint;	/* Primary mount point */
+	uint64_t	vfs_xattr;
+	boolean_t	vfs_readonly;
+	boolean_t	vfs_do_readonly;
+	boolean_t	vfs_setuid;
+	boolean_t	vfs_do_setuid;
+	boolean_t	vfs_exec;
+	boolean_t	vfs_do_exec;
+	boolean_t	vfs_devices;
+	boolean_t	vfs_do_devices;
+	boolean_t	vfs_do_xattr;
+	boolean_t	vfs_atime;
+	boolean_t	vfs_do_atime;
+	boolean_t	vfs_relatime;
+	boolean_t	vfs_do_relatime;
+	boolean_t	vfs_nbmand;
+	boolean_t	vfs_do_nbmand;
+} vfs_t;
+
+typedef struct zfs_mnt {
+	const char	*mnt_osname;	/* Objset name */
+	char		*mnt_data;	/* Raw mount options */
+} zfs_mnt_t;
+
+struct zfsvfs {
+	vfs_t		*z_vfs;		/* generic fs struct */
+	struct super_block *z_sb;	/* generic super_block */
+	struct zfsvfs	*z_parent;	/* parent fs */
+	objset_t	*z_os;		/* objset reference */
+>>>>>>> temp
 	uint64_t	z_flags;	/* super_block flags */
 	uint64_t	z_root;		/* id of root znode */
 	uint64_t	z_unlinkedobj;	/* id of unlinked zapobj */
@@ -111,14 +153,23 @@ typedef struct zfs_sb {
 	kmutex_t	z_lock;
 	uint64_t	z_userquota_obj;
 	uint64_t	z_groupquota_obj;
+<<<<<<< HEAD
+=======
+	uint64_t	z_userobjquota_obj;
+	uint64_t	z_groupobjquota_obj;
+>>>>>>> temp
 	uint64_t	z_replay_eof;	/* New end of file - replay only */
 	sa_attr_type_t	*z_attr_table;	/* SA attr mapping->id */
 	uint64_t	z_hold_size;	/* znode hold array size */
 	avl_tree_t	*z_hold_trees;	/* znode hold trees */
 	kmutex_t	*z_hold_locks;	/* znode hold locks */
+<<<<<<< HEAD
 } zfs_sb_t;
 
 #define	ZFS_SUPER_MAGIC	0x2fc12fc1
+=======
+};
+>>>>>>> temp
 
 #define	ZSB_XATTR	0x0001		/* Enable user xattrs */
 
@@ -179,6 +230,7 @@ typedef struct zfid_long {
 
 extern uint_t zfs_fsyncer_key;
 
+<<<<<<< HEAD
 extern int zfs_suspend_fs(zfs_sb_t *zsb);
 extern int zfs_resume_fs(zfs_sb_t *zsb, const char *osname);
 extern int zfs_userspace_one(zfs_sb_t *zsb, zfs_userquota_prop_t type,
@@ -215,6 +267,36 @@ extern int zfs_remount(struct super_block *sb, int *flags, zfs_mntopts_t *zmo);
 extern int zfs_root(zfs_sb_t *zsb, struct inode **ipp);
 extern int zfs_statvfs(struct dentry *dentry, struct kstatfs *statp);
 extern int zfs_vget(struct super_block *sb, struct inode **ipp, fid_t *fidp);
+=======
+extern int zfs_suspend_fs(zfsvfs_t *zfsvfs);
+extern int zfs_resume_fs(zfsvfs_t *zfsvfs, struct dsl_dataset *ds);
+extern int zfs_userspace_one(zfsvfs_t *zfsvfs, zfs_userquota_prop_t type,
+    const char *domain, uint64_t rid, uint64_t *valuep);
+extern int zfs_userspace_many(zfsvfs_t *zfsvfs, zfs_userquota_prop_t type,
+    uint64_t *cookiep, void *vbuf, uint64_t *bufsizep);
+extern int zfs_set_userquota(zfsvfs_t *zfsvfs, zfs_userquota_prop_t type,
+    const char *domain, uint64_t rid, uint64_t quota);
+extern boolean_t zfs_owner_overquota(zfsvfs_t *zfsvfs, struct znode *,
+    boolean_t isgroup);
+extern boolean_t zfs_fuid_overquota(zfsvfs_t *zfsvfs, boolean_t isgroup,
+    uint64_t fuid);
+extern boolean_t zfs_fuid_overobjquota(zfsvfs_t *zfsvfs, boolean_t isgroup,
+    uint64_t fuid);
+extern int zfs_set_version(zfsvfs_t *zfsvfs, uint64_t newvers);
+extern int zfsvfs_create(const char *name, zfsvfs_t **zfvp);
+extern void zfsvfs_free(zfsvfs_t *zfsvfs);
+extern int zfs_check_global_label(const char *dsname, const char *hexsl);
+
+extern boolean_t zfs_is_readonly(zfsvfs_t *zfsvfs);
+extern int zfs_domount(struct super_block *sb, zfs_mnt_t *zm, int silent);
+extern void zfs_preumount(struct super_block *sb);
+extern int zfs_umount(struct super_block *sb);
+extern int zfs_remount(struct super_block *sb, int *flags, zfs_mnt_t *zm);
+extern int zfs_statvfs(struct dentry *dentry, struct kstatfs *statp);
+extern int zfs_vget(struct super_block *sb, struct inode **ipp, fid_t *fidp);
+extern int zfs_prune(struct super_block *sb, unsigned long nr_to_scan,
+    int *objects);
+>>>>>>> temp
 
 #ifdef	__cplusplus
 }

@@ -1,4 +1,8 @@
 ext2 ?
+<<<<<<< HEAD
+=======
+ext4 ?
+>>>>>>> temp
 jfs ?
 reiserfs ?
 xfs ?

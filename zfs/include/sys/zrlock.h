@@ -20,6 +20,10 @@
  */
 /*
  * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+<<<<<<< HEAD
+=======
+ * Copyright (c) 2015 by Delphix. All rights reserved.
+>>>>>>> temp
  */
 
 #ifndef	_SYS_ZRLOCK_H
@@ -44,12 +48,17 @@ typedef struct zrlock {
 
 extern void zrl_init(zrlock_t *);
 extern void zrl_destroy(zrlock_t *);
+<<<<<<< HEAD
 #ifdef	ZFS_DEBUG
 #define	zrl_add(_z)	zrl_add_debug((_z), __func__)
 extern void zrl_add_debug(zrlock_t *, const char *);
 #else
 extern void zrl_add(zrlock_t *);
 #endif
+=======
+#define	zrl_add(_z)	zrl_add_impl((_z), __func__)
+extern void zrl_add_impl(zrlock_t *, const char *);
+>>>>>>> temp
 extern void zrl_remove(zrlock_t *);
 extern int zrl_tryenter(zrlock_t *);
 extern void zrl_exit(zrlock_t *);

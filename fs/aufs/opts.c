@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright (C) 2005-2015 Junjiro R. Okajima
+=======
+ * Copyright (C) 2005-2017 Junjiro R. Okajima
+>>>>>>> temp
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,6 +51,10 @@ enum {
 	Opt_verbose, Opt_noverbose,
 	Opt_sum, Opt_nosum, Opt_wsum,
 	Opt_dirperm1, Opt_nodirperm1,
+<<<<<<< HEAD
+=======
+	Opt_dirren, Opt_nodirren,
+>>>>>>> temp
 	Opt_acl, Opt_noacl,
 	Opt_tail, Opt_ignore, Opt_ignore_silent, Opt_err
 };
@@ -101,10 +109,25 @@ static match_table_t options = {
 	{Opt_dio, "dio"},
 	{Opt_nodio, "nodio"},
 
+<<<<<<< HEAD
 #ifdef CONFIG_AUFS_FHSM
 	{Opt_fhsm_sec, "fhsm_sec=%d"},
 #else
 	{Opt_ignore_silent, "fhsm_sec=%d"},
+=======
+#ifdef CONFIG_AUFS_DIRREN
+	{Opt_dirren, "dirren"},
+	{Opt_nodirren, "nodirren"},
+#else
+	{Opt_ignore, "dirren"},
+	{Opt_ignore_silent, "nodirren"},
+#endif
+
+#ifdef CONFIG_AUFS_FHSM
+	{Opt_fhsm_sec, "fhsm_sec=%d"},
+#else
+	{Opt_ignore, "fhsm_sec=%d"},
+>>>>>>> temp
 #endif
 
 	{Opt_diropq_a, "diropq=always"},
@@ -117,7 +140,11 @@ static match_table_t options = {
 
 	/* keep them temporary */
 	{Opt_ignore_silent, "nodlgt"},
+<<<<<<< HEAD
 	{Opt_ignore_silent, "clean_plink"},
+=======
+	{Opt_ignore, "clean_plink"},
+>>>>>>> temp
 
 #ifdef CONFIG_AUFS_SHWH
 	{Opt_shwh, "shwh"},
@@ -155,7 +182,11 @@ static match_table_t options = {
 	{Opt_acl, "acl"},
 	{Opt_noacl, "noacl"},
 #else
+<<<<<<< HEAD
 	{Opt_ignore_silent, "acl"},
+=======
+	{Opt_ignore, "acl"},
+>>>>>>> temp
 	{Opt_ignore_silent, "noacl"},
 #endif
 
@@ -424,6 +455,13 @@ static match_table_t au_wbr_create_policy = {
 	{AuWbrCreate_MFSV, "mfs:%d"},
 	{AuWbrCreate_MFSV, "most-free-space:%d"},
 
+<<<<<<< HEAD
+=======
+	/* top-down regardless the parent, and then mfs */
+	{AuWbrCreate_TDMFS, "tdmfs:%d"},
+	{AuWbrCreate_TDMFSV, "tdmfs:%d:%d"},
+
+>>>>>>> temp
 	{AuWbrCreate_MFSRR, "mfsrr:%d"},
 	{AuWbrCreate_MFSRRV, "mfsrr:%d:%d"},
 	{AuWbrCreate_PMFS, "pmfs"},
@@ -434,6 +472,7 @@ static match_table_t au_wbr_create_policy = {
 	{-1, NULL}
 };
 
+<<<<<<< HEAD
 /*
  * cf. linux/lib/parser.c and cmdline.c
  * gave up calling memparse() since it uses simple_strtoull() instead of
@@ -456,6 +495,8 @@ au_match_ull(substring_t *s, unsigned long long *result)
 	return err;
 }
 
+=======
+>>>>>>> temp
 static int au_wbr_mfs_wmark(substring_t *arg, char *str,
 			    struct au_opt_wbr_create *create)
 {
@@ -463,7 +504,11 @@ static int au_wbr_mfs_wmark(substring_t *arg, char *str,
 	unsigned long long ull;
 
 	err = 0;
+<<<<<<< HEAD
 	if (!au_match_ull(arg, &ull))
+=======
+	if (!match_u64(arg, &ull))
+>>>>>>> temp
 		create->mfsrr_watermark = ull;
 	else {
 		pr_err("bad integer in %s\n", str);
@@ -499,6 +544,10 @@ au_wbr_create_val(char *str, struct au_opt_wbr_create *create)
 	create->wbr_create = err;
 	switch (err) {
 	case AuWbrCreate_MFSRRV:
+<<<<<<< HEAD
+=======
+	case AuWbrCreate_TDMFSV:
+>>>>>>> temp
 	case AuWbrCreate_PMFSRRV:
 		e = au_wbr_mfs_wmark(&args[0], str, create);
 		if (!e)
@@ -507,6 +556,10 @@ au_wbr_create_val(char *str, struct au_opt_wbr_create *create)
 			err = e;
 		break;
 	case AuWbrCreate_MFSRR:
+<<<<<<< HEAD
+=======
+	case AuWbrCreate_TDMFS:
+>>>>>>> temp
 	case AuWbrCreate_PMFSRR:
 		e = au_wbr_mfs_wmark(&args[0], str, create);
 		if (unlikely(e)) {
@@ -717,10 +770,18 @@ static void dump_opts(struct au_opts *opts)
 				AuDbg("%d sec\n", u.create->mfs_second);
 				break;
 			case AuWbrCreate_MFSRR:
+<<<<<<< HEAD
+=======
+			case AuWbrCreate_TDMFS:
+>>>>>>> temp
 				AuDbg("%llu watermark\n",
 					  u.create->mfsrr_watermark);
 				break;
 			case AuWbrCreate_MFSRRV:
+<<<<<<< HEAD
+=======
+			case AuWbrCreate_TDMFSV:
+>>>>>>> temp
 			case AuWbrCreate_PMFSRRV:
 				AuDbg("%llu watermark, %d sec\n",
 					  u.create->mfsrr_watermark,
@@ -735,6 +796,15 @@ static void dump_opts(struct au_opts *opts)
 		case Opt_fhsm_sec:
 			AuDbg("fhsm_sec %u\n", opt->fhsm_second);
 			break;
+<<<<<<< HEAD
+=======
+		case Opt_dirren:
+			AuLabel(dirren);
+			break;
+		case Opt_nodirren:
+			AuLabel(nodirren);
+			break;
+>>>>>>> temp
 		case Opt_acl:
 			AuLabel(acl);
 			break;
@@ -800,7 +870,11 @@ static int opt_add(struct au_opt *opt, char *opt_str, unsigned long sb_flags,
 			add->perm = AuBrPerm_RO;
 			if (au_test_fs_rr(add->path.dentry->d_sb))
 				add->perm = AuBrPerm_RR;
+<<<<<<< HEAD
 			else if (!bindex && !(sb_flags & MS_RDONLY))
+=======
+			else if (!bindex && !(sb_flags & SB_RDONLY))
+>>>>>>> temp
 				add->perm = AuBrPerm_RW;
 		}
 		opt->type = Opt_add;
@@ -837,7 +911,11 @@ static int au_opts_parse_idel(struct super_block *sb, aufs_bindex_t bindex,
 	err = -EINVAL;
 	root = sb->s_root;
 	aufs_read_lock(root, AuLock_FLUSH);
+<<<<<<< HEAD
 	if (bindex < 0 || au_sbend(sb) < bindex) {
+=======
+	if (bindex < 0 || au_sbbot(sb) < bindex) {
+>>>>>>> temp
 		pr_err("out of bounds, %d\n", bindex);
 		goto out;
 	}
@@ -893,7 +971,11 @@ static int au_opts_parse_imod(struct super_block *sb, aufs_bindex_t bindex,
 	err = -EINVAL;
 	root = sb->s_root;
 	aufs_read_lock(root, AuLock_FLUSH);
+<<<<<<< HEAD
 	if (bindex < 0 || au_sbend(sb) < bindex) {
+=======
+	if (bindex < 0 || au_sbbot(sb) < bindex) {
+>>>>>>> temp
 		pr_err("out of bounds, %d\n", bindex);
 		goto out;
 	}
@@ -942,7 +1024,11 @@ au_opts_parse_xino_itrunc_path(struct super_block *sb,
 			       substring_t args[])
 {
 	int err;
+<<<<<<< HEAD
 	aufs_bindex_t bend, bindex;
+=======
+	aufs_bindex_t bbot, bindex;
+>>>>>>> temp
 	struct path path;
 	struct dentry *root;
 
@@ -955,8 +1041,13 @@ au_opts_parse_xino_itrunc_path(struct super_block *sb,
 	xino_itrunc->bindex = -1;
 	root = sb->s_root;
 	aufs_read_lock(root, AuLock_FLUSH);
+<<<<<<< HEAD
 	bend = au_sbend(sb);
 	for (bindex = 0; bindex <= bend; bindex++) {
+=======
+	bbot = au_sbbot(sb);
+	for (bindex = 0; bindex <= bbot; bindex++) {
+>>>>>>> temp
 		if (au_h_dptr(root, bindex) == path.dentry) {
 			xino_itrunc->bindex = bindex;
 			break;
@@ -1100,7 +1191,11 @@ int au_opts_parse(struct super_block *sb, char *str, struct au_opts *opts)
 			}
 			u.xino_itrunc->bindex = n;
 			aufs_read_lock(root, AuLock_FLUSH);
+<<<<<<< HEAD
 			if (n < 0 || au_sbend(sb) < n) {
+=======
+			if (n < 0 || au_sbbot(sb) < n) {
+>>>>>>> temp
 				pr_err("out of bounds, %d\n", n);
 				aufs_read_unlock(root, !AuLock_IR);
 				break;
@@ -1185,6 +1280,11 @@ int au_opts_parse(struct super_block *sb, char *str, struct au_opts *opts)
 		case Opt_wsum:
 		case Opt_rdblk_def:
 		case Opt_rdhash_def:
+<<<<<<< HEAD
+=======
+		case Opt_dirren:
+		case Opt_nodirren:
+>>>>>>> temp
 		case Opt_acl:
 		case Opt_noacl:
 			err = 0;
@@ -1286,6 +1386,11 @@ static int au_opt_wbr_create(struct super_block *sb,
 	switch (create->wbr_create) {
 	case AuWbrCreate_MFSRRV:
 	case AuWbrCreate_MFSRR:
+<<<<<<< HEAD
+=======
+	case AuWbrCreate_TDMFS:
+	case AuWbrCreate_TDMFSV:
+>>>>>>> temp
 	case AuWbrCreate_PMFSRR:
 	case AuWbrCreate_PMFSRRV:
 		sbinfo->si_wbr_mfs.mfsrr_watermark = create->mfsrr_watermark;
@@ -1449,11 +1554,41 @@ static int au_opt_simple(struct super_block *sb, struct au_opt *opt,
 		au_fclr_opts(opts->flags, TRUNC_XIB);
 		break;
 
+<<<<<<< HEAD
 	case Opt_acl:
 		sb->s_flags |= MS_POSIXACL;
 		break;
 	case Opt_noacl:
 		sb->s_flags &= ~MS_POSIXACL;
+=======
+	case Opt_dirren:
+		err = 1;
+		if (!au_opt_test(sbinfo->si_mntflags, DIRREN)) {
+			err = au_dr_opt_set(sb);
+			if (!err)
+				err = 1;
+		}
+		if (err == 1)
+			au_opt_set(sbinfo->si_mntflags, DIRREN);
+		break;
+	case Opt_nodirren:
+		err = 1;
+		if (au_opt_test(sbinfo->si_mntflags, DIRREN)) {
+			err = au_dr_opt_clr(sb, au_ftest_opts(opts->flags,
+							      DR_FLUSHED));
+			if (!err)
+				err = 1;
+		}
+		if (err == 1)
+			au_opt_clr(sbinfo->si_mntflags, DIRREN);
+		break;
+
+	case Opt_acl:
+		sb->s_flags |= SB_POSIXACL;
+		break;
+	case Opt_noacl:
+		sb->s_flags &= ~SB_POSIXACL;
+>>>>>>> temp
 		break;
 
 	default:
@@ -1478,7 +1613,11 @@ static int au_opt_br(struct super_block *sb, struct au_opt *opt,
 	err = 0;
 	switch (opt->type) {
 	case Opt_append:
+<<<<<<< HEAD
 		opt->add.bindex = au_sbend(sb) + 1;
+=======
+		opt->add.bindex = au_sbbot(sb) + 1;
+>>>>>>> temp
 		if (opt->add.bindex < 0)
 			opt->add.bindex = 0;
 		goto add;
@@ -1517,7 +1656,10 @@ static int au_opt_br(struct super_block *sb, struct au_opt *opt,
 		}
 		break;
 	}
+<<<<<<< HEAD
 
+=======
+>>>>>>> temp
 	return err;
 }
 
@@ -1526,7 +1668,11 @@ static int au_opt_xino(struct super_block *sb, struct au_opt *opt,
 		       struct au_opts *opts)
 {
 	int err;
+<<<<<<< HEAD
 	aufs_bindex_t bend, bindex;
+=======
+	aufs_bindex_t bbot, bindex;
+>>>>>>> temp
 	struct dentry *root, *parent, *h_root;
 
 	err = 0;
@@ -1543,8 +1689,13 @@ static int au_opt_xino(struct super_block *sb, struct au_opt *opt,
 		/* safe d_parent access */
 		parent = opt->xino.file->f_path.dentry->d_parent;
 		root = sb->s_root;
+<<<<<<< HEAD
 		bend = au_sbend(sb);
 		for (bindex = 0; bindex <= bend; bindex++) {
+=======
+		bbot = au_sbbot(sb);
+		for (bindex = 0; bindex <= bbot; bindex++) {
+>>>>>>> temp
 			h_root = au_h_dptr(root, bindex);
 			if (h_root == parent) {
 				au_xino_brid_set(sb, au_sbr_id(sb, bindex));
@@ -1567,7 +1718,11 @@ int au_opts_verify(struct super_block *sb, unsigned long sb_flags,
 		   unsigned int pending)
 {
 	int err, fhsm;
+<<<<<<< HEAD
 	aufs_bindex_t bindex, bend;
+=======
+	aufs_bindex_t bindex, bbot;
+>>>>>>> temp
 	unsigned char do_plink, skip, do_free, can_no_dreval;
 	struct au_branch *br;
 	struct au_wbr *wbr;
@@ -1581,20 +1736,36 @@ int au_opts_verify(struct super_block *sb, unsigned long sb_flags,
 	sbinfo = au_sbi(sb);
 	AuDebugOn(!(sbinfo->si_mntflags & AuOptMask_UDBA));
 
+<<<<<<< HEAD
 	if (!(sb_flags & MS_RDONLY)) {
 		if (unlikely(!au_br_writable(au_sbr_perm(sb, 0))))
 			pr_warn("first branch should be rw\n");
 		if (unlikely(au_opt_test(sbinfo->si_mntflags, SHWH)))
 			pr_warn("shwh should be used with ro\n");
+=======
+	if (!(sb_flags & SB_RDONLY)) {
+		if (unlikely(!au_br_writable(au_sbr_perm(sb, 0))))
+			pr_warn("first branch should be rw\n");
+		if (unlikely(au_opt_test(sbinfo->si_mntflags, SHWH)))
+			pr_warn_once("shwh should be used with ro\n");
+>>>>>>> temp
 	}
 
 	if (au_opt_test((sbinfo->si_mntflags | pending), UDBA_HNOTIFY)
 	    && !au_opt_test(sbinfo->si_mntflags, XINO))
+<<<<<<< HEAD
 		pr_warn("udba=*notify requires xino\n");
 
 	if (au_opt_test(sbinfo->si_mntflags, DIRPERM1))
 		pr_warn("dirperm1 breaks the protection"
 			" by the permission bits on the lower branch\n");
+=======
+		pr_warn_once("udba=*notify requires xino\n");
+
+	if (au_opt_test(sbinfo->si_mntflags, DIRPERM1))
+		pr_warn_once("dirperm1 breaks the protection"
+			     " by the permission bits on the lower branch\n");
+>>>>>>> temp
 
 	err = 0;
 	fhsm = 0;
@@ -1603,8 +1774,13 @@ int au_opts_verify(struct super_block *sb, unsigned long sb_flags,
 	do_plink = !!au_opt_test(sbinfo->si_mntflags, PLINK);
 	can_no_dreval = !!au_opt_test((sbinfo->si_mntflags | pending),
 				      UDBA_NONE);
+<<<<<<< HEAD
 	bend = au_sbend(sb);
 	for (bindex = 0; !err && bindex <= bend; bindex++) {
+=======
+	bbot = au_sbbot(sb);
+	for (bindex = 0; !err && bindex <= bbot; bindex++) {
+>>>>>>> temp
 		skip = 0;
 		h_dir = au_h_iptr(dir, bindex);
 		br = au_sbr(sb, bindex);
@@ -1614,7 +1790,11 @@ int au_opts_verify(struct super_block *sb, unsigned long sb_flags,
 			br->br_perm &= ~AuBrAttr_ICEX;
 #if 0
 		if ((br->br_perm & AuBrAttr_ICEX_SEC)
+<<<<<<< HEAD
 		    && (au_br_sb(br)->s_flags & MS_NOSEC))
+=======
+		    && (au_br_sb(br)->s_flags & SB_NOSEC))
+>>>>>>> temp
 			br->br_perm &= ~AuBrAttr_ICEX_SEC;
 #endif
 
@@ -1669,13 +1849,21 @@ int au_opts_verify(struct super_block *sb, unsigned long sb_flags,
 			continue;
 
 		hdir = au_hi(dir, bindex);
+<<<<<<< HEAD
 		au_hn_imtx_lock_nested(hdir, AuLsc_I_PARENT);
+=======
+		au_hn_inode_lock_nested(hdir, AuLsc_I_PARENT);
+>>>>>>> temp
 		if (wbr)
 			wbr_wh_write_lock(wbr);
 		err = au_wh_init(br, sb);
 		if (wbr)
 			wbr_wh_write_unlock(wbr);
+<<<<<<< HEAD
 		au_hn_imtx_unlock(hdir);
+=======
+		au_hn_inode_unlock(hdir);
+>>>>>>> temp
 
 		if (!err && do_free) {
 			kfree(wbr);
@@ -1690,7 +1878,11 @@ int au_opts_verify(struct super_block *sb, unsigned long sb_flags,
 
 	if (fhsm >= 2) {
 		au_fset_si(sbinfo, FHSM);
+<<<<<<< HEAD
 		for (bindex = bend; bindex >= 0; bindex--) {
+=======
+		for (bindex = bbot; bindex >= 0; bindex--) {
+>>>>>>> temp
 			br = au_sbr(sb, bindex);
 			if (au_br_fhsm(br->br_perm)) {
 				au_fhsm_set_bottom(sb, bindex);
@@ -1709,7 +1901,11 @@ int au_opts_mount(struct super_block *sb, struct au_opts *opts)
 {
 	int err;
 	unsigned int tmp;
+<<<<<<< HEAD
 	aufs_bindex_t bindex, bend;
+=======
+	aufs_bindex_t bindex, bbot;
+>>>>>>> temp
 	struct au_opt *opt;
 	struct au_opt_xino *opt_xino, xino;
 	struct au_sbinfo *sbinfo;
@@ -1742,8 +1938,13 @@ int au_opts_mount(struct super_block *sb, struct au_opts *opts)
 	else if (unlikely(err < 0))
 		goto out;
 
+<<<<<<< HEAD
 	bend = au_sbend(sb);
 	if (unlikely(bend < 0)) {
+=======
+	bbot = au_sbbot(sb);
+	if (unlikely(bbot < 0)) {
+>>>>>>> temp
 		err = -EINVAL;
 		pr_err("no branches\n");
 		goto out;
@@ -1778,8 +1979,13 @@ int au_opts_mount(struct super_block *sb, struct au_opts *opts)
 	tmp &= AuOptMask_UDBA;
 	sbinfo->si_mntflags &= ~AuOptMask_UDBA;
 	sbinfo->si_mntflags |= tmp;
+<<<<<<< HEAD
 	bend = au_sbend(sb);
 	for (bindex = 0; bindex <= bend; bindex++) {
+=======
+	bbot = au_sbbot(sb);
+	for (bindex = 0; bindex <= bbot; bindex++) {
+>>>>>>> temp
 		br = au_sbr(sb, bindex);
 		err = au_hnotify_reset_br(tmp, br, br->br_perm);
 		if (unlikely(err))
@@ -1807,7 +2013,15 @@ int au_opts_remount(struct super_block *sb, struct au_opts *opts)
 
 	SiMustWriteLock(sb);
 
+<<<<<<< HEAD
 	err = 0;
+=======
+	err = au_dr_opt_flush(sb);
+	if (unlikely(err))
+		goto out;
+	au_fset_opts(opts->flags, DR_FLUSHED);
+
+>>>>>>> temp
 	dir = d_inode(sb->s_root);
 	sbinfo = au_sbi(sb);
 	opt_xino = NULL;
@@ -1848,6 +2062,11 @@ int au_opts_remount(struct super_block *sb, struct au_opts *opts)
 		au_fset_opts(opts->flags, REFRESH);
 
 	AuDbg("status 0x%x\n", opts->flags);
+<<<<<<< HEAD
+=======
+
+out:
+>>>>>>> temp
 	return err;
 }
 

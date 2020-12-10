@@ -73,7 +73,10 @@ static struct phy_driver bcm63xx_driver[] = {
 	.read_status	= genphy_read_status,
 	.ack_interrupt	= bcm_phy_ack_intr,
 	.config_intr	= bcm63xx_config_intr,
+<<<<<<< HEAD
 	.driver		= { .owner = THIS_MODULE },
+=======
+>>>>>>> temp
 }, {
 	/* same phy as above, with just a different OUI */
 	.phy_id		= 0x002bdc00,
@@ -86,7 +89,10 @@ static struct phy_driver bcm63xx_driver[] = {
 	.read_status	= genphy_read_status,
 	.ack_interrupt	= bcm_phy_ack_intr,
 	.config_intr	= bcm63xx_config_intr,
+<<<<<<< HEAD
 	.driver		= { .owner = THIS_MODULE },
+=======
+>>>>>>> temp
 } };
 
 module_phy_driver(bcm63xx_driver);

@@ -70,11 +70,14 @@
 #define XR_USB_SERIAL_NW  16
 #define XR_USB_SERIAL_NR  16
 
+<<<<<<< HEAD
 #define RAMCTL_BUFFER_PARITY                               0x1
 #define RAMCTL_BUFFER_BREAK                                0x2
 #define RAMCTL_BUFFER_FRAME                                0x4
 #define RAMCTL_BUFFER_OVERRUN                              0x8
 
+=======
+>>>>>>> temp
 struct xr_usb_serial_wb {
 	unsigned char *buf;
 	dma_addr_t dmah;
@@ -149,6 +152,7 @@ struct xr_usb_serial {
 	u8 bInterval;
 	struct xr_usb_serial_wb *delayed_wb;			/* write queued for a device about to be woken */
 	unsigned int channel;
+<<<<<<< HEAD
 	int           preciseflags; /* USB: wide mode, TTY: flags per character */
     int           trans9;   /* USB: wide mode, serial 9N1 */
 	int           have_extra_byte;
@@ -162,6 +166,12 @@ struct xr_usb_serial {
 	struct reg_addr_map reg_map;
     int found_smbios_exar_config;
 	unsigned char channel_config;
+=======
+	unsigned short DeviceVendor;
+	unsigned short DeviceProduct;
+	struct reg_addr_map reg_map;
+	bool rs485_422_en;
+>>>>>>> temp
 };
 
 #define CDC_DATA_INTERFACE_TYPE	0x0a

@@ -102,20 +102,55 @@ int platform_get_irq(struct platform_device *dev, unsigned int num)
 	}
 
 	r = platform_get_resource(dev, IORESOURCE_IRQ, num);
+	if (has_acpi_companion(&dev->dev)) {
+		if (r && r->flags & IORESOURCE_DISABLED) {
+			int ret;
+
+			ret = acpi_irq_get(ACPI_HANDLE(&dev->dev), num, r);
+			if (ret)
+				return ret;
+		}
+	}
+
 	/*
 	 * The resources may pass trigger flags to the irqs that need
 	 * to be set up. It so happens that the trigger flags for
 	 * IORESOURCE_BITS correspond 1-to-1 to the IRQF_TRIGGER*
 	 * settings.
 	 */
-	if (r && r->flags & IORESOURCE_BITS)
-		irqd_set_trigger_type(irq_get_irq_data(r->start),
-				      r->flags & IORESOURCE_BITS);
+	if (r && r->flags & IORESOURCE_BITS) {
+		struct irq_data *irqd;
+
+		irqd = irq_get_irq_data(r->start);
+		if (!irqd)
+			return -ENXIO;
+		irqd_set_trigger_type(irqd, r->flags & IORESOURCE_BITS);
+	}
 
 	return r ? r->start : -ENXIO;
 #endif
 }
 EXPORT_SYMBOL_GPL(platform_get_irq);
+
+/**
+ * platform_irq_count - Count the number of IRQs a platform device uses
+ * @dev: platform device
+ *
+ * Return: Number of IRQs a platform device uses or EPROBE_DEFER
+ */
+int platform_irq_count(struct platform_device *dev)
+{
+	int ret, nr = 0;
+
+	while ((ret = platform_get_irq(dev, nr)) >= 0)
+		nr++;
+
+	if (ret == -EPROBE_DEFER)
+		return ret;
+
+	return nr;
+}
+EXPORT_SYMBOL_GPL(platform_irq_count);
 
 /**
  * platform_get_resource_byname - get a resource for a device by name
@@ -302,6 +337,7 @@ EXPORT_SYMBOL_GPL(platform_device_add_data);
 /**
  * platform_device_add_properties - add built-in properties to a platform device
  * @pdev: platform device to add properties to
+<<<<<<< HEAD
  * @pset: properties to add
  *
  * The function will take deep copy of the properties in @pset and attach
@@ -312,6 +348,18 @@ int platform_device_add_properties(struct platform_device *pdev,
 				   const struct property_set *pset)
 {
 	return device_add_property_set(&pdev->dev, pset);
+=======
+ * @properties: null terminated array of properties to add
+ *
+ * The function will take deep copy of @properties and attach the copy to the
+ * platform device. The memory associated with properties will be freed when the
+ * platform device is released.
+ */
+int platform_device_add_properties(struct platform_device *pdev,
+				   const struct property_entry *properties)
+{
+	return device_add_properties(&pdev->dev, properties);
+>>>>>>> temp
 }
 EXPORT_SYMBOL_GPL(platform_device_add_properties);
 
@@ -371,7 +419,7 @@ int platform_device_add(struct platform_device *pdev)
 		}
 
 		if (p && insert_resource(p, r)) {
-			dev_err(&pdev->dev, "failed to claim resource %d\n", i);
+			dev_err(&pdev->dev, "failed to claim resource %d: %pR\n", i, r);
 			ret = -EBUSY;
 			goto failed;
 		}
@@ -414,6 +462,7 @@ void platform_device_del(struct platform_device *pdev)
 	int i;
 
 	if (pdev) {
+		device_remove_properties(&pdev->dev);
 		device_del(&pdev->dev);
 
 		if (pdev->id_auto) {
@@ -506,8 +555,14 @@ struct platform_device *platform_device_register_full(
 	if (ret)
 		goto err;
 
+<<<<<<< HEAD
 	if (pdevinfo->pset) {
 		ret = platform_device_add_properties(pdev, pdevinfo->pset);
+=======
+	if (pdevinfo->properties) {
+		ret = platform_device_add_properties(pdev,
+						     pdevinfo->properties);
+>>>>>>> temp
 		if (ret)
 			goto err;
 	}
@@ -582,7 +637,6 @@ static void platform_drv_shutdown(struct device *_dev)
 
 	if (drv->shutdown)
 		drv->shutdown(dev);
-	dev_pm_domain_detach(_dev, true);
 }
 
 /**
@@ -813,7 +867,7 @@ static ssize_t modalias_show(struct device *dev, struct device_attribute *a,
 	struct platform_device	*pdev = to_platform_device(dev);
 	int len;
 
-	len = of_device_get_modalias(dev, buf, PAGE_SIZE -1);
+	len = of_device_modalias(dev, buf, PAGE_SIZE);
 	if (len != -ENODEV)
 		return len;
 
@@ -1109,6 +1163,7 @@ struct bus_type platform_bus_type = {
 	.match		= platform_match,
 	.uevent		= platform_uevent,
 	.pm		= &platform_dev_pm_ops,
+	.force_dma	= true,
 };
 EXPORT_SYMBOL_GPL(platform_bus_type);
 

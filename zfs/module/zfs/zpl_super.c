@@ -184,6 +184,7 @@ zpl_statfs(struct dentry *dentry, struct kstatfs *statp)
 	return (error);
 }
 
+<<<<<<< HEAD
 enum {
 	TOKEN_RO,
 	TOKEN_RW,
@@ -389,6 +390,17 @@ zpl_remount_fs(struct super_block *sb, int *flags, char *data)
 
 	cookie = spl_fstrans_mark();
 	error = -zfs_remount(sb, flags, zsb->z_mntopts);
+=======
+static int
+zpl_remount_fs(struct super_block *sb, int *flags, char *data)
+{
+	zfs_mnt_t zm = { .mnt_osname = NULL, .mnt_data = data };
+	fstrans_cookie_t cookie;
+	int error;
+
+	cookie = spl_fstrans_mark();
+	error = -zfs_remount(sb, flags, &zm);
+>>>>>>> temp
 	spl_fstrans_unmark(cookie);
 	ASSERT3S(error, <=, 0);
 
@@ -396,12 +408,22 @@ zpl_remount_fs(struct super_block *sb, int *flags, char *data)
 }
 
 static int
+<<<<<<< HEAD
 __zpl_show_options(struct seq_file *seq, zfs_sb_t *zsb)
 {
 	seq_printf(seq, ",%s", zsb->z_flags & ZSB_XATTR ? "xattr" : "noxattr");
 
 #ifdef CONFIG_FS_POSIX_ACL
 	switch (zsb->z_acl_type) {
+=======
+__zpl_show_options(struct seq_file *seq, zfsvfs_t *zfsvfs)
+{
+	seq_printf(seq, ",%s",
+	    zfsvfs->z_flags & ZSB_XATTR ? "xattr" : "noxattr");
+
+#ifdef CONFIG_FS_POSIX_ACL
+	switch (zfsvfs->z_acl_type) {
+>>>>>>> temp
 	case ZFS_ACLTYPE_POSIXACL:
 		seq_puts(seq, ",posixacl");
 		break;
@@ -431,12 +453,20 @@ zpl_show_options(struct seq_file *seq, struct vfsmount *vfsp)
 static int
 zpl_fill_super(struct super_block *sb, void *data, int silent)
 {
+<<<<<<< HEAD
 	zfs_mntopts_t *zmo = (zfs_mntopts_t *)data;
+=======
+	zfs_mnt_t *zm = (zfs_mnt_t *)data;
+>>>>>>> temp
 	fstrans_cookie_t cookie;
 	int error;
 
 	cookie = spl_fstrans_mark();
+<<<<<<< HEAD
 	error = -zfs_domount(sb, zmo, silent);
+=======
+	error = -zfs_domount(sb, zm, silent);
+>>>>>>> temp
 	spl_fstrans_unmark(cookie);
 	ASSERT3S(error, <=, 0);
 
@@ -446,6 +476,7 @@ zpl_fill_super(struct super_block *sb, void *data, int silent)
 static int
 zpl_test_super(struct super_block *s, void *data)
 {
+<<<<<<< HEAD
 	zfs_sb_t *zsb = s->s_fs_info;
 
 	objset_t *os = data;
@@ -458,12 +489,29 @@ zpl_test_super(struct super_block *s, void *data)
 
 static struct super_block *
 zpl_mount_impl(struct file_system_type *fs_type, int flags, zfs_mntopts_t *zmo)
+=======
+	zfsvfs_t *zfsvfs = s->s_fs_info;
+	objset_t *os = data;
+
+	if (zfsvfs == NULL)
+		return (0);
+
+	return (os == zfsvfs->z_os);
+}
+
+static struct super_block *
+zpl_mount_impl(struct file_system_type *fs_type, int flags, zfs_mnt_t *zm)
+>>>>>>> temp
 {
 	struct super_block *s;
 	objset_t *os;
 	int err;
 
+<<<<<<< HEAD
 	err = dmu_objset_hold(zmo->z_osname, FTAG, &os);
+=======
+	err = dmu_objset_hold(zm->mnt_osname, FTAG, &os);
+>>>>>>> temp
 	if (err)
 		return (ERR_PTR(-err));
 
@@ -482,7 +530,11 @@ zpl_mount_impl(struct file_system_type *fs_type, int flags, zfs_mntopts_t *zmo)
 		return (ERR_CAST(s));
 
 	if (s->s_root == NULL) {
+<<<<<<< HEAD
 		err = zpl_fill_super(s, zmo, flags & SB_SILENT ? 1 : 0);
+=======
+		err = zpl_fill_super(s, zm, flags & SB_SILENT ? 1 : 0);
+>>>>>>> temp
 		if (err) {
 			deactivate_locked_super(s);
 			return (ERR_PTR(err));
@@ -495,11 +547,16 @@ zpl_mount_impl(struct file_system_type *fs_type, int flags, zfs_mntopts_t *zmo)
 
 	return (s);
 }
+<<<<<<< HEAD
+=======
+
+>>>>>>> temp
 #ifdef HAVE_FST_MOUNT
 static struct dentry *
 zpl_mount(struct file_system_type *fs_type, int flags,
     const char *osname, void *data)
 {
+<<<<<<< HEAD
 	zfs_mntopts_t *zmo = zfs_mntopts_alloc();
 	struct super_block *sb;
 	int error;
@@ -510,6 +567,11 @@ zpl_mount(struct file_system_type *fs_type, int flags,
 		return (ERR_PTR(error));
 	}
 	sb = zpl_mount_impl(fs_type, flags, zmo);
+=======
+	zfs_mnt_t zm = { .mnt_osname = osname, .mnt_data = data };
+
+	struct super_block *sb = zpl_mount_impl(fs_type, flags, &zm);
+>>>>>>> temp
 	if (IS_ERR(sb))
 		return (ERR_CAST(sb));
 
@@ -520,6 +582,7 @@ static int
 zpl_get_sb(struct file_system_type *fs_type, int flags,
     const char *osname, void *data, struct vfsmount *mnt)
 {
+<<<<<<< HEAD
 	zfs_mntopts_t *zmo = zfs_mntopts_alloc();
 	struct super_block *sb;
 	int error;
@@ -532,6 +595,13 @@ zpl_get_sb(struct file_system_type *fs_type, int flags,
 	sb = zpl_mount_impl(fs_type, flags, zmo);
 	if (IS_ERR(sb))
 		return (ERR_CAST(sb));
+=======
+	zfs_mnt_t zm = { .mnt_osname = osname, .mnt_data = data };
+
+	struct super_block *sb = zpl_mount_impl(fs_type, flags, &zm);
+	if (IS_ERR(sb))
+		return (PTR_ERR(sb));
+>>>>>>> temp
 
 	(void) simple_set_mnt(mnt, sb);
 
@@ -556,7 +626,11 @@ zpl_prune_sb(int64_t nr_to_scan, void *arg)
 	struct super_block *sb = (struct super_block *)arg;
 	int objects = 0;
 
+<<<<<<< HEAD
 	(void) -zfs_sb_prune(sb, nr_to_scan, &objects);
+=======
+	(void) -zfs_prune(sb, nr_to_scan, &objects);
+>>>>>>> temp
 }
 
 #ifdef HAVE_NR_CACHED_OBJECTS

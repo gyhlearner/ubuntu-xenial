@@ -28,17 +28,32 @@
 #include <sys/types.h>
 #include <linux/mutex.h>
 #include <linux/compiler_compat.h>
+<<<<<<< HEAD
+=======
+#include <linux/lockdep.h>
+>>>>>>> temp
 
 typedef enum {
 	MUTEX_DEFAULT	= 0,
 	MUTEX_SPIN	= 1,
+<<<<<<< HEAD
 	MUTEX_ADAPTIVE	= 2
+=======
+	MUTEX_ADAPTIVE	= 2,
+	MUTEX_NOLOCKDEP	= 3
+>>>>>>> temp
 } kmutex_type_t;
 
 typedef struct {
 	struct mutex		m_mutex;
 	spinlock_t		m_lock;	/* used for serializing mutex_exit */
 	kthread_t		*m_owner;
+<<<<<<< HEAD
+=======
+#ifdef CONFIG_LOCKDEP
+	kmutex_type_t		m_type;
+#endif /* CONFIG_LOCKDEP */
+>>>>>>> temp
 } kmutex_t;
 
 #define	MUTEX(mp)		(&((mp)->m_mutex))
@@ -60,6 +75,33 @@ spl_mutex_clear_owner(kmutex_t *mp)
 #define	MUTEX_HELD(mp)		mutex_owned(mp)
 #define	MUTEX_NOT_HELD(mp)	(!MUTEX_HELD(mp))
 
+<<<<<<< HEAD
+=======
+#ifdef CONFIG_LOCKDEP
+static inline void
+spl_mutex_set_type(kmutex_t *mp, kmutex_type_t type)
+{
+	mp->m_type = type;
+}
+static inline void
+spl_mutex_lockdep_off_maybe(kmutex_t *mp)			\
+{								\
+	if (mp && mp->m_type == MUTEX_NOLOCKDEP)		\
+		lockdep_off();					\
+}
+static inline void
+spl_mutex_lockdep_on_maybe(kmutex_t *mp)			\
+{								\
+	if (mp && mp->m_type == MUTEX_NOLOCKDEP)		\
+		lockdep_on();					\
+}
+#else  /* CONFIG_LOCKDEP */
+#define spl_mutex_set_type(mp, type)
+#define spl_mutex_lockdep_off_maybe(mp)
+#define spl_mutex_lockdep_on_maybe(mp)
+#endif /* CONFIG_LOCKDEP */
+
+>>>>>>> temp
 /*
  * The following functions must be a #define and not static inline.
  * This ensures that the native linux mutex functions (lock/unlock)
@@ -70,11 +112,19 @@ spl_mutex_clear_owner(kmutex_t *mp)
 #define	mutex_init(mp, name, type, ibc)				\
 {								\
 	static struct lock_class_key __key;			\
+<<<<<<< HEAD
 	ASSERT(type == MUTEX_DEFAULT);				\
+=======
+	ASSERT(type == MUTEX_DEFAULT || type == MUTEX_NOLOCKDEP); \
+>>>>>>> temp
 								\
 	__mutex_init(MUTEX(mp), (name) ? (#name) : (#mp), &__key); \
 	spin_lock_init(&(mp)->m_lock);				\
 	spl_mutex_clear_owner(mp);				\
+<<<<<<< HEAD
+=======
+	spl_mutex_set_type(mp, type);				\
+>>>>>>> temp
 }
 
 #undef mutex_destroy
@@ -87,8 +137,15 @@ spl_mutex_clear_owner(kmutex_t *mp)
 ({								\
 	int _rc_;						\
 								\
+<<<<<<< HEAD
 	if ((_rc_ = mutex_trylock(MUTEX(mp))) == 1)		\
 		spl_mutex_set_owner(mp);			\
+=======
+	spl_mutex_lockdep_off_maybe(mp);			\
+	if ((_rc_ = mutex_trylock(MUTEX(mp))) == 1)		\
+		spl_mutex_set_owner(mp);			\
+	spl_mutex_lockdep_on_maybe(mp);				\
+>>>>>>> temp
 								\
 	_rc_;							\
 })
@@ -97,14 +154,26 @@ spl_mutex_clear_owner(kmutex_t *mp)
 #define	mutex_enter_nested(mp, subclass)			\
 {								\
 	ASSERT3P(mutex_owner(mp), !=, current);			\
+<<<<<<< HEAD
 	mutex_lock_nested(MUTEX(mp), (subclass));		\
+=======
+	spl_mutex_lockdep_off_maybe(mp);			\
+	mutex_lock_nested(MUTEX(mp), (subclass));		\
+	spl_mutex_lockdep_on_maybe(mp);				\
+>>>>>>> temp
 	spl_mutex_set_owner(mp);				\
 }
 #else /* CONFIG_DEBUG_LOCK_ALLOC */
 #define	mutex_enter_nested(mp, subclass)			\
 {								\
 	ASSERT3P(mutex_owner(mp), !=, current);			\
+<<<<<<< HEAD
 	mutex_lock(MUTEX(mp));					\
+=======
+	spl_mutex_lockdep_off_maybe(mp);			\
+	mutex_lock(MUTEX(mp));					\
+	spl_mutex_lockdep_on_maybe(mp);				\
+>>>>>>> temp
 	spl_mutex_set_owner(mp);				\
 }
 #endif /*  CONFIG_DEBUG_LOCK_ALLOC */
@@ -132,10 +201,20 @@ spl_mutex_clear_owner(kmutex_t *mp)
  */
 #define	mutex_exit(mp)						\
 {								\
+<<<<<<< HEAD
 	spin_lock(&(mp)->m_lock);				\
 	spl_mutex_clear_owner(mp);				\
 	mutex_unlock(MUTEX(mp));				\
 	spin_unlock(&(mp)->m_lock);				\
+=======
+	spl_mutex_clear_owner(mp);				\
+	spin_lock(&(mp)->m_lock);				\
+	spl_mutex_lockdep_off_maybe(mp);			\
+	mutex_unlock(MUTEX(mp));				\
+	spl_mutex_lockdep_on_maybe(mp);				\
+	spin_unlock(&(mp)->m_lock);				\
+	/* NOTE: do not dereference mp after this point */	\
+>>>>>>> temp
 }
 
 int spl_mutex_init(void);

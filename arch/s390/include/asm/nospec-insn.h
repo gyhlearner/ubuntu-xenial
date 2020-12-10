@@ -4,7 +4,10 @@
 
 #include <asm/alternative-asm.h>
 #include <asm/asm-offsets.h>
+<<<<<<< HEAD
 
+=======
+>>>>>>> temp
 #ifdef __ASSEMBLY__
 
 #ifdef CONFIG_EXPOLINE

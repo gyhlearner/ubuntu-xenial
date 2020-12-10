@@ -34,6 +34,7 @@ typedef struct cred cred_t;
 #define	kcred		((cred_t *)(init_task.cred))
 #define	CRED()		((cred_t *)current_cred())
 
+<<<<<<< HEAD
 #ifdef HAVE_KUIDGID_T
 
 /*
@@ -47,6 +48,14 @@ typedef struct cred cred_t;
 #include <linux/uidgid.h>
 #undef uid_t
 #undef gid_t
+=======
+/* Linux 4.9 API change, GROUP_AT was removed */
+#ifndef GROUP_AT
+#define	GROUP_AT(gi, i)	((gi)->gid[i])
+#endif
+
+#ifdef HAVE_KUIDGID_T
+>>>>>>> temp
 
 #define	KUID_TO_SUID(x)		(__kuid_val(x))
 #define	KGID_TO_SGID(x)		(__kgid_val(x))

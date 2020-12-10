@@ -32,6 +32,7 @@ struct pp_hw_power_state;
 extern const struct pp_table_func pptable_funcs;
 
 typedef int (*pp_tables_hw_clock_info_callback)(struct pp_hwmgr *hwmgr,
+<<<<<<< HEAD
 					struct pp_hw_power_state *hw_ps,
 							unsigned int index,
 						 const void *clock_info);
@@ -43,5 +44,21 @@ int pp_tables_get_entry(struct pp_hwmgr *hwmgr,
 						unsigned long entry_index,
 						struct pp_power_state *ps,
 				pp_tables_hw_clock_info_callback func);
+=======
+						struct pp_hw_power_state *hw_ps,
+						unsigned int index,
+						const void *clock_info);
+
+int pp_tables_get_num_of_entries(struct pp_hwmgr *hwmgr,
+				 unsigned long *num_of_entries);
+
+int pp_tables_get_entry(struct pp_hwmgr *hwmgr,
+			unsigned long entry_index,
+			struct pp_power_state *ps,
+			pp_tables_hw_clock_info_callback func);
+
+int pp_tables_get_response_times(struct pp_hwmgr *hwmgr,
+				 uint32_t *vol_rep_time, uint32_t *bb_rep_time);
+>>>>>>> temp
 
 #endif

@@ -25,7 +25,6 @@
 #include <asm/hyperv.h>
 #include <asm/mshyperv.h>
 #include <asm/desc.h>
-#include <asm/idle.h>
 #include <asm/irq_regs.h>
 #include <asm/i8259.h>
 #include <asm/apic.h>
@@ -50,6 +49,9 @@ void hyperv_vector_handler(struct pt_regs *regs)
 	if (vmbus_handler)
 		vmbus_handler();
 
+	if (ms_hyperv.hints & HV_X64_DEPRECATING_AEOI_RECOMMENDED)
+		ack_APIC_irq();
+
 	exiting_irq();
 	set_irq_regs(old_regs);
 }
@@ -57,13 +59,6 @@ void hyperv_vector_handler(struct pt_regs *regs)
 void hv_setup_vmbus_irq(void (*handler)(void))
 {
 	vmbus_handler = handler;
-	/*
-	 * Setup the IDT for hypervisor callback. Prevent reallocation
-	 * at module reload.
-	 */
-	if (!test_bit(HYPERVISOR_CALLBACK_VECTOR, used_vectors))
-		alloc_intr_gate(HYPERVISOR_CALLBACK_VECTOR,
-				hyperv_callback_vector);
 }
 
 void hv_remove_vmbus_irq(void)
@@ -158,9 +153,26 @@ static int hv_nmi_unknown(unsigned int val, struct pt_regs *regs)
 	return NMI_DONE;
 }
 #endif
+<<<<<<< HEAD
+=======
+
+static unsigned long hv_get_tsc_khz(void)
+{
+	unsigned long freq;
+
+	rdmsrl(HV_X64_MSR_TSC_FREQUENCY, freq);
+
+	return freq / 1000;
+}
+>>>>>>> temp
 
 static void __init ms_hyperv_init_platform(void)
 {
+	int hv_host_info_eax;
+	int hv_host_info_ebx;
+	int hv_host_info_ecx;
+	int hv_host_info_edx;
+
 	/*
 	 * Extract the features and hints
 	 */
@@ -168,11 +180,39 @@ static void __init ms_hyperv_init_platform(void)
 	ms_hyperv.misc_features = cpuid_edx(HYPERV_CPUID_FEATURES);
 	ms_hyperv.hints    = cpuid_eax(HYPERV_CPUID_ENLIGHTMENT_INFO);
 
-	printk(KERN_INFO "HyperV: features 0x%x, hints 0x%x\n",
-	       ms_hyperv.features, ms_hyperv.hints);
+	pr_info("Hyper-V: features 0x%x, hints 0x%x\n",
+		ms_hyperv.features, ms_hyperv.hints);
+
+	ms_hyperv.max_vp_index = cpuid_eax(HVCPUID_IMPLEMENTATION_LIMITS);
+	ms_hyperv.max_lp_index = cpuid_ebx(HVCPUID_IMPLEMENTATION_LIMITS);
+
+	pr_debug("Hyper-V: max %u virtual processors, %u logical processors\n",
+		 ms_hyperv.max_vp_index, ms_hyperv.max_lp_index);
+
+	/*
+	 * Extract host information.
+	 */
+	if (cpuid_eax(HVCPUID_VENDOR_MAXFUNCTION) >= HVCPUID_VERSION) {
+		hv_host_info_eax = cpuid_eax(HVCPUID_VERSION);
+		hv_host_info_ebx = cpuid_ebx(HVCPUID_VERSION);
+		hv_host_info_ecx = cpuid_ecx(HVCPUID_VERSION);
+		hv_host_info_edx = cpuid_edx(HVCPUID_VERSION);
+
+		pr_info("Hyper-V Host Build:%d-%d.%d-%d-%d.%d\n",
+			hv_host_info_eax, hv_host_info_ebx >> 16,
+			hv_host_info_ebx & 0xFFFF, hv_host_info_ecx,
+			hv_host_info_edx >> 24, hv_host_info_edx & 0xFFFFFF);
+	}
+
+	if (ms_hyperv.features & HV_X64_ACCESS_FREQUENCY_MSRS &&
+	    ms_hyperv.misc_features & HV_FEATURE_FREQUENCY_MSRS_AVAILABLE) {
+		x86_platform.calibrate_tsc = hv_get_tsc_khz;
+		x86_platform.calibrate_cpu = hv_get_tsc_khz;
+	}
 
 #ifdef CONFIG_X86_LOCAL_APIC
-	if (ms_hyperv.features & HV_X64_MSR_APIC_FREQUENCY_AVAILABLE) {
+	if (ms_hyperv.features & HV_X64_ACCESS_FREQUENCY_MSRS &&
+	    ms_hyperv.misc_features & HV_FEATURE_FREQUENCY_MSRS_AVAILABLE) {
 		/*
 		 * Get the APIC frequency.
 		 */
@@ -181,8 +221,8 @@ static void __init ms_hyperv_init_platform(void)
 		rdmsrl(HV_X64_MSR_APIC_FREQUENCY, hv_lapic_frequency);
 		hv_lapic_frequency = div_u64(hv_lapic_frequency, HZ);
 		lapic_timer_frequency = hv_lapic_frequency;
-		printk(KERN_INFO "HyperV: LAPIC Timer Frequency: %#x\n",
-				lapic_timer_frequency);
+		pr_info("Hyper-V: LAPIC Timer Frequency: %#x\n",
+			lapic_timer_frequency);
 	}
 
 	register_nmi_handler(NMI_UNKNOWN, hv_nmi_unknown, NMI_FLAG_FIRST,
@@ -205,11 +245,24 @@ static void __init ms_hyperv_init_platform(void)
 	 */
 	if (efi_enabled(EFI_BOOT))
 		x86_platform.get_nmi_reason = hv_get_nmi_reason;
+<<<<<<< HEAD
+=======
+
+#if IS_ENABLED(CONFIG_HYPERV)
+	/*
+	 * Setup the hook to get control post apic initialization.
+	 */
+	x86_platform.apic_post_init = hyperv_init;
+	hyperv_setup_mmu_ops();
+	/* Setup the IDT for hypervisor callback */
+	alloc_intr_gate(HYPERVISOR_CALLBACK_VECTOR, hyperv_callback_vector);
+#endif
+>>>>>>> temp
 }
 
-const __refconst struct hypervisor_x86 x86_hyper_ms_hyperv = {
-	.name			= "Microsoft HyperV",
+const __initconst struct hypervisor_x86 x86_hyper_ms_hyperv = {
+	.name			= "Microsoft Hyper-V",
 	.detect			= ms_hyperv_platform,
-	.init_platform		= ms_hyperv_init_platform,
+	.type			= X86_HYPER_MS_HYPERV,
+	.init.init_platform	= ms_hyperv_init_platform,
 };
-EXPORT_SYMBOL(x86_hyper_ms_hyperv);

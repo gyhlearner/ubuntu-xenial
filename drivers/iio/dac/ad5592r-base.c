@@ -23,6 +23,7 @@
 
 #include "ad5592r-base.h"
 
+<<<<<<< HEAD
 static struct ad5592r_state *gpiochip_to_ad5592r(struct gpio_chip *chip)
 {
 	return container_of(chip, struct ad5592r_state, gpiochip);
@@ -31,6 +32,11 @@ static struct ad5592r_state *gpiochip_to_ad5592r(struct gpio_chip *chip)
 static int ad5592r_gpio_get(struct gpio_chip *chip, unsigned offset)
 {
 	struct ad5592r_state *st = gpiochip_to_ad5592r(chip);
+=======
+static int ad5592r_gpio_get(struct gpio_chip *chip, unsigned offset)
+{
+	struct ad5592r_state *st = gpiochip_get_data(chip);
+>>>>>>> temp
 	int ret = 0;
 	u8 val;
 
@@ -51,7 +57,11 @@ static int ad5592r_gpio_get(struct gpio_chip *chip, unsigned offset)
 
 static void ad5592r_gpio_set(struct gpio_chip *chip, unsigned offset, int value)
 {
+<<<<<<< HEAD
 	struct ad5592r_state *st = gpiochip_to_ad5592r(chip);
+=======
+	struct ad5592r_state *st = gpiochip_get_data(chip);
+>>>>>>> temp
 
 	mutex_lock(&st->gpio_lock);
 
@@ -67,7 +77,11 @@ static void ad5592r_gpio_set(struct gpio_chip *chip, unsigned offset, int value)
 
 static int ad5592r_gpio_direction_input(struct gpio_chip *chip, unsigned offset)
 {
+<<<<<<< HEAD
 	struct ad5592r_state *st = gpiochip_to_ad5592r(chip);
+=======
+	struct ad5592r_state *st = gpiochip_get_data(chip);
+>>>>>>> temp
 	int ret;
 
 	mutex_lock(&st->gpio_lock);
@@ -90,7 +104,11 @@ err_unlock:
 static int ad5592r_gpio_direction_output(struct gpio_chip *chip,
 					 unsigned offset, int value)
 {
+<<<<<<< HEAD
 	struct ad5592r_state *st = gpiochip_to_ad5592r(chip);
+=======
+	struct ad5592r_state *st = gpiochip_get_data(chip);
+>>>>>>> temp
 	int ret;
 
 	mutex_lock(&st->gpio_lock);
@@ -121,7 +139,11 @@ err_unlock:
 
 static int ad5592r_gpio_request(struct gpio_chip *chip, unsigned offset)
 {
+<<<<<<< HEAD
 	struct ad5592r_state *st = gpiochip_to_ad5592r(chip);
+=======
+	struct ad5592r_state *st = gpiochip_get_data(chip);
+>>>>>>> temp
 
 	if (!(st->gpio_map & BIT(offset))) {
 		dev_err(st->dev, "GPIO %d is reserved by alternate function\n",
@@ -140,7 +162,11 @@ static int ad5592r_gpio_init(struct ad5592r_state *st)
 	st->gpiochip.label = dev_name(st->dev);
 	st->gpiochip.base = -1;
 	st->gpiochip.ngpio = 8;
+<<<<<<< HEAD
 	st->gpiochip.dev = st->dev;
+=======
+	st->gpiochip.parent = st->dev;
+>>>>>>> temp
 	st->gpiochip.can_sleep = true;
 	st->gpiochip.direction_input = ad5592r_gpio_direction_input;
 	st->gpiochip.direction_output = ad5592r_gpio_direction_output;
@@ -151,7 +177,11 @@ static int ad5592r_gpio_init(struct ad5592r_state *st)
 
 	mutex_init(&st->gpio_lock);
 
+<<<<<<< HEAD
 	return gpiochip_add(&st->gpiochip);
+=======
+	return gpiochip_add_data(&st->gpiochip, st);
+>>>>>>> temp
 }
 
 static void ad5592r_gpio_cleanup(struct ad5592r_state *st)
@@ -479,7 +509,10 @@ static const struct iio_info ad5592r_info = {
 	.read_raw = ad5592r_read_raw,
 	.write_raw = ad5592r_write_raw,
 	.write_raw_get_fmt = ad5592r_write_raw_get_fmt,
+<<<<<<< HEAD
 	.driver_module = THIS_MODULE,
+=======
+>>>>>>> temp
 };
 
 static ssize_t ad5592r_show_scale_available(struct iio_dev *iio_dev,

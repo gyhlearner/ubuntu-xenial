@@ -1,8 +1,14 @@
 #! /bin/sh
 # Attempt to guess a canonical system name.
+<<<<<<< HEAD
 #   Copyright 1992-2015 Free Software Foundation, Inc.
 
 timestamp='2015-08-20'
+=======
+#   Copyright 1992-2017 Free Software Foundation, Inc.
+
+timestamp='2017-11-07'
+>>>>>>> temp
 
 # This file is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by
@@ -15,7 +21,11 @@ timestamp='2015-08-20'
 # General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+<<<<<<< HEAD
 # along with this program; if not, see <http://www.gnu.org/licenses/>.
+=======
+# along with this program; if not, see <https://www.gnu.org/licenses/>.
+>>>>>>> temp
 #
 # As a special exception to the GNU General Public License, if you
 # distribute this file as part of a program that contains a
@@ -27,7 +37,11 @@ timestamp='2015-08-20'
 # Originally written by Per Bothner; maintained since 2000 by Ben Elliston.
 #
 # You can get the latest version of this script from:
+<<<<<<< HEAD
 # http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD
+=======
+# https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess
+>>>>>>> temp
 #
 # Please send patches to <config-patches@gnu.org>.
 
@@ -39,7 +53,11 @@ Usage: $0 [OPTION]
 
 Output the configuration name of the system \`$me' is run on.
 
+<<<<<<< HEAD
 Operation modes:
+=======
+Options:
+>>>>>>> temp
   -h, --help         print this help, then exit
   -t, --time-stamp   print date of last modification, then exit
   -v, --version      print version number, then exit
@@ -50,7 +68,11 @@ version="\
 GNU config.guess ($timestamp)
 
 Originally written by Per Bothner.
+<<<<<<< HEAD
 Copyright 1992-2015 Free Software Foundation, Inc.
+=======
+Copyright 1992-2017 Free Software Foundation, Inc.
+>>>>>>> temp
 
 This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
@@ -186,9 +208,18 @@ case "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" in
 	    *) machine=${UNAME_MACHINE_ARCH}-unknown ;;
 	esac
 	# The Operating System including object format, if it has switched
+<<<<<<< HEAD
 	# to ELF recently, or will in the future.
 	case "${UNAME_MACHINE_ARCH}" in
 	    arm*|earm*|i386|m68k|ns32k|sh3*|sparc|vax)
+=======
+	# to ELF recently (or will in the future) and ABI.
+	case "${UNAME_MACHINE_ARCH}" in
+	    earm*)
+		os=netbsdelf
+		;;
+	    arm*|i386|m68k|ns32k|sh3*|sparc|vax)
+>>>>>>> temp
 		eval $set_cc_for_build
 		if echo __ELF__ | $CC_FOR_BUILD -E - 2>/dev/null \
 			| grep -q __ELF__
@@ -237,6 +268,16 @@ case "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" in
 	UNAME_MACHINE_ARCH=`arch | sed 's/OpenBSD.//'`
 	echo ${UNAME_MACHINE_ARCH}-unknown-openbsd${UNAME_RELEASE}
 	exit ;;
+<<<<<<< HEAD
+=======
+    *:LibertyBSD:*:*)
+	UNAME_MACHINE_ARCH=`arch | sed 's/^.*BSD\.//'`
+	echo ${UNAME_MACHINE_ARCH}-unknown-libertybsd${UNAME_RELEASE}
+	exit ;;
+    *:MidnightBSD:*:*)
+	echo ${UNAME_MACHINE}-unknown-midnightbsd${UNAME_RELEASE}
+	exit ;;
+>>>>>>> temp
     *:ekkoBSD:*:*)
 	echo ${UNAME_MACHINE}-unknown-ekkobsd${UNAME_RELEASE}
 	exit ;;
@@ -252,6 +293,12 @@ case "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" in
     *:Sortix:*:*)
 	echo ${UNAME_MACHINE}-unknown-sortix
 	exit ;;
+<<<<<<< HEAD
+=======
+    *:Redox:*:*)
+	echo ${UNAME_MACHINE}-unknown-redox
+	exit ;;
+>>>>>>> temp
     alpha:OSF1:*:*)
 	case $UNAME_RELEASE in
 	*4.0)
@@ -268,6 +315,7 @@ case "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" in
 	ALPHA_CPU_TYPE=`/usr/sbin/psrinfo -v | sed -n -e 's/^  The alpha \(.*\) processor.*$/\1/p' | head -n 1`
 	case "$ALPHA_CPU_TYPE" in
 	    "EV4 (21064)")
+<<<<<<< HEAD
 		UNAME_MACHINE="alpha" ;;
 	    "EV4.5 (21064)")
 		UNAME_MACHINE="alpha" ;;
@@ -297,17 +345,53 @@ case "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" in
 		UNAME_MACHINE="alphaev7" ;;
 	    "EV7.9 (21364A)")
 		UNAME_MACHINE="alphaev79" ;;
+=======
+		UNAME_MACHINE=alpha ;;
+	    "EV4.5 (21064)")
+		UNAME_MACHINE=alpha ;;
+	    "LCA4 (21066/21068)")
+		UNAME_MACHINE=alpha ;;
+	    "EV5 (21164)")
+		UNAME_MACHINE=alphaev5 ;;
+	    "EV5.6 (21164A)")
+		UNAME_MACHINE=alphaev56 ;;
+	    "EV5.6 (21164PC)")
+		UNAME_MACHINE=alphapca56 ;;
+	    "EV5.7 (21164PC)")
+		UNAME_MACHINE=alphapca57 ;;
+	    "EV6 (21264)")
+		UNAME_MACHINE=alphaev6 ;;
+	    "EV6.7 (21264A)")
+		UNAME_MACHINE=alphaev67 ;;
+	    "EV6.8CB (21264C)")
+		UNAME_MACHINE=alphaev68 ;;
+	    "EV6.8AL (21264B)")
+		UNAME_MACHINE=alphaev68 ;;
+	    "EV6.8CX (21264D)")
+		UNAME_MACHINE=alphaev68 ;;
+	    "EV6.9A (21264/EV69A)")
+		UNAME_MACHINE=alphaev69 ;;
+	    "EV7 (21364)")
+		UNAME_MACHINE=alphaev7 ;;
+	    "EV7.9 (21364A)")
+		UNAME_MACHINE=alphaev79 ;;
+>>>>>>> temp
 	esac
 	# A Pn.n version is a patched version.
 	# A Vn.n version is a released version.
 	# A Tn.n version is a released field test version.
 	# A Xn.n version is an unreleased experimental baselevel.
 	# 1.2 uses "1.2" for uname -r.
+<<<<<<< HEAD
 	echo ${UNAME_MACHINE}-dec-osf`echo ${UNAME_RELEASE} | sed -e 's/^[PVTX]//' | tr 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+=======
+	echo ${UNAME_MACHINE}-dec-osf`echo ${UNAME_RELEASE} | sed -e 's/^[PVTX]//' | tr ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz`
+>>>>>>> temp
 	# Reset EXIT trap before exiting to avoid spurious non-zero exit code.
 	exitcode=$?
 	trap '' 0
 	exit $exitcode ;;
+<<<<<<< HEAD
     Alpha\ *:Windows_NT*:*)
 	# How do we know it's Interix rather than the generic POSIX subsystem?
 	# Should we change UNAME_MACHINE based on the output of uname instead
@@ -317,6 +401,8 @@ case "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" in
     21064:Windows_NT:50:3)
 	echo alpha-dec-winnt3.5
 	exit ;;
+=======
+>>>>>>> temp
     Amiga*:UNIX_System_V:4.0:*)
 	echo m68k-unknown-sysv4
 	exit ;;
@@ -376,6 +462,7 @@ case "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" in
 	exit ;;
     i86pc:SunOS:5.*:* | i86xen:SunOS:5.*:*)
 	eval $set_cc_for_build
+<<<<<<< HEAD
 	SUN_ARCH="i386"
 	# If there is a compiler, see if it is configured for 64-bit objects.
 	# Note that the Sun cc does not turn __LP64__ into 1 like gcc does.
@@ -386,6 +473,18 @@ case "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" in
 		grep IS_64BIT_ARCH >/dev/null
 	    then
 		SUN_ARCH="x86_64"
+=======
+	SUN_ARCH=i386
+	# If there is a compiler, see if it is configured for 64-bit objects.
+	# Note that the Sun cc does not turn __LP64__ into 1 like gcc does.
+	# This test works for both compilers.
+	if [ "$CC_FOR_BUILD" != no_compiler_found ]; then
+	    if (echo '#ifdef __amd64'; echo IS_64BIT_ARCH; echo '#endif') | \
+		(CCOPTS="" $CC_FOR_BUILD -E - 2>/dev/null) | \
+		grep IS_64BIT_ARCH >/dev/null
+	    then
+		SUN_ARCH=x86_64
+>>>>>>> temp
 	    fi
 	fi
 	echo ${SUN_ARCH}-pc-solaris2`echo ${UNAME_RELEASE}|sed -e 's/[^.]*//'`
@@ -410,7 +509,11 @@ case "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" in
 	exit ;;
     sun*:*:4.2BSD:*)
 	UNAME_RELEASE=`(sed 1q /etc/motd | awk '{print substr($5,1,3)}') 2>/dev/null`
+<<<<<<< HEAD
 	test "x${UNAME_RELEASE}" = "x" && UNAME_RELEASE=3
+=======
+	test "x${UNAME_RELEASE}" = x && UNAME_RELEASE=3
+>>>>>>> temp
 	case "`/bin/arch`" in
 	    sun3)
 		echo m68k-sun-sunos${UNAME_RELEASE}
@@ -478,6 +581,7 @@ case "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" in
 #endif
 	#if defined (host_mips) && defined (MIPSEB)
 	#if defined (SYSTYPE_SYSV)
+<<<<<<< HEAD
 	  printf ("mips-mips-riscos%ssysv\n", argv[1]); exit (0);
 	#endif
 	#if defined (SYSTYPE_SVR4)
@@ -485,6 +589,15 @@ case "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" in
 	#endif
 	#if defined (SYSTYPE_BSD43) || defined(SYSTYPE_BSD)
 	  printf ("mips-mips-riscos%sbsd\n", argv[1]); exit (0);
+=======
+	  printf ("mips-mips-riscos%ssysv\\n", argv[1]); exit (0);
+	#endif
+	#if defined (SYSTYPE_SVR4)
+	  printf ("mips-mips-riscos%ssvr4\\n", argv[1]); exit (0);
+	#endif
+	#if defined (SYSTYPE_BSD43) || defined(SYSTYPE_BSD)
+	  printf ("mips-mips-riscos%sbsd\\n", argv[1]); exit (0);
+>>>>>>> temp
 	#endif
 	#endif
 	  exit (-1);
@@ -607,7 +720,11 @@ EOF
     *:AIX:*:*)
 	echo rs6000-ibm-aix
 	exit ;;
+<<<<<<< HEAD
     ibmrt:4.4BSD:*|romp-ibm:BSD:*)
+=======
+    ibmrt:4.4BSD:*|romp-ibm:4.4BSD:*)
+>>>>>>> temp
 	echo romp-ibm-bsd4.4
 	exit ;;
     ibmrt:*BSD:*|romp-ibm:BSD:*)            # covers RT/PC BSD and
@@ -628,13 +745,19 @@ EOF
     9000/[34678]??:HP-UX:*:*)
 	HPUX_REV=`echo ${UNAME_RELEASE}|sed -e 's/[^.]*.[0B]*//'`
 	case "${UNAME_MACHINE}" in
+<<<<<<< HEAD
 	    9000/31? )            HP_ARCH=m68000 ;;
 	    9000/[34]?? )         HP_ARCH=m68k ;;
+=======
+	    9000/31?)            HP_ARCH=m68000 ;;
+	    9000/[34]??)         HP_ARCH=m68k ;;
+>>>>>>> temp
 	    9000/[678][0-9][0-9])
 		if [ -x /usr/bin/getconf ]; then
 		    sc_cpu_version=`/usr/bin/getconf SC_CPU_VERSION 2>/dev/null`
 		    sc_kernel_bits=`/usr/bin/getconf SC_KERNEL_BITS 2>/dev/null`
 		    case "${sc_cpu_version}" in
+<<<<<<< HEAD
 		      523) HP_ARCH="hppa1.0" ;; # CPU_PA_RISC1_0
 		      528) HP_ARCH="hppa1.1" ;; # CPU_PA_RISC1_1
 		      532)                      # CPU_PA_RISC2_0
@@ -642,6 +765,15 @@ EOF
 			  32) HP_ARCH="hppa2.0n" ;;
 			  64) HP_ARCH="hppa2.0w" ;;
 			  '') HP_ARCH="hppa2.0" ;;   # HP-UX 10.20
+=======
+		      523) HP_ARCH=hppa1.0 ;; # CPU_PA_RISC1_0
+		      528) HP_ARCH=hppa1.1 ;; # CPU_PA_RISC1_1
+		      532)                      # CPU_PA_RISC2_0
+			case "${sc_kernel_bits}" in
+			  32) HP_ARCH=hppa2.0n ;;
+			  64) HP_ARCH=hppa2.0w ;;
+			  '') HP_ARCH=hppa2.0 ;;   # HP-UX 10.20
+>>>>>>> temp
 			esac ;;
 		    esac
 		fi
@@ -680,11 +812,19 @@ EOF
 		    exit (0);
 		}
 EOF
+<<<<<<< HEAD
 		    (CCOPTS= $CC_FOR_BUILD -o $dummy $dummy.c 2>/dev/null) && HP_ARCH=`$dummy`
 		    test -z "$HP_ARCH" && HP_ARCH=hppa
 		fi ;;
 	esac
 	if [ ${HP_ARCH} = "hppa2.0w" ]
+=======
+		    (CCOPTS="" $CC_FOR_BUILD -o $dummy $dummy.c 2>/dev/null) && HP_ARCH=`$dummy`
+		    test -z "$HP_ARCH" && HP_ARCH=hppa
+		fi ;;
+	esac
+	if [ ${HP_ARCH} = hppa2.0w ]
+>>>>>>> temp
 	then
 	    eval $set_cc_for_build
 
@@ -697,12 +837,21 @@ EOF
 	    # $ CC_FOR_BUILD="cc +DA2.0w" ./config.guess
 	    # => hppa64-hp-hpux11.23
 
+<<<<<<< HEAD
 	    if echo __LP64__ | (CCOPTS= $CC_FOR_BUILD -E - 2>/dev/null) |
 		grep -q __LP64__
 	    then
 		HP_ARCH="hppa2.0w"
 	    else
 		HP_ARCH="hppa64"
+=======
+	    if echo __LP64__ | (CCOPTS="" $CC_FOR_BUILD -E - 2>/dev/null) |
+		grep -q __LP64__
+	    then
+		HP_ARCH=hppa2.0w
+	    else
+		HP_ARCH=hppa64
+>>>>>>> temp
 	    fi
 	fi
 	echo ${HP_ARCH}-hp-hpux${HPUX_REV}
@@ -742,7 +891,11 @@ EOF
 		{ echo "$SYSTEM_NAME"; exit; }
 	echo unknown-hitachi-hiuxwe2
 	exit ;;
+<<<<<<< HEAD
     9000/7??:4.3bsd:*:* | 9000/8?[79]:4.3bsd:*:* )
+=======
+    9000/7??:4.3bsd:*:* | 9000/8?[79]:4.3bsd:*:*)
+>>>>>>> temp
 	echo hppa1.1-hp-bsd
 	exit ;;
     9000/8??:4.3bsd:*:*)
@@ -751,7 +904,11 @@ EOF
     *9??*:MPE/iX:*:* | *3000*:MPE/iX:*:*)
 	echo hppa1.0-hp-mpeix
 	exit ;;
+<<<<<<< HEAD
     hp7??:OSF1:*:* | hp8?[79]:OSF1:*:* )
+=======
+    hp7??:OSF1:*:* | hp8?[79]:OSF1:*:*)
+>>>>>>> temp
 	echo hppa1.1-hp-osf
 	exit ;;
     hp8??:OSF1:*:*)
@@ -807,14 +964,24 @@ EOF
 	echo craynv-cray-unicosmp${UNAME_RELEASE} | sed -e 's/\.[^.]*$/.X/'
 	exit ;;
     F30[01]:UNIX_System_V:*:* | F700:UNIX_System_V:*:*)
+<<<<<<< HEAD
 	FUJITSU_PROC=`uname -m | tr 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
 	FUJITSU_SYS=`uname -p | tr 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz' | sed -e 's/\///'`
+=======
+	FUJITSU_PROC=`uname -m | tr ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz`
+	FUJITSU_SYS=`uname -p | tr ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz | sed -e 's/\///'`
+>>>>>>> temp
 	FUJITSU_REL=`echo ${UNAME_RELEASE} | sed -e 's/ /_/'`
 	echo "${FUJITSU_PROC}-fujitsu-${FUJITSU_SYS}${FUJITSU_REL}"
 	exit ;;
     5000:UNIX_System_V:4.*:*)
+<<<<<<< HEAD
 	FUJITSU_SYS=`uname -p | tr 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz' | sed -e 's/\///'`
 	FUJITSU_REL=`echo ${UNAME_RELEASE} | tr 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz' | sed -e 's/ /_/'`
+=======
+	FUJITSU_SYS=`uname -p | tr ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz | sed -e 's/\///'`
+	FUJITSU_REL=`echo ${UNAME_RELEASE} | tr ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz | sed -e 's/ /_/'`
+>>>>>>> temp
 	echo "sparc-fujitsu-${FUJITSU_SYS}${FUJITSU_REL}"
 	exit ;;
     i*86:BSD/386:*:* | i*86:BSD/OS:*:* | *:Ascend\ Embedded/OS:*:*)
@@ -830,10 +997,18 @@ EOF
 	UNAME_PROCESSOR=`/usr/bin/uname -p`
 	case ${UNAME_PROCESSOR} in
 	    amd64)
+<<<<<<< HEAD
 		echo x86_64-unknown-freebsd`echo ${UNAME_RELEASE}|sed -e 's/[-(].*//'` ;;
 	    *)
 		echo ${UNAME_PROCESSOR}-unknown-freebsd`echo ${UNAME_RELEASE}|sed -e 's/[-(].*//'` ;;
 	esac
+=======
+		UNAME_PROCESSOR=x86_64 ;;
+	    i386)
+		UNAME_PROCESSOR=i586 ;;
+	esac
+	echo ${UNAME_PROCESSOR}-unknown-freebsd`echo ${UNAME_RELEASE}|sed -e 's/[-(].*//'`
+>>>>>>> temp
 	exit ;;
     i*:CYGWIN*:*)
 	echo ${UNAME_MACHINE}-pc-cygwin
@@ -847,10 +1022,13 @@ EOF
     *:MSYS*:*)
 	echo ${UNAME_MACHINE}-pc-msys
 	exit ;;
+<<<<<<< HEAD
     i*:windows32*:*)
 	# uname -m includes "-pc" on this system.
 	echo ${UNAME_MACHINE}-mingw32
 	exit ;;
+=======
+>>>>>>> temp
     i*:PW*:*)
 	echo ${UNAME_MACHINE}-pc-pw32
 	exit ;;
@@ -866,6 +1044,7 @@ EOF
 		echo ia64-unknown-interix${UNAME_RELEASE}
 		exit ;;
 	esac ;;
+<<<<<<< HEAD
     [345]86:Windows_95:* | [345]86:Windows_98:* | [345]86:Windows_NT:*)
 	echo i${UNAME_MACHINE}-pc-mks
 	exit ;;
@@ -878,15 +1057,20 @@ EOF
 	# UNAME_MACHINE based on the output of uname instead of i386?
 	echo i586-pc-interix
 	exit ;;
+=======
+>>>>>>> temp
     i*:UWIN*:*)
 	echo ${UNAME_MACHINE}-pc-uwin
 	exit ;;
     amd64:CYGWIN*:*:* | x86_64:CYGWIN*:*:*)
 	echo x86_64-unknown-cygwin
 	exit ;;
+<<<<<<< HEAD
     p*:CYGWIN*:*)
 	echo powerpcle-unknown-cygwin
 	exit ;;
+=======
+>>>>>>> temp
     prep*:SunOS:5.*:*)
 	echo powerpcle-unknown-solaris2`echo ${UNAME_RELEASE}|sed -e 's/[^.]*//'`
 	exit ;;
@@ -896,7 +1080,11 @@ EOF
 	exit ;;
     *:GNU/*:*:*)
 	# other systems with GNU libc and userland
+<<<<<<< HEAD
 	echo ${UNAME_MACHINE}-unknown-`echo ${UNAME_SYSTEM} | sed 's,^[^/]*/,,' | tr '[A-Z]' '[a-z]'``echo ${UNAME_RELEASE}|sed -e 's/[-(].*//'`-${LIBC}
+=======
+	echo ${UNAME_MACHINE}-unknown-`echo ${UNAME_SYSTEM} | sed 's,^[^/]*/,,' | tr "[:upper:]" "[:lower:]"``echo ${UNAME_RELEASE}|sed -e 's/[-(].*//'`-${LIBC}
+>>>>>>> temp
 	exit ;;
     i*86:Minix:*:*)
 	echo ${UNAME_MACHINE}-pc-minix
@@ -919,7 +1107,11 @@ EOF
 	  EV68*) UNAME_MACHINE=alphaev68 ;;
 	esac
 	objdump --private-headers /bin/sh | grep -q ld.so.1
+<<<<<<< HEAD
 	if test "$?" = 0 ; then LIBC="gnulibc1" ; fi
+=======
+	if test "$?" = 0 ; then LIBC=gnulibc1 ; fi
+>>>>>>> temp
 	echo ${UNAME_MACHINE}-unknown-linux-${LIBC}
 	exit ;;
     arc:Linux:*:* | arceb:Linux:*:*)
@@ -965,6 +1157,12 @@ EOF
     ia64:Linux:*:*)
 	echo ${UNAME_MACHINE}-unknown-linux-${LIBC}
 	exit ;;
+<<<<<<< HEAD
+=======
+    k1om:Linux:*:*)
+	echo ${UNAME_MACHINE}-unknown-linux-${LIBC}
+	exit ;;
+>>>>>>> temp
     m32r*:Linux:*:*)
 	echo ${UNAME_MACHINE}-unknown-linux-${LIBC}
 	exit ;;
@@ -990,6 +1188,12 @@ EOF
 	eval `$CC_FOR_BUILD -E $dummy.c 2>/dev/null | grep '^CPU'`
 	test x"${CPU}" != x && { echo "${CPU}-unknown-linux-${LIBC}"; exit; }
 	;;
+<<<<<<< HEAD
+=======
+    mips64el:Linux:*:*)
+	echo ${UNAME_MACHINE}-unknown-linux-${LIBC}
+	exit ;;
+>>>>>>> temp
     openrisc*:Linux:*:*)
 	echo or1k-unknown-linux-${LIBC}
 	exit ;;
@@ -1022,6 +1226,12 @@ EOF
     ppcle:Linux:*:*)
 	echo powerpcle-unknown-linux-${LIBC}
 	exit ;;
+<<<<<<< HEAD
+=======
+    riscv32:Linux:*:* | riscv64:Linux:*:*)
+	echo ${UNAME_MACHINE}-unknown-linux-${LIBC}
+	exit ;;
+>>>>>>> temp
     s390:Linux:*:* | s390x:Linux:*:*)
 	echo ${UNAME_MACHINE}-ibm-linux-${LIBC}
 	exit ;;
@@ -1080,7 +1290,11 @@ EOF
     i*86:*DOS:*:*)
 	echo ${UNAME_MACHINE}-pc-msdosdjgpp
 	exit ;;
+<<<<<<< HEAD
     i*86:*:4.*:* | i*86:SYSTEM_V:4.*:*)
+=======
+    i*86:*:4.*:*)
+>>>>>>> temp
 	UNAME_REL=`echo ${UNAME_RELEASE} | sed 's/\/MP$//'`
 	if grep Novell /usr/include/link.h >/dev/null 2>/dev/null; then
 		echo ${UNAME_MACHINE}-univel-sysv${UNAME_REL}
@@ -1120,7 +1334,11 @@ EOF
 	# uname -m prints for DJGPP always 'pc', but it prints nothing about
 	# the processor, so we play safe by assuming i586.
 	# Note: whatever this is, it MUST be the same as what config.sub
+<<<<<<< HEAD
 	# prints for the "djgpp" host, or else GDB configury will decide that
+=======
+	# prints for the "djgpp" host, or else GDB configure will decide that
+>>>>>>> temp
 	# this is a cross-build.
 	echo i586-pc-msdosdjgpp
 	exit ;;
@@ -1269,6 +1487,12 @@ EOF
     SX-8R:SUPER-UX:*:*)
 	echo sx8r-nec-superux${UNAME_RELEASE}
 	exit ;;
+<<<<<<< HEAD
+=======
+    SX-ACE:SUPER-UX:*:*)
+	echo sxace-nec-superux${UNAME_RELEASE}
+	exit ;;
+>>>>>>> temp
     Power*:Rhapsody:*:*)
 	echo powerpc-apple-rhapsody${UNAME_RELEASE}
 	exit ;;
@@ -1282,16 +1506,33 @@ EOF
 	    UNAME_PROCESSOR=powerpc
 	fi
 	if test `echo "$UNAME_RELEASE" | sed -e 's/\..*//'` -le 10 ; then
+<<<<<<< HEAD
 	    if [ "$CC_FOR_BUILD" != 'no_compiler_found' ]; then
 		if (echo '#ifdef __LP64__'; echo IS_64BIT_ARCH; echo '#endif') | \
 		    (CCOPTS= $CC_FOR_BUILD -E - 2>/dev/null) | \
 		    grep IS_64BIT_ARCH >/dev/null
+=======
+	    if [ "$CC_FOR_BUILD" != no_compiler_found ]; then
+		if (echo '#ifdef __LP64__'; echo IS_64BIT_ARCH; echo '#endif') | \
+		       (CCOPTS="" $CC_FOR_BUILD -E - 2>/dev/null) | \
+		       grep IS_64BIT_ARCH >/dev/null
+>>>>>>> temp
 		then
 		    case $UNAME_PROCESSOR in
 			i386) UNAME_PROCESSOR=x86_64 ;;
 			powerpc) UNAME_PROCESSOR=powerpc64 ;;
 		    esac
 		fi
+<<<<<<< HEAD
+=======
+		# On 10.4-10.6 one might compile for PowerPC via gcc -arch ppc
+		if (echo '#ifdef __POWERPC__'; echo IS_PPC; echo '#endif') | \
+		       (CCOPTS="" $CC_FOR_BUILD -E - 2>/dev/null) | \
+		       grep IS_PPC >/dev/null
+		then
+		    UNAME_PROCESSOR=powerpc
+		fi
+>>>>>>> temp
 	    fi
 	elif test "$UNAME_PROCESSOR" = i386 ; then
 	    # Avoid executing cc on OS X 10.9, as it ships with a stub
@@ -1306,7 +1547,11 @@ EOF
 	exit ;;
     *:procnto*:*:* | *:QNX:[0123456789]*:*)
 	UNAME_PROCESSOR=`uname -p`
+<<<<<<< HEAD
 	if test "$UNAME_PROCESSOR" = "x86"; then
+=======
+	if test "$UNAME_PROCESSOR" = x86; then
+>>>>>>> temp
 		UNAME_PROCESSOR=i386
 		UNAME_MACHINE=pc
 	fi
@@ -1315,15 +1560,28 @@ EOF
     *:QNX:*:4*)
 	echo i386-pc-qnx
 	exit ;;
+<<<<<<< HEAD
     NEO-?:NONSTOP_KERNEL:*:*)
+=======
+    NEO-*:NONSTOP_KERNEL:*:*)
+>>>>>>> temp
 	echo neo-tandem-nsk${UNAME_RELEASE}
 	exit ;;
     NSE-*:NONSTOP_KERNEL:*:*)
 	echo nse-tandem-nsk${UNAME_RELEASE}
 	exit ;;
+<<<<<<< HEAD
     NSR-?:NONSTOP_KERNEL:*:*)
 	echo nsr-tandem-nsk${UNAME_RELEASE}
 	exit ;;
+=======
+    NSR-*:NONSTOP_KERNEL:*:*)
+	echo nsr-tandem-nsk${UNAME_RELEASE}
+	exit ;;
+    NSX-*:NONSTOP_KERNEL:*:*)
+	echo nsx-tandem-nsk${UNAME_RELEASE}
+	exit ;;
+>>>>>>> temp
     *:NonStop-UX:*:*)
 	echo mips-compaq-nonstopux
 	exit ;;
@@ -1337,7 +1595,11 @@ EOF
 	# "uname -m" is not consistent, so use $cputype instead. 386
 	# is converted to i386 for consistency with other x86
 	# operating systems.
+<<<<<<< HEAD
 	if test "$cputype" = "386"; then
+=======
+	if test "$cputype" = 386; then
+>>>>>>> temp
 	    UNAME_MACHINE=i386
 	else
 	    UNAME_MACHINE="$cputype"
@@ -1379,7 +1641,11 @@ EOF
 	echo i386-pc-xenix
 	exit ;;
     i*86:skyos:*:*)
+<<<<<<< HEAD
 	echo ${UNAME_MACHINE}-pc-skyos`echo ${UNAME_RELEASE}` | sed -e 's/ .*$//'
+=======
+	echo ${UNAME_MACHINE}-pc-skyos`echo ${UNAME_RELEASE} | sed -e 's/ .*$//'`
+>>>>>>> temp
 	exit ;;
     i*86:rdos:*:*)
 	echo ${UNAME_MACHINE}-pc-rdos
@@ -1390,6 +1656,7 @@ EOF
     x86_64:VMkernel:*:*)
 	echo ${UNAME_MACHINE}-unknown-esx
 	exit ;;
+<<<<<<< HEAD
 esac
 
 cat >&2 <<EOF
@@ -1407,6 +1674,39 @@ If the version you run ($0) is already up to date, please
 send the following data and any information you think might be
 pertinent to <config-patches@gnu.org> in order to provide the needed
 information to handle your system.
+=======
+    amd64:Isilon\ OneFS:*:*)
+	echo x86_64-unknown-onefs
+	exit ;;
+esac
+
+echo "$0: unable to guess system type" >&2
+
+case "${UNAME_MACHINE}:${UNAME_SYSTEM}" in
+    mips:Linux | mips64:Linux)
+	# If we got here on MIPS GNU/Linux, output extra information.
+	cat >&2 <<EOF
+
+NOTE: MIPS GNU/Linux systems require a C compiler to fully recognize
+the system type. Please install a C compiler and try again.
+EOF
+	;;
+esac
+
+cat >&2 <<EOF
+
+This script (version $timestamp), has failed to recognize the
+operating system you are using. If your script is old, overwrite *all*
+copies of config.guess and config.sub with the latest versions from:
+
+  https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess
+and
+  https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.sub
+
+If $0 has already been updated, send the following data and any
+information you think might be pertinent to config-patches@gnu.org to
+provide the necessary information to handle your system.
+>>>>>>> temp
 
 config.guess timestamp = $timestamp
 
@@ -1434,7 +1734,11 @@ EOF
 exit 1
 
 # Local variables:
+<<<<<<< HEAD
 # eval: (add-hook 'write-file-hooks 'time-stamp)
+=======
+# eval: (add-hook 'write-file-functions 'time-stamp)
+>>>>>>> temp
 # time-stamp-start: "timestamp='"
 # time-stamp-format: "%:y-%02m-%02d"
 # time-stamp-end: "'"

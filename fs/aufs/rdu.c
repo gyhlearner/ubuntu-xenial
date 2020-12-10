@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright (C) 2005-2015 Junjiro R. Okajima
+=======
+ * Copyright (C) 2005-2017 Junjiro R. Okajima
+>>>>>>> temp
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -122,7 +126,11 @@ out:
 static int au_rdu(struct file *file, struct aufs_rdu *rdu)
 {
 	int err;
+<<<<<<< HEAD
 	aufs_bindex_t bend;
+=======
+	aufs_bindex_t bbot;
+>>>>>>> temp
 	struct au_rdu_arg arg = {
 		.ctx = {
 			.actor = au_rdu_fill
@@ -148,7 +156,11 @@ static int au_rdu(struct file *file, struct aufs_rdu *rdu)
 	arg.end += rdu->sz;
 
 	err = -ENOTDIR;
+<<<<<<< HEAD
 	if (unlikely(!file->f_op->iterate))
+=======
+	if (unlikely(!file->f_op->iterate && !file->f_op->iterate_shared))
+>>>>>>> temp
 		goto out;
 
 	err = security_file_permission(file, MAY_READ);
@@ -158,6 +170,7 @@ static int au_rdu(struct file *file, struct aufs_rdu *rdu)
 
 	dentry = file->f_path.dentry;
 	inode = d_inode(dentry);
+<<<<<<< HEAD
 #if 1
 	mutex_lock(&inode->i_mutex);
 #else
@@ -166,6 +179,9 @@ static int au_rdu(struct file *file, struct aufs_rdu *rdu)
 	if (unlikely(err))
 		goto out;
 #endif
+=======
+	inode_lock_shared(inode);
+>>>>>>> temp
 
 	arg.sb = inode->i_sb;
 	err = si_read_lock(arg.sb, AuLock_FLUSH | AuLock_NOPLM);
@@ -188,12 +204,21 @@ static int au_rdu(struct file *file, struct aufs_rdu *rdu)
 		if (!rdu->blk)
 			rdu->blk = au_dir_size(file, /*dentry*/NULL);
 	}
+<<<<<<< HEAD
 	bend = au_fbstart(file);
 	if (cookie->bindex < bend)
 		cookie->bindex = bend;
 	bend = au_fbend_dir(file);
 	/* AuDbg("b%d, b%d\n", cookie->bindex, bend); */
 	for (; !err && cookie->bindex <= bend;
+=======
+	bbot = au_fbtop(file);
+	if (cookie->bindex < bbot)
+		cookie->bindex = bbot;
+	bbot = au_fbbot_dir(file);
+	/* AuDbg("b%d, b%d\n", cookie->bindex, bbot); */
+	for (; !err && cookie->bindex <= bbot;
+>>>>>>> temp
 	     cookie->bindex++, cookie->h_pos = 0) {
 		h_file = au_hf_dir(file, cookie->bindex);
 		if (!h_file)
@@ -214,7 +239,11 @@ static int au_rdu(struct file *file, struct aufs_rdu *rdu)
 	}
 
 	ii_read_lock_child(inode);
+<<<<<<< HEAD
 	fsstack_copy_attr_atime(inode, au_h_iptr(inode, au_ibstart(inode)));
+=======
+	fsstack_copy_attr_atime(inode, au_h_iptr(inode, au_ibtop(inode)));
+>>>>>>> temp
 	ii_read_unlock(inode);
 
 out_unlock:
@@ -222,7 +251,11 @@ out_unlock:
 out_si:
 	si_read_unlock(arg.sb);
 out_mtx:
+<<<<<<< HEAD
 	mutex_unlock(&inode->i_mutex);
+=======
+	inode_unlock_shared(inode);
+>>>>>>> temp
 out:
 	AuTraceErr(err);
 	return err;

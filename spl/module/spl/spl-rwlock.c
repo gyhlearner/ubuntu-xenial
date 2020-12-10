@@ -32,6 +32,7 @@
 
 #define DEBUG_SUBSYSTEM S_RWLOCK
 
+<<<<<<< HEAD
 #ifdef CONFIG_RWSEM_GENERIC_SPINLOCK
 
 /*
@@ -91,6 +92,91 @@ __down_write_trylock_locked(struct rw_semaphore *sem)
 EXPORT_SYMBOL(__down_write_trylock_locked);
 
 #endif
+=======
+#if defined(CONFIG_PREEMPT_RT_FULL)
+
+#include <linux/rtmutex.h>
+#define	RT_MUTEX_OWNER_MASKALL	1UL
+
+static int
+__rwsem_tryupgrade(struct rw_semaphore *rwsem)
+{
+
+	ASSERT((struct task_struct *)
+	    ((unsigned long)rwsem->lock.owner & ~RT_MUTEX_OWNER_MASKALL) ==
+	    current);
+
+	/*
+	 * Under the realtime patch series, rwsem is implemented as a
+	 * single mutex held by readers and writers alike. However,
+	 * this implementation would prevent a thread from taking a
+	 * read lock twice, as the mutex would already be locked on
+	 * the second attempt. Therefore the implementation allows a
+	 * single thread to take a rwsem as read lock multiple times
+	 * tracking that nesting as read_depth counter.
+	 */
+	if (rwsem->read_depth <= 1) {
+		/*
+		 * In case, the current thread has not taken the lock
+		 * more than once as read lock, we can allow an
+		 * upgrade to a write lock. rwsem_rt.h implements
+		 * write locks as read_depth == 0.
+		 */
+		rwsem->read_depth = 0;
+		return (1);
+	}
+	return (0);
+}
+#elif defined(CONFIG_RWSEM_GENERIC_SPINLOCK)
+static int
+__rwsem_tryupgrade(struct rw_semaphore *rwsem)
+{
+	int ret = 0;
+	unsigned long flags;
+	spl_rwsem_lock_irqsave(&rwsem->wait_lock, flags);
+	if (RWSEM_COUNT(rwsem) == SPL_RWSEM_SINGLE_READER_VALUE &&
+	    list_empty(&rwsem->wait_list)) {
+		ret = 1;
+		RWSEM_COUNT(rwsem) = SPL_RWSEM_SINGLE_WRITER_VALUE;
+	}
+	spl_rwsem_unlock_irqrestore(&rwsem->wait_lock, flags);
+	return (ret);
+}
+#elif defined(HAVE_RWSEM_ATOMIC_LONG_COUNT)
+static int
+__rwsem_tryupgrade(struct rw_semaphore *rwsem)
+{
+	long val;
+	val = atomic_long_cmpxchg(&rwsem->count, SPL_RWSEM_SINGLE_READER_VALUE,
+	    SPL_RWSEM_SINGLE_WRITER_VALUE);
+	return (val == SPL_RWSEM_SINGLE_READER_VALUE);
+}
+#else
+static int
+__rwsem_tryupgrade(struct rw_semaphore *rwsem)
+{
+	typeof (rwsem->count) val;
+	val = cmpxchg(&rwsem->count, SPL_RWSEM_SINGLE_READER_VALUE,
+	    SPL_RWSEM_SINGLE_WRITER_VALUE);
+	return (val == SPL_RWSEM_SINGLE_READER_VALUE);
+}
+#endif
+
+int
+rwsem_tryupgrade(struct rw_semaphore *rwsem)
+{
+	if (__rwsem_tryupgrade(rwsem)) {
+		rwsem_release(&rwsem->dep_map, 1, _RET_IP_);
+		rwsem_acquire(&rwsem->dep_map, 0, 1, _RET_IP_);
+#ifdef CONFIG_RWSEM_SPIN_ON_OWNER
+		rwsem->owner = current;
+#endif
+		return (1);
+	}
+	return (0);
+}
+EXPORT_SYMBOL(rwsem_tryupgrade);
+>>>>>>> temp
 
 int spl_rw_init(void) { return 0; }
 void spl_rw_fini(void) { }

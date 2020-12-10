@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright (C) 2010-2015 Junjiro R. Okajima
+=======
+ * Copyright (C) 2010-2017 Junjiro R. Okajima
+>>>>>>> temp
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,6 +31,7 @@
  * How large will these lists be?
  * Usually just a few elements, 20-30 at most for each, I guess.
  */
+<<<<<<< HEAD
 static struct au_splhead dynop[AuDyLast];
 
 static struct au_dykey *dy_gfind_get(struct au_splhead *spl, const void *h_op)
@@ -38,12 +43,29 @@ static struct au_dykey *dy_gfind_get(struct au_splhead *spl, const void *h_op)
 	head = &spl->head;
 	rcu_read_lock();
 	list_for_each_entry_rcu(tmp, head, dk_list)
+=======
+static struct hlist_bl_head dynop[AuDyLast];
+
+static struct au_dykey *dy_gfind_get(struct hlist_bl_head *hbl,
+				     const void *h_op)
+{
+	struct au_dykey *key, *tmp;
+	struct hlist_bl_node *pos;
+
+	key = NULL;
+	hlist_bl_lock(hbl);
+	hlist_bl_for_each_entry(tmp, pos, hbl, dk_hnode)
+>>>>>>> temp
 		if (tmp->dk_op.dy_hop == h_op) {
 			key = tmp;
 			kref_get(&key->dk_kref);
 			break;
 		}
+<<<<<<< HEAD
 	rcu_read_unlock();
+=======
+	hlist_bl_unlock(hbl);
+>>>>>>> temp
 
 	return key;
 }
@@ -84,6 +106,7 @@ static struct au_dykey *dy_bradd(struct au_branch *br, struct au_dykey *key)
 }
 
 /* kref_get() if @key is already added */
+<<<<<<< HEAD
 static struct au_dykey *dy_gadd(struct au_splhead *spl, struct au_dykey *key)
 {
 	struct au_dykey *tmp, *found;
@@ -94,14 +117,30 @@ static struct au_dykey *dy_gadd(struct au_splhead *spl, struct au_dykey *key)
 	head = &spl->head;
 	spin_lock(&spl->spin);
 	list_for_each_entry(tmp, head, dk_list)
+=======
+static struct au_dykey *dy_gadd(struct hlist_bl_head *hbl, struct au_dykey *key)
+{
+	struct au_dykey *tmp, *found;
+	struct hlist_bl_node *pos;
+	const void *h_op = key->dk_op.dy_hop;
+
+	found = NULL;
+	hlist_bl_lock(hbl);
+	hlist_bl_for_each_entry(tmp, pos, hbl, dk_hnode)
+>>>>>>> temp
 		if (tmp->dk_op.dy_hop == h_op) {
 			kref_get(&tmp->dk_kref);
 			found = tmp;
 			break;
 		}
 	if (!found)
+<<<<<<< HEAD
 		list_add_rcu(&key->dk_list, head);
 	spin_unlock(&spl->spin);
+=======
+		hlist_bl_add_head(&key->dk_hnode, hbl);
+	hlist_bl_unlock(hbl);
+>>>>>>> temp
 
 	if (!found)
 		DyPrSym(key);
@@ -120,11 +159,19 @@ static void dy_free_rcu(struct rcu_head *rcu)
 static void dy_free(struct kref *kref)
 {
 	struct au_dykey *key;
+<<<<<<< HEAD
 	struct au_splhead *spl;
 
 	key = container_of(kref, struct au_dykey, dk_kref);
 	spl = dynop + key->dk_op.dy_type;
 	au_spl_del_rcu(&key->dk_list, spl);
+=======
+	struct hlist_bl_head *hbl;
+
+	key = container_of(kref, struct au_dykey, dk_kref);
+	hbl = dynop + key->dk_op.dy_type;
+	au_hbl_del(&key->dk_hnode, hbl);
+>>>>>>> temp
 	call_rcu(&key->dk_rcu, dy_free_rcu);
 }
 
@@ -189,6 +236,11 @@ static void dy_aop(struct au_dykey *key, const void *h_op,
 	/* this one will be changed according to an aufs mount option */
 	DySetAop(direct_IO);
 	DySetAop(migratepage);
+<<<<<<< HEAD
+=======
+	DySetAop(isolate_page);
+	DySetAop(putback_page);
+>>>>>>> temp
 	DySetAop(launder_page);
 	DySetAop(is_partially_uptodate);
 	DySetAop(is_dirty_writeback);
@@ -209,7 +261,11 @@ static void dy_bug(struct kref *kref)
 static struct au_dykey *dy_get(struct au_dynop *op, struct au_branch *br)
 {
 	struct au_dykey *key, *old;
+<<<<<<< HEAD
 	struct au_splhead *spl;
+=======
+	struct hlist_bl_head *hbl;
+>>>>>>> temp
 	struct op {
 		unsigned int sz;
 		void (*set)(struct au_dykey *key, const void *h_op,
@@ -223,8 +279,13 @@ static struct au_dykey *dy_get(struct au_dynop *op, struct au_branch *br)
 	};
 	const struct op *p;
 
+<<<<<<< HEAD
 	spl = dynop + op->dy_type;
 	key = dy_gfind_get(spl, op->dy_hop);
+=======
+	hbl = dynop + op->dy_type;
+	key = dy_gfind_get(hbl, op->dy_hop);
+>>>>>>> temp
 	if (key)
 		goto out_add; /* success */
 
@@ -238,7 +299,11 @@ static struct au_dykey *dy_get(struct au_dynop *op, struct au_branch *br)
 	key->dk_op.dy_hop = op->dy_hop;
 	kref_init(&key->dk_kref);
 	p->set(key, op->dy_hop, au_br_sb(br));
+<<<<<<< HEAD
 	old = dy_gadd(spl, key);
+=======
+	old = dy_gadd(hbl, key);
+>>>>>>> temp
 	if (old) {
 		kfree(key);
 		key = old;
@@ -321,20 +386,31 @@ out:
 int au_dy_irefresh(struct inode *inode)
 {
 	int err;
+<<<<<<< HEAD
 	aufs_bindex_t bstart;
+=======
+	aufs_bindex_t btop;
+>>>>>>> temp
 	struct inode *h_inode;
 
 	err = 0;
 	if (S_ISREG(inode->i_mode)) {
+<<<<<<< HEAD
 		bstart = au_ibstart(inode);
 		h_inode = au_h_iptr(inode, bstart);
 		err = au_dy_iaop(inode, bstart, h_inode);
+=======
+		btop = au_ibtop(inode);
+		h_inode = au_h_iptr(inode, btop);
+		err = au_dy_iaop(inode, btop, h_inode);
+>>>>>>> temp
 	}
 	return err;
 }
 
 void au_dy_arefresh(int do_dx)
 {
+<<<<<<< HEAD
 	struct au_splhead *spl;
 	struct list_head *head;
 	struct au_dykey *key;
@@ -345,6 +421,17 @@ void au_dy_arefresh(int do_dx)
 	list_for_each_entry(key, head, dk_list)
 		dy_adx((void *)key, do_dx);
 	spin_unlock(&spl->spin);
+=======
+	struct hlist_bl_head *hbl;
+	struct hlist_bl_node *pos;
+	struct au_dykey *key;
+
+	hbl = dynop + AuDy_AOP;
+	hlist_bl_lock(hbl);
+	hlist_bl_for_each_entry(key, pos, hbl, dk_hnode)
+		dy_adx((void *)key, do_dx);
+	hlist_bl_unlock(hbl);
+>>>>>>> temp
 }
 
 /* ---------------------------------------------------------------------- */
@@ -357,7 +444,11 @@ void __init au_dy_init(void)
 	BUILD_BUG_ON(offsetof(struct au_dyaop, da_key));
 
 	for (i = 0; i < AuDyLast; i++)
+<<<<<<< HEAD
 		au_spl_init(dynop + i);
+=======
+		INIT_HLIST_BL_HEAD(dynop + i);
+>>>>>>> temp
 }
 
 void au_dy_fin(void)
@@ -365,5 +456,9 @@ void au_dy_fin(void)
 	int i;
 
 	for (i = 0; i < AuDyLast; i++)
+<<<<<<< HEAD
 		WARN_ON(!list_empty(&dynop[i].head));
+=======
+		WARN_ON(!hlist_bl_empty(dynop + i));
+>>>>>>> temp
 }

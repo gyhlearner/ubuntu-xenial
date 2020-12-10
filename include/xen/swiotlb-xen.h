@@ -1,11 +1,13 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 #ifndef __LINUX_SWIOTLB_XEN_H
 #define __LINUX_SWIOTLB_XEN_H
 
-#include <linux/dma-direction.h>
 #include <linux/swiotlb.h>
 
 extern int xen_swiotlb_init(int verbose, bool early);
+extern const struct dma_map_ops xen_swiotlb_dma_ops;
 
+<<<<<<< HEAD
 extern void
 *xen_swiotlb_alloc_coherent(struct device *hwdev, size_t size,
 			    dma_addr_t *dma_handle, gfp_t flags,
@@ -63,4 +65,6 @@ extern int
 xen_swiotlb_dma_mmap(struct device *dev, struct vm_area_struct *vma,
 		     void *cpu_addr, dma_addr_t dma_addr, size_t size,
 		     struct dma_attrs *attrs);
+=======
+>>>>>>> temp
 #endif /* __LINUX_SWIOTLB_XEN_H */

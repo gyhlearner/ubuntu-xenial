@@ -21,6 +21,10 @@
 
 /*
  * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+<<<<<<< HEAD
+=======
+ * Copyright (c) 2015, 2017 by Delphix. All rights reserved.
+>>>>>>> temp
  */
 
 #include <sys/stropts.h>
@@ -138,6 +142,14 @@ static int nvlist_add_common(nvlist_t *nvl, const char *name, data_type_t type,
 #define	NVPAIR2I_NVP(nvp) \
 	((i_nvp_t *)((size_t)(nvp) - offsetof(i_nvp_t, nvi_nvp)))
 
+<<<<<<< HEAD
+=======
+#ifdef _KERNEL
+int nvpair_max_recursion = 20;
+#else
+int nvpair_max_recursion = 100;
+#endif
+>>>>>>> temp
 
 int
 nv_alloc_init(nv_alloc_t *nva, const nv_alloc_ops_t *nvo, /* args */ ...)
@@ -910,6 +922,11 @@ nvlist_add_common(nvlist_t *nvl, const char *name,
 
 	/* calculate sizes of the nvpair elements and the nvpair itself */
 	name_sz = strlen(name) + 1;
+<<<<<<< HEAD
+=======
+	if (name_sz >= 1ULL << (sizeof (nvp->nvp_name_sz) * NBBY - 1))
+		return (EINVAL);
+>>>>>>> temp
 
 	nvp_sz = NVP_SIZE_CALC(name_sz, value_sz);
 
@@ -1236,6 +1253,10 @@ nvpair_type_is_array(nvpair_t *nvp)
 	data_type_t type = NVP_TYPE(nvp);
 
 	if ((type == DATA_TYPE_BYTE_ARRAY) ||
+<<<<<<< HEAD
+=======
+	    (type == DATA_TYPE_INT8_ARRAY) ||
+>>>>>>> temp
 	    (type == DATA_TYPE_UINT8_ARRAY) ||
 	    (type == DATA_TYPE_INT16_ARRAY) ||
 	    (type == DATA_TYPE_UINT16_ARRAY) ||
@@ -1254,6 +1275,11 @@ nvpair_type_is_array(nvpair_t *nvp)
 static int
 nvpair_value_common(nvpair_t *nvp, data_type_t type, uint_t *nelem, void *data)
 {
+<<<<<<< HEAD
+=======
+	int value_sz;
+
+>>>>>>> temp
 	if (nvp == NULL || nvpair_type(nvp) != type)
 		return (EINVAL);
 
@@ -1283,8 +1309,14 @@ nvpair_value_common(nvpair_t *nvp, data_type_t type, uint_t *nelem, void *data)
 #endif
 		if (data == NULL)
 			return (EINVAL);
+<<<<<<< HEAD
 		bcopy(NVP_VALUE(nvp), data,
 		    (size_t)i_get_value_size(type, NULL, 1));
+=======
+		if ((value_sz = i_get_value_size(type, NULL, 1)) < 0)
+			return (EINVAL);
+		bcopy(NVP_VALUE(nvp), data, (size_t)value_sz);
+>>>>>>> temp
 		if (nelem != NULL)
 			*nelem = 1;
 		break;
@@ -2017,12 +2049,20 @@ typedef struct {
 	const nvs_ops_t	*nvs_ops;
 	void		*nvs_private;
 	nvpriv_t	*nvs_priv;
+<<<<<<< HEAD
+=======
+	int		nvs_recursion;
+>>>>>>> temp
 } nvstream_t;
 
 /*
  * nvs operations are:
  *   - nvs_nvlist
+<<<<<<< HEAD
  *     encoding / decoding of a nvlist header (nvlist_t)
+=======
+ *     encoding / decoding of an nvlist header (nvlist_t)
+>>>>>>> temp
  *     calculates the size used for header and end detection
  *
  *   - nvs_nvpair
@@ -2168,9 +2208,22 @@ static int
 nvs_embedded(nvstream_t *nvs, nvlist_t *embedded)
 {
 	switch (nvs->nvs_op) {
+<<<<<<< HEAD
 	case NVS_OP_ENCODE:
 		return (nvs_operation(nvs, embedded, NULL));
 
+=======
+	case NVS_OP_ENCODE: {
+		int err;
+
+		if (nvs->nvs_recursion >= nvpair_max_recursion)
+			return (EINVAL);
+		nvs->nvs_recursion++;
+		err = nvs_operation(nvs, embedded, NULL);
+		nvs->nvs_recursion--;
+		return (err);
+	}
+>>>>>>> temp
 	case NVS_OP_DECODE: {
 		nvpriv_t *priv;
 		int err;
@@ -2183,8 +2236,19 @@ nvs_embedded(nvstream_t *nvs, nvlist_t *embedded)
 
 		nvlist_init(embedded, embedded->nvl_nvflag, priv);
 
+<<<<<<< HEAD
 		if ((err = nvs_operation(nvs, embedded, NULL)) != 0)
 			nvlist_free(embedded);
+=======
+		if (nvs->nvs_recursion >= nvpair_max_recursion) {
+			nvlist_free(embedded);
+			return (EINVAL);
+		}
+		nvs->nvs_recursion++;
+		if ((err = nvs_operation(nvs, embedded, NULL)) != 0)
+			nvlist_free(embedded);
+		nvs->nvs_recursion--;
+>>>>>>> temp
 		return (err);
 	}
 	default:
@@ -2272,6 +2336,10 @@ nvlist_common(nvlist_t *nvl, char *buf, size_t *buflen, int encoding,
 		return (EINVAL);
 
 	nvs.nvs_op = nvs_op;
+<<<<<<< HEAD
+=======
+	nvs.nvs_recursion = 0;
+>>>>>>> temp
 
 	/*
 	 * For NVS_OP_ENCODE and NVS_OP_DECODE make sure an nvlist and
@@ -2373,7 +2441,11 @@ nvlist_xpack(nvlist_t *nvl, char **bufp, size_t *buflen, int encoding,
 	 * 1. The nvlist has fixed allocator properties.
 	 *    All other nvlist routines (like nvlist_add_*, ...) use
 	 *    these properties.
+<<<<<<< HEAD
 	 * 2. When using nvlist_pack() the user can specify his own
+=======
+	 * 2. When using nvlist_pack() the user can specify their own
+>>>>>>> temp
 	 *    allocator properties (e.g. by using KM_NOSLEEP).
 	 *
 	 * We use the user specified properties (2). A clearer solution
@@ -2779,11 +2851,19 @@ nvs_native_nvpair(nvstream_t *nvs, nvpair_t *nvp, size_t *size)
 }
 
 static const nvs_ops_t nvs_native_ops = {
+<<<<<<< HEAD
 	nvs_native_nvlist,
 	nvs_native_nvpair,
 	nvs_native_nvp_op,
 	nvs_native_nvp_size,
 	nvs_native_nvl_fini
+=======
+	.nvs_nvlist = nvs_native_nvlist,
+	.nvs_nvpair = nvs_native_nvpair,
+	.nvs_nvp_op = nvs_native_nvp_op,
+	.nvs_nvp_size = nvs_native_nvp_size,
+	.nvs_nvl_fini = nvs_native_nvl_fini
+>>>>>>> temp
 };
 
 static int
@@ -3266,11 +3346,19 @@ nvs_xdr_nvpair(nvstream_t *nvs, nvpair_t *nvp, size_t *size)
 }
 
 static const struct nvs_ops nvs_xdr_ops = {
+<<<<<<< HEAD
 	nvs_xdr_nvlist,
 	nvs_xdr_nvpair,
 	nvs_xdr_nvp_op,
 	nvs_xdr_nvp_size,
 	nvs_xdr_nvl_fini
+=======
+	.nvs_nvlist = nvs_xdr_nvlist,
+	.nvs_nvpair = nvs_xdr_nvpair,
+	.nvs_nvp_op = nvs_xdr_nvp_op,
+	.nvs_nvp_size = nvs_xdr_nvp_size,
+	.nvs_nvl_fini = nvs_xdr_nvl_fini
+>>>>>>> temp
 };
 
 static int

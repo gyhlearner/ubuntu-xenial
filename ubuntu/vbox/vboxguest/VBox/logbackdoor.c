@@ -4,7 +4,11 @@
  */
 
 /*
+<<<<<<< HEAD
  * Copyright (C) 2006-2015 Oracle Corporation
+=======
+ * Copyright (C) 2006-2017 Oracle Corporation
+>>>>>>> temp
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -68,10 +72,18 @@ RT_EXPORT_SYMBOL(RTLogBackdoorPrintfV);
 
 /**
  * Callback for RTLogFormatV which writes to the backdoor.
+<<<<<<< HEAD
  * See PFNLOGOUTPUT() for details.
  */
 static DECLCALLBACK(size_t) rtLogBackdoorOutput(void *pv, const char *pachChars, size_t cbChars)
 {
+=======
+ * See PFNRTSTROUTPUT() for details.
+ */
+static DECLCALLBACK(size_t) rtLogBackdoorOutput(void *pvArg, const char *pachChars, size_t cbChars)
+{
+    RT_NOREF_PV(pvArg);
+>>>>>>> temp
     RTLogWriteUser(pachChars, cbChars);
     return cbChars;
 }

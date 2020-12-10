@@ -4,7 +4,11 @@
  */
 
 /*
+<<<<<<< HEAD
  * Copyright (C) 2006-2015 Oracle Corporation
+=======
+ * Copyright (C) 2006-2017 Oracle Corporation
+>>>>>>> temp
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -227,13 +231,21 @@ static void rtR0LogLoggerExFallback(uint32_t fDestFlags, uint32_t fFlags, PRTLOG
                                     const char *pszFormat, va_list va);
 #endif
 #ifdef IN_RING3
+<<<<<<< HEAD
 static int rtlogFileOpen(PRTLOGGER pLogger, char *pszErrorMsg, size_t cchErrorMsg);
 static void rtlogRotate(PRTLOGGER pLogger, uint32_t uTimeSlot, bool fFirst);
+=======
+static int  rtR3LogOpenFileDestination(PRTLOGGER pLogger, PRTERRINFO pErrInfo);
+>>>>>>> temp
 #endif
 #ifndef IN_RC
 static void rtLogRingBufFlush(PRTLOGGER pLogger);
 #endif
+<<<<<<< HEAD
 static void rtlogFlush(PRTLOGGER pLogger);
+=======
+static void rtlogFlush(PRTLOGGER pLogger, bool fNeedSpace);
+>>>>>>> temp
 static DECLCALLBACK(size_t) rtLogOutput(void *pv, const char *pachChars, size_t cbChars);
 static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars, size_t cbChars);
 static void rtlogLoggerExVLocked(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup, const char *pszFormat, va_list args);
@@ -343,7 +355,11 @@ static struct
     const char *pszInstr;               /**< The name. */
     size_t      cchInstr;               /**< The size of the name. */
     uint32_t    fFlag;                  /**< The corresponding destination flag. */
+<<<<<<< HEAD
 } const s_aLogDst[] =
+=======
+} const g_aLogDst[] =
+>>>>>>> temp
 {
     { RT_STR_TUPLE("file"),         RTLOGDEST_FILE },       /* Must be 1st! */
     { RT_STR_TUPLE("dir"),          RTLOGDEST_FILE },       /* Must be 2nd! */
@@ -355,9 +371,17 @@ static struct
     { RT_STR_TUPLE("stderr"),       RTLOGDEST_STDERR },
     { RT_STR_TUPLE("debugger"),     RTLOGDEST_DEBUGGER },
     { RT_STR_TUPLE("com"),          RTLOGDEST_COM },
+<<<<<<< HEAD
     { RT_STR_TUPLE("user"),         RTLOGDEST_USER },
 };
 
+=======
+    { RT_STR_TUPLE("nodeny"),       RTLOGDEST_F_NO_DENY },
+    { RT_STR_TUPLE("user"),         RTLOGDEST_USER },
+};
+
+#ifdef IN_RING3
+>>>>>>> temp
 /** Log rotation backoff table - millisecond sleep intervals.
  * Important on Windows host, especially for VBoxSVC release logging.  Only a
  * medium term solution, until a proper fix for log file handling is available.
@@ -365,6 +389,10 @@ static struct
  */
 static const uint32_t g_acMsLogBackoff[] =
 { 10, 10, 10, 20, 50, 100, 200, 200, 200, 200, 500, 500, 500, 500, 1000, 1000, 1000, 1000, 1000, 1000, 1000 };
+<<<<<<< HEAD
+=======
+#endif
+>>>>>>> temp
 
 
 /**
@@ -473,7 +501,11 @@ static DECLCALLBACK(void) rtlogPhaseMsgLocked(PRTLOGGER pLogger, const char *psz
     Assert(pLogger->pInt->hSpinMtx != NIL_RTSEMSPINMUTEX);
 
     va_start(args, pszFormat);
+<<<<<<< HEAD
     rtlogLoggerExVLocked(pLogger, 0, ~0, pszFormat, args);
+=======
+    rtlogLoggerExVLocked(pLogger, 0, ~0U, pszFormat, args);
+>>>>>>> temp
     va_end(args);
 }
 
@@ -493,7 +525,11 @@ static DECLCALLBACK(void) rtlogPhaseMsgNormal(PRTLOGGER pLogger, const char *psz
     Assert(pLogger->pInt->hSpinMtx != NIL_RTSEMSPINMUTEX);
 
     va_start(args, pszFormat);
+<<<<<<< HEAD
     RTLogLoggerExV(pLogger, 0, ~0, pszFormat, args);
+=======
+    RTLogLoggerExV(pLogger, 0, ~0U, pszFormat, args);
+>>>>>>> temp
     va_end(args);
 }
 
@@ -774,13 +810,20 @@ static void rtLogRingBufFlush(PRTLOGGER pLogger)
 }
 
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> temp
 RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszGroupSettings,
                            const char *pszEnvVarBase, unsigned cGroups, const char * const *papszGroups,
                            uint32_t fDestFlags, PFNRTLOGPHASE pfnPhase, uint32_t cHistory,
                            uint64_t cbHistoryFileMax, uint32_t cSecsHistoryTimeSlot,
+<<<<<<< HEAD
                            char *pszErrorMsg, size_t cchErrorMsg, const char *pszFilenameFmt, va_list args)
+=======
+                           PRTERRINFO pErrInfo, const char *pszFilenameFmt, va_list args)
+>>>>>>> temp
 {
     int         rc;
     size_t      offInternal;
@@ -790,17 +833,25 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
     /*
      * Validate input.
      */
+<<<<<<< HEAD
     if (    (cGroups && !papszGroups)
         ||  !VALID_PTR(ppLogger) )
+=======
+    if (   (cGroups && !papszGroups)
+        || !VALID_PTR(ppLogger) )
+>>>>>>> temp
     {
         AssertMsgFailed(("Invalid parameters!\n"));
         return VERR_INVALID_PARAMETER;
     }
     *ppLogger = NULL;
 
+<<<<<<< HEAD
     if (pszErrorMsg)
         RTStrPrintf(pszErrorMsg, cchErrorMsg, N_("unknown error"));
 
+=======
+>>>>>>> temp
     AssertMsgReturn(cHistory < _1M, ("%#x", cHistory), VERR_OUT_OF_RANGE);
 
     /*
@@ -850,7 +901,13 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
             pLogger->pInt->cSecsHistoryTimeSlot = UINT32_MAX;
         else
             pLogger->pInt->cSecsHistoryTimeSlot = cSecsHistoryTimeSlot;
+<<<<<<< HEAD
 # endif  /* IN_RING3 */
+=======
+# else   /* !IN_RING3 */
+        RT_NOREF_PV(pfnPhase); RT_NOREF_PV(cHistory); RT_NOREF_PV(cbHistoryFileMax); RT_NOREF_PV(cSecsHistoryTimeSlot);
+# endif  /* !IN_RING3 */
+>>>>>>> temp
         if (pszGroupSettings)
             RTLogGroupSettings(pLogger, pszGroupSettings);
 
@@ -879,11 +936,19 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
         }
         else
         {
+<<<<<<< HEAD
 #  ifdef RT_OS_LINUX
             if (pszErrorMsg) /* Most probably SELinux causing trouble since the larger RTMemAlloc succeeded. */
                 RTStrPrintf(pszErrorMsg, cchErrorMsg, N_("mmap(PROT_WRITE | PROT_EXEC) failed -- SELinux?"));
 #  endif
             rc = VERR_NO_MEMORY;
+=======
+            rc = VERR_NO_MEMORY;
+#  ifdef RT_OS_LINUX
+                /* Most probably SELinux causing trouble since the larger RTMemAlloc succeeded. */
+            RTErrInfoSet(pErrInfo, rc, N_("mmap(PROT_WRITE | PROT_EXEC) failed -- SELinux?"));
+#  endif
+>>>>>>> temp
         }
         if (RT_SUCCESS(rc))
 # endif /* X86 wrapper code*/
@@ -896,7 +961,12 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
             {
                 /** @todo validate the length, fail on overflow. */
                 RTStrPrintfV(pLogger->pInt->szFilename, sizeof(pLogger->pInt->szFilename), pszFilenameFmt, args);
+<<<<<<< HEAD
                 pLogger->fDestFlags |= RTLOGDEST_FILE;
+=======
+                if (pLogger->pInt->szFilename[0])
+                    pLogger->fDestFlags |= RTLOGDEST_FILE;
+>>>>>>> temp
             }
 
             /*
@@ -933,12 +1003,19 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
                 if (pszValue)
                     RTLogGroupSettings(pLogger, pszValue);
             }
+<<<<<<< HEAD
 # endif /* IN_RING3 */
+=======
+# else  /* !IN_RING3 */
+            RT_NOREF_PV(pszEnvVarBase); RT_NOREF_PV(pszFilenameFmt); RT_NOREF_PV(args);
+# endif /* !IN_RING3 */
+>>>>>>> temp
 
             /*
              * Open the destination(s).
              */
             rc = VINF_SUCCESS;
+<<<<<<< HEAD
 # ifdef IN_RING3
             if (pLogger->fDestFlags & RTLOGDEST_FILE)
             {
@@ -965,6 +1042,14 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
                 }
             }
 # endif  /* IN_RING3 */
+=======
+            if ((pLogger->fDestFlags & (RTLOGDEST_F_DELAY_FILE | RTLOGDEST_FILE)) == RTLOGDEST_F_DELAY_FILE)
+                pLogger->fDestFlags &= ~RTLOGDEST_F_DELAY_FILE;
+# ifdef IN_RING3
+            if ((pLogger->fDestFlags & (RTLOGDEST_FILE | RTLOGDEST_F_DELAY_FILE)) == RTLOGDEST_FILE)
+                rc = rtR3LogOpenFileDestination(pLogger, pErrInfo);
+# endif
+>>>>>>> temp
 
             if ((pLogger->fDestFlags & RTLOGDEST_RINGBUF) && RT_SUCCESS(rc))
                 rc = rtLogRingBufAdjust(pLogger, pLogger->pInt->cbRingBuf, true /*fForce*/);
@@ -999,8 +1084,12 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
                     return VINF_SUCCESS;
                 }
 
+<<<<<<< HEAD
                 if (pszErrorMsg)
                     RTStrPrintf(pszErrorMsg, cchErrorMsg, N_("failed to create semaphore"));
+=======
+                RTErrInfoSet(pErrInfo, rc, N_("failed to create semaphore"));
+>>>>>>> temp
             }
 # ifdef IN_RING3
             RTFileClose(pLogger->pInt->hFile);
@@ -1031,7 +1120,11 @@ RTDECL(int) RTLogCreate(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszGro
     va_start(args, pszFilenameFmt);
     rc = RTLogCreateExV(ppLogger, fFlags, pszGroupSettings, pszEnvVarBase, cGroups, papszGroups,
                         fDestFlags, NULL /*pfnPhase*/, 0 /*cHistory*/, 0 /*cbHistoryFileMax*/, 0 /*cSecsHistoryTimeSlot*/,
+<<<<<<< HEAD
                         NULL /*pszErrorMsg*/, 0 /*cchErrorMsg*/, pszFilenameFmt, args);
+=======
+                        NULL /*pErrInfo*/, pszFilenameFmt, args);
+>>>>>>> temp
     va_end(args);
     return rc;
 }
@@ -1042,7 +1135,11 @@ RTDECL(int) RTLogCreateEx(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszG
                           const char *pszEnvVarBase, unsigned cGroups, const char * const * papszGroups,
                           uint32_t fDestFlags, PFNRTLOGPHASE pfnPhase, uint32_t cHistory,
                           uint64_t cbHistoryFileMax, uint32_t cSecsHistoryTimeSlot,
+<<<<<<< HEAD
                           char *pszErrorMsg, size_t cchErrorMsg, const char *pszFilenameFmt, ...)
+=======
+                          PRTERRINFO pErrInfo, const char *pszFilenameFmt, ...)
+>>>>>>> temp
 {
     va_list args;
     int rc;
@@ -1050,7 +1147,11 @@ RTDECL(int) RTLogCreateEx(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszG
     va_start(args, pszFilenameFmt);
     rc = RTLogCreateExV(ppLogger, fFlags, pszGroupSettings, pszEnvVarBase, cGroups, papszGroups,
                         fDestFlags, pfnPhase, cHistory, cbHistoryFileMax, cSecsHistoryTimeSlot,
+<<<<<<< HEAD
                         pszErrorMsg, cchErrorMsg, pszFilenameFmt, args);
+=======
+                        pErrInfo, pszFilenameFmt, args);
+>>>>>>> temp
     va_end(args);
     return rc;
 }
@@ -1094,7 +1195,11 @@ RTDECL(int) RTLogDestroy(PRTLOGGER pLogger)
     /*
      * Flush it.
      */
+<<<<<<< HEAD
     rtlogFlush(pLogger);
+=======
+    rtlogFlush(pLogger, false /*fNeedSpace*/);
+>>>>>>> temp
 
 # ifdef IN_RING3
     /*
@@ -2201,6 +2306,52 @@ RT_EXPORT_SYMBOL(RTLogGetFlags);
 
 
 /**
+<<<<<<< HEAD
+=======
+ * Finds the end of a destination value.
+ *
+ * The value ends when we counter a ';' or a free standing word (space on both
+ * from the g_aLogDst table.  (If this is problematic for someone, we could
+ * always do quoting and escaping.)
+ *
+ * @returns Value length in chars.
+ * @param   pszValue            The first char after '=' or ':'.
+ */
+static size_t rtLogDestFindValueLength(const char *pszValue)
+{
+    size_t off = 0;
+    char   ch;
+    while ((ch = pszValue[off]) != '\0' && ch != ';')
+    {
+        if (!RT_C_IS_SPACE(ch))
+            off++;
+        else
+        {
+            unsigned i;
+            size_t   cchThusFar = off;
+            do
+                off++;
+            while ((ch = pszValue[off]) != '\0' && RT_C_IS_SPACE(ch));
+            if (ch == ';')
+                return cchThusFar;
+
+            if (ch == 'n' && pszValue[off + 1] == 'o')
+                off += 2;
+            for (i = 0; i < RT_ELEMENTS(g_aLogDst); i++)
+                if (!strncmp(&pszValue[off], g_aLogDst[i].pszInstr, g_aLogDst[i].cchInstr))
+                {
+                    ch = pszValue[off + g_aLogDst[i].cchInstr];
+                    if (ch == '\0' || RT_C_IS_SPACE(ch) || ch == '=' || ch == ':' || ch == ';')
+                        return cchThusFar;
+                }
+        }
+    }
+    return off;
+}
+
+
+/**
+>>>>>>> temp
  * Updates the logger destination using the specified string.
  *
  * @returns VINF_SUCCESS or VERR_BUFFER_OVERFLOW.
@@ -2235,13 +2386,23 @@ RTDECL(int) RTLogDestinations(PRTLOGGER pLogger, char const *pszValue)
 
         /* check no prefix. */
         fNo = false;
+<<<<<<< HEAD
         if (pszValue[0] == 'n' && pszValue[1] == 'o')
+=======
+        if (   pszValue[0] == 'n'
+            && pszValue[1] == 'o'
+            && (   pszValue[2] != 'd'
+                || pszValue[3] != 'e'
+                || pszValue[4] != 'n'
+                || pszValue[5] != 'y'))
+>>>>>>> temp
         {
             fNo = true;
             pszValue += 2;
         }
 
         /* instruction. */
+<<<<<<< HEAD
         for (i = 0; i < RT_ELEMENTS(s_aLogDst); i++)
         {
             size_t cchInstr = strlen(s_aLogDst[i].pszInstr);
@@ -2251,6 +2412,17 @@ RTDECL(int) RTLogDestinations(PRTLOGGER pLogger, char const *pszValue)
                     pLogger->fDestFlags |= s_aLogDst[i].fFlag;
                 else
                     pLogger->fDestFlags &= ~s_aLogDst[i].fFlag;
+=======
+        for (i = 0; i < RT_ELEMENTS(g_aLogDst); i++)
+        {
+            size_t cchInstr = strlen(g_aLogDst[i].pszInstr);
+            if (!strncmp(pszValue, g_aLogDst[i].pszInstr, cchInstr))
+            {
+                if (!fNo)
+                    pLogger->fDestFlags |= g_aLogDst[i].fFlag;
+                else
+                    pLogger->fDestFlags &= ~g_aLogDst[i].fFlag;
+>>>>>>> temp
                 pszValue += cchInstr;
 
                 /* check for value. */
@@ -2258,6 +2430,7 @@ RTDECL(int) RTLogDestinations(PRTLOGGER pLogger, char const *pszValue)
                     pszValue++;
                 if (*pszValue == '=' || *pszValue == ':')
                 {
+<<<<<<< HEAD
                     const char *pszEnd;
 
                     pszValue++;
@@ -2265,6 +2438,12 @@ RTDECL(int) RTLogDestinations(PRTLOGGER pLogger, char const *pszValue)
                     if (!pszEnd)
                         pszEnd = strchr(pszValue, '\0');
                     size_t cch = pszEnd - pszValue;
+=======
+                    pszValue++;
+                    size_t cch = rtLogDestFindValueLength(pszValue);
+                    const char *pszEnd = pszValue + cch;
+
+>>>>>>> temp
 # ifdef IN_RING3
                     char szTmp[sizeof(pLogger->pInt->szFilename)];
 # else
@@ -2346,7 +2525,11 @@ RTDECL(int) RTLogDestinations(PRTLOGGER pLogger, char const *pszValue)
                     else if (i == 5 /* ringbuf */ && !fNo)
                     {
                         int rc = RTStrCopyEx(szTmp, sizeof(szTmp), pszValue, cch);
+<<<<<<< HEAD
                         uint32_t cbRingBuf;
+=======
+                        uint32_t cbRingBuf = 0;
+>>>>>>> temp
                         if (RT_SUCCESS(rc))
                             rc = RTStrToUInt32Full(szTmp, 0, &cbRingBuf);
                         AssertMsgRCReturn(rc, ("Invalid ring buffer size value '%s' (%Rrc)!\n", szTmp, rc), rc);
@@ -2365,7 +2548,11 @@ RTDECL(int) RTLogDestinations(PRTLOGGER pLogger, char const *pszValue)
                     }
                     else
                         AssertMsgFailedReturn(("Invalid destination value! %s%s doesn't take a value!\n",
+<<<<<<< HEAD
                                                fNo ? "no" : "", s_aLogDst[i].pszInstr),
+=======
+                                               fNo ? "no" : "", g_aLogDst[i].pszInstr),
+>>>>>>> temp
                                               VERR_INVALID_PARAMETER);
 
                     pszValue = pszEnd + (*pszEnd != '\0');
@@ -2381,7 +2568,11 @@ RTDECL(int) RTLogDestinations(PRTLOGGER pLogger, char const *pszValue)
         }
 
         /* assert known instruction */
+<<<<<<< HEAD
         AssertMsgReturn(i < RT_ELEMENTS(s_aLogDst),
+=======
+        AssertMsgReturn(i < RT_ELEMENTS(g_aLogDst),
+>>>>>>> temp
                         ("Invalid destination value! unknown instruction %.20s\n", pszValue),
                         VERR_INVALID_PARAMETER);
 
@@ -2396,6 +2587,56 @@ RT_EXPORT_SYMBOL(RTLogDestinations);
 
 
 /**
+<<<<<<< HEAD
+=======
+ * Clear the file delay flag if set, opening the destination and flushing.
+ *
+ * @returns IPRT status code.
+ * @param   pLogger             Logger instance (NULL for default logger).
+ * @param   pszValue            The value to parse.
+ * @param   pErrInfo            Where to return extended error info.  Optional.
+ */
+RTDECL(int) RTLogClearFileDelayFlag(PRTLOGGER pLogger, PRTERRINFO pErrInfo)
+{
+    /*
+     * Resolve defaults.
+     */
+    if (!pLogger)
+    {
+        pLogger = RTLogDefaultInstance();
+        if (!pLogger)
+            return VINF_SUCCESS;
+    }
+
+    /*
+     * Do the work.
+     */
+    int rc = rtlogLock(pLogger);
+    if (RT_SUCCESS(rc))
+    {
+        if (pLogger->fDestFlags & RTLOGDEST_F_DELAY_FILE)
+        {
+            pLogger->fDestFlags &= ~RTLOGDEST_F_DELAY_FILE;
+# ifdef IN_RING3
+            if (   pLogger->fDestFlags & RTLOGDEST_FILE
+                && pLogger->pInt->hFile == NIL_RTFILE)
+            {
+                rc = rtR3LogOpenFileDestination(pLogger, pErrInfo);
+                if (RT_SUCCESS(rc))
+                    rtlogFlush(pLogger, false /*fNeedSpace*/);
+            }
+# endif
+            RT_NOREF(pErrInfo); /** @todo fix create API to use RTErrInfo */
+        }
+        rtlogUnlock(pLogger);
+    }
+    return VINF_SUCCESS;
+}
+RT_EXPORT_SYMBOL(RTLogClearFileDelayFlag);
+
+
+/**
+>>>>>>> temp
  * Get the current log destinations as a string.
  *
  * @returns VINF_SUCCESS or VERR_BUFFER_OVERFLOW.
@@ -2428,8 +2669,13 @@ RTDECL(int) RTLogGetDestinations(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf)
      * Add the flags in the list.
      */
     fDestFlags = pLogger->fDestFlags;
+<<<<<<< HEAD
     for (i = 6; i < RT_ELEMENTS(s_aLogDst); i++)
         if (s_aLogDst[i].fFlag & fDestFlags)
+=======
+    for (i = 6; i < RT_ELEMENTS(g_aLogDst); i++)
+        if (g_aLogDst[i].fFlag & fDestFlags)
+>>>>>>> temp
         {
             if (fNotFirst)
             {
@@ -2437,7 +2683,11 @@ RTDECL(int) RTLogGetDestinations(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf)
                 if (RT_FAILURE(rc))
                     return rc;
             }
+<<<<<<< HEAD
             rc = RTStrCopyP(&pszBuf, &cchBuf, s_aLogDst[i].pszInstr);
+=======
+            rc = RTStrCopyP(&pszBuf, &cchBuf, g_aLogDst[i].pszInstr);
+>>>>>>> temp
             if (RT_FAILURE(rc))
                 return rc;
             fNotFirst = true;
@@ -2552,7 +2802,11 @@ RTDECL(void) RTLogFlush(PRTLOGGER pLogger)
         /*
          * Call worker.
          */
+<<<<<<< HEAD
         rtlogFlush(pLogger);
+=======
+        rtlogFlush(pLogger, false /*fNeedSpace*/);
+>>>>>>> temp
 
 #ifndef IN_RC
         /*
@@ -2625,8 +2879,13 @@ RTDECL(PRTLOGGER)   RTLogDefaultInstanceEx(uint32_t fFlagsAndGroup)
             uint16_t const fFlags = RT_LO_U16(fFlagsAndGroup);
             uint16_t const iGroup = RT_HI_U16(fFlagsAndGroup);
             if (   iGroup != UINT16_MAX
+<<<<<<< HEAD
                  && (   (pLogger->afGroups[iGroup < pLogger->cGroups ? iGroup : 0] & (fFlags | RTLOGGRPFLAGS_ENABLED))
                      != (fFlags | RTLOGGRPFLAGS_ENABLED)))
+=======
+                 && (   (pLogger->afGroups[iGroup < pLogger->cGroups ? iGroup : 0] & (fFlags | (uint32_t)RTLOGGRPFLAGS_ENABLED))
+                     != (fFlags | (uint32_t)RTLOGGRPFLAGS_ENABLED)))
+>>>>>>> temp
             pLogger = NULL;
         }
     }
@@ -3097,11 +3356,18 @@ RT_EXPORT_SYMBOL(RTLogDumpPrintfV);
  * Opens/creates the log file.
  *
  * @param   pLogger         The logger instance to update. NULL is not allowed!
+<<<<<<< HEAD
  * @param   pszErrorMsg     A buffer which is filled with an error message if
  *                          something fails.  May be NULL.
  * @param   cchErrorMsg     The size of the error message buffer.
  */
 static int rtlogFileOpen(PRTLOGGER pLogger, char *pszErrorMsg, size_t cchErrorMsg)
+=======
+ * @param   pErrInfo        Where to return extended error information.
+ *                          Optional.
+ */
+static int rtlogFileOpen(PRTLOGGER pLogger, PRTERRINFO pErrInfo)
+>>>>>>> temp
 {
     uint32_t fOpen = RTFILE_O_WRITE | RTFILE_O_DENY_NONE;
     if (pLogger->fFlags & RTLOGFLAGS_APPEND)
@@ -3110,6 +3376,11 @@ static int rtlogFileOpen(PRTLOGGER pLogger, char *pszErrorMsg, size_t cchErrorMs
         fOpen |= RTFILE_O_CREATE_REPLACE;
     if (pLogger->fFlags & RTLOGFLAGS_WRITE_THROUGH)
         fOpen |= RTFILE_O_WRITE_THROUGH;
+<<<<<<< HEAD
+=======
+    if (pLogger->fDestFlags & RTLOGDEST_F_NO_DENY)
+        fOpen = (fOpen & ~RTFILE_O_DENY_NONE) | RTFILE_O_DENY_NOT_DELETE;
+>>>>>>> temp
 
     unsigned cBackoff = 0;
     int rc = RTFileOpen(&pLogger->pInt->hFile, pLogger->pInt->szFilename, fOpen);
@@ -3132,8 +3403,12 @@ static int rtlogFileOpen(PRTLOGGER pLogger, char *pszErrorMsg, size_t cchErrorMs
     else
     {
         pLogger->pInt->hFile = NIL_RTFILE;
+<<<<<<< HEAD
         if (pszErrorMsg)
             RTStrPrintf(pszErrorMsg, cchErrorMsg, N_("could not open file '%s' (fOpen=%#x)"), pLogger->pInt->szFilename, fOpen);
+=======
+        RTErrInfoSetF(pErrInfo, rc, N_("could not open file '%s' (fOpen=%#x)"), pLogger->pInt->szFilename, fOpen);
+>>>>>>> temp
     }
     return rc;
 }
@@ -3149,8 +3424,14 @@ static int rtlogFileOpen(PRTLOGGER pLogger, char *pszErrorMsg, size_t cchErrorMs
  * @param   fFirst      Flag whether this is the beginning of logging, i.e.
  *                      called from RTLogCreateExV.  Prevents pfnPhase from
  *                      being called.
+<<<<<<< HEAD
  */
 static void rtlogRotate(PRTLOGGER pLogger, uint32_t uTimeSlot, bool fFirst)
+=======
+ * @param   pErrInfo    Where to return extended error information. Optional.
+ */
+static void rtlogRotate(PRTLOGGER pLogger, uint32_t uTimeSlot, bool fFirst, PRTERRINFO pErrInfo)
+>>>>>>> temp
 {
     /* Suppress rotating empty log files simply because the time elapsed. */
     if (RT_UNLIKELY(!pLogger->pInt->cbHistoryFileWritten))
@@ -3242,7 +3523,11 @@ static void rtlogRotate(PRTLOGGER pLogger, uint32_t uTimeSlot, bool fFirst)
      */
     pLogger->pInt->cbHistoryFileWritten = 0;
     pLogger->pInt->uHistoryTimeSlotStart = uTimeSlot;
+<<<<<<< HEAD
     rtlogFileOpen(pLogger, NULL, 0);
+=======
+    rtlogFileOpen(pLogger, pErrInfo);
+>>>>>>> temp
 
     /*
      * Use the callback to generate some initial log contents, but only if this
@@ -3262,21 +3547,78 @@ static void rtlogRotate(PRTLOGGER pLogger, uint32_t uTimeSlot, bool fFirst)
     pLogger->fFlags         = fSavedFlags;
 }
 
+<<<<<<< HEAD
+=======
+
+/**
+ * Worker for RTLogCreateExV and RTLogClearFileDelayFlag.
+ *
+ * This will later be used to reopen the file by RTLogDestinations.
+ *
+ * @returns IPRT status code.
+ * @param   pLogger             The logger.
+ * @param   pErrInfo            Where to return extended error information.
+ *                              Optional.
+ */
+static int rtR3LogOpenFileDestination(PRTLOGGER pLogger, PRTERRINFO pErrInfo)
+{
+    int rc;
+    if (pLogger->fFlags & RTLOGFLAGS_APPEND)
+    {
+        rc = rtlogFileOpen(pLogger, pErrInfo);
+
+        /* Rotate in case of appending to a too big log file,
+           otherwise this simply doesn't do anything. */
+        rtlogRotate(pLogger, 0, true /* fFirst */, pErrInfo);
+    }
+    else
+    {
+        /* Force rotation if it is configured. */
+        pLogger->pInt->cbHistoryFileWritten = UINT64_MAX;
+        rtlogRotate(pLogger, 0, true /* fFirst */, pErrInfo);
+
+        /* If the file is not open then rotation is not set up. */
+        if (pLogger->pInt->hFile == NIL_RTFILE)
+        {
+            pLogger->pInt->cbHistoryFileWritten = 0;
+            rc = rtlogFileOpen(pLogger, pErrInfo);
+        }
+        else
+            rc = VINF_SUCCESS;
+    }
+    return rc;
+}
+
+>>>>>>> temp
 #endif /* IN_RING3 */
 
 
 /**
  * Writes the buffer to the given log device without checking for buffered
  * data or anything.
+<<<<<<< HEAD
  * Used by the RTLogFlush() function.
  *
  * @param   pLogger     The logger instance to write to. NULL is not allowed!
  */
 static void rtlogFlush(PRTLOGGER pLogger)
+=======
+ *
+ * Used by the RTLogFlush() function.
+ *
+ * @param   pLogger     The logger instance to write to. NULL is not allowed!
+ * @param   fNeedSpace  Set if the caller assumes space will be made available.
+ */
+static void rtlogFlush(PRTLOGGER pLogger, bool fNeedSpace)
+>>>>>>> temp
 {
     uint32_t const cchScratch = pLogger->offScratch;
     if (cchScratch == 0)
         return; /* nothing to flush. */
+<<<<<<< HEAD
+=======
+    NOREF(fNeedSpace);
+>>>>>>> temp
 
 #ifndef IN_RC
     /*
@@ -3290,7 +3632,18 @@ static void rtlogFlush(PRTLOGGER pLogger)
         rtLogRingBufWrite(pLogger->pInt, pLogger->achScratch, pLogger->offScratch);
         pLogger->offScratch = 0; /* empty the buffer. */
     }
+<<<<<<< HEAD
     else
+=======
+    /*
+     * In file delay mode, we ignore flush requests except when we're full
+     * and the caller really needs some scratch space to get work done.
+     */
+    else
+# ifdef IN_RING3
+        if (!(pLogger->fDestFlags & RTLOGDEST_F_DELAY_FILE))
+# endif
+>>>>>>> temp
 #endif
     {
         /* Make sure the string is terminated.  On Windows, RTLogWriteDebugger
@@ -3352,9 +3705,38 @@ static void rtlogFlush(PRTLOGGER pLogger)
          */
         if (   (pLogger->fDestFlags & RTLOGDEST_FILE)
             && pLogger->pInt->cHistory)
+<<<<<<< HEAD
             rtlogRotate(pLogger, RTTimeProgramSecTS() / pLogger->pInt->cSecsHistoryTimeSlot, false /* fFirst */);
 #endif
     }
+=======
+            rtlogRotate(pLogger, RTTimeProgramSecTS() / pLogger->pInt->cSecsHistoryTimeSlot, false /*fFirst*/, NULL /*pErrInfo*/);
+#endif
+    }
+#ifdef IN_RING3
+    else
+    {
+        /*
+         * Delay file open but the caller really need some space.  So, give him half a
+         * buffer and insert a message indicating that we've dropped output.
+         */
+        uint32_t offHalf = sizeof(pLogger->achScratch) / 2;
+        if (cchScratch > offHalf)
+        {
+            if (pLogger->fFlags & RTLOGFLAGS_USECRLF)
+                pLogger->achScratch[offHalf++] = '\r';
+            static const char s_szDropMsg[] = "\n[DROP DROP DROP]";
+            memcpy(&pLogger->achScratch[offHalf], RT_STR_TUPLE(s_szDropMsg));
+            offHalf += sizeof(s_szDropMsg) - 1;
+            if (pLogger->fFlags & RTLOGFLAGS_USECRLF)
+                pLogger->achScratch[offHalf++] = '\r';
+            pLogger->achScratch[offHalf++] = '\n';
+
+            pLogger->offScratch = offHalf;
+        }
+    }
+#endif
+>>>>>>> temp
 }
 
 
@@ -3400,7 +3782,11 @@ static DECLCALLBACK(size_t) rtLogOutput(void *pv, const char *pachChars, size_t 
             pachChars += cb;
 
             /* flush */
+<<<<<<< HEAD
             rtlogFlush(pLogger);
+=======
+            rtlogFlush(pLogger, true /*fNeedSpace*/);
+>>>>>>> temp
         }
 
         /* won't ever get here! */
@@ -3464,7 +3850,12 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
         size_t cbRet = 0;
         for (;;)
         {
+<<<<<<< HEAD
             size_t      cb = sizeof(pLogger->achScratch) - pLogger->offScratch - 1;
+=======
+            uint32_t    offScratch = pLogger->offScratch;
+            size_t      cb         = sizeof(pLogger->achScratch) - offScratch - 1;
+>>>>>>> temp
             const char *pszNewLine;
             char       *psz;
 #ifdef IN_RC
@@ -3482,10 +3873,17 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
 
 #if defined(DEBUG) && defined(IN_RING3)
                 /* sanity */
+<<<<<<< HEAD
                 if (pLogger->offScratch >= sizeof(pLogger->achScratch))
                 {
                     fprintf(stderr, "pLogger->offScratch >= sizeof(pLogger->achScratch) (%#x >= %#x)\n",
                             pLogger->offScratch, (unsigned)sizeof(pLogger->achScratch));
+=======
+                if (offScratch >= sizeof(pLogger->achScratch))
+                {
+                    fprintf(stderr, "offScratch >= sizeof(pLogger->achScratch) (%#x >= %#x)\n",
+                            offScratch, (unsigned)sizeof(pLogger->achScratch));
+>>>>>>> temp
                     AssertBreakpoint(); AssertBreakpoint();
                 }
 #endif
@@ -3496,15 +3894,25 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                  */
                 if (cb < 256 + 16)
                 {
+<<<<<<< HEAD
                     rtlogFlush(pLogger);
                     cb = sizeof(pLogger->achScratch) - pLogger->offScratch - 1;
+=======
+                    rtlogFlush(pLogger, true /*fNeedSpace*/);
+                    offScratch = pLogger->offScratch;
+                    cb = sizeof(pLogger->achScratch) - offScratch - 1;
+>>>>>>> temp
                 }
 
                 /*
                  * Write the prefixes.
                  * psz is pointing to the current position.
                  */
+<<<<<<< HEAD
                 psz = &pLogger->achScratch[pLogger->offScratch];
+=======
+                psz = &pLogger->achScratch[offScratch];
+>>>>>>> temp
                 if (pLogger->fFlags & RTLOGFLAGS_PREFIX_TS)
                 {
                     uint64_t     u64    = RTTimeNanoTS();
@@ -3786,6 +4194,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                 /*
                  * Done, figure what we've used and advance the buffer and free size.
                  */
+<<<<<<< HEAD
                 cb = psz - &pLogger->achScratch[pLogger->offScratch];
                 AssertMsg(cb <= 223, ("%#zx (%zd) - fFlags=%#x\n", cb, cb, pLogger->fFlags));
                 pLogger->offScratch += (uint32_t)cb;
@@ -3795,14 +4204,33 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
             {
                 rtlogFlush(pLogger);
                 cb = sizeof(pLogger->achScratch) - pLogger->offScratch - 1;
+=======
+                cb = psz - &pLogger->achScratch[offScratch];
+                AssertMsg(cb <= 223, ("%#zx (%zd) - fFlags=%#x\n", cb, cb, pLogger->fFlags));
+                pLogger->offScratch = offScratch += (uint32_t)cb;
+                cb = sizeof(pLogger->achScratch) - offScratch - 1;
+            }
+            else if (cb <= 0)
+            {
+                rtlogFlush(pLogger, true /*fNeedSpace*/);
+                offScratch = pLogger->offScratch;
+                cb = sizeof(pLogger->achScratch) - offScratch - 1;
+>>>>>>> temp
             }
 
 #if defined(DEBUG) && defined(IN_RING3)
             /* sanity */
+<<<<<<< HEAD
             if (pLogger->offScratch >= sizeof(pLogger->achScratch))
             {
                 fprintf(stderr, "pLogger->offScratch >= sizeof(pLogger->achScratch) (%#x >= %#x)\n",
                         pLogger->offScratch, (unsigned)sizeof(pLogger->achScratch));
+=======
+            if (offScratch >= sizeof(pLogger->achScratch))
+            {
+                fprintf(stderr, "offScratch >= sizeof(pLogger->achScratch) (%#x >= %#x)\n",
+                        offScratch, (unsigned)sizeof(pLogger->achScratch));
+>>>>>>> temp
                 AssertBreakpoint(); AssertBreakpoint();
             }
 #endif
@@ -3825,19 +4253,33 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
             }
 
             /* copy */
+<<<<<<< HEAD
             memcpy(&pLogger->achScratch[pLogger->offScratch], pachChars, cb);
 
             /* advance */
             pLogger->offScratch += (uint32_t)cb;
+=======
+            memcpy(&pLogger->achScratch[offScratch], pachChars, cb);
+
+            /* advance */
+            pLogger->offScratch = offScratch += (uint32_t)cb;
+>>>>>>> temp
             cbRet += cb;
             cbChars -= cb;
 
             if (    pszNewLine
                 &&  (pLogger->fFlags & RTLOGFLAGS_USECRLF)
+<<<<<<< HEAD
                 &&  pLogger->offScratch + 2 < sizeof(pLogger->achScratch))
             {
                 memcpy(&pLogger->achScratch[pLogger->offScratch], "\r\n", 2);
                 pLogger->offScratch += 2;
+=======
+                &&  offScratch + 2 < sizeof(pLogger->achScratch))
+            {
+                memcpy(&pLogger->achScratch[offScratch], "\r\n", 2);
+                pLogger->offScratch = offScratch += 2;
+>>>>>>> temp
                 cbRet++;
                 cbChars--;
                 cb++;
@@ -3895,7 +4337,11 @@ static void rtlogLoggerExVLocked(PRTLOGGER pLogger, unsigned fFlags, unsigned iG
         RTLogFormatV(rtLogOutput, pLogger, pszFormat, args);
     if (    !(pLogger->fFlags & RTLOGFLAGS_BUFFERED)
         &&  pLogger->offScratch)
+<<<<<<< HEAD
         rtlogFlush(pLogger);
+=======
+        rtlogFlush(pLogger, false /*fNeedSpace*/);
+>>>>>>> temp
 }
 
 

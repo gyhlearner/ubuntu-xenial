@@ -4,7 +4,11 @@
  * This file contains AppArmor network mediation definitions.
  *
  * Copyright (C) 1998-2008 Novell/SUSE
+<<<<<<< HEAD
  * Copyright 2009-2014 Canonical Ltd.
+=======
+ * Copyright 2009-2017 Canonical Ltd.
+>>>>>>> temp
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -17,6 +21,10 @@
 
 #include <net/sock.h>
 #include <linux/path.h>
+<<<<<<< HEAD
+=======
+#include <linux/lsm_hooks.h>
+>>>>>>> temp
 
 #include "apparmorfs.h"
 #include "label.h"
@@ -56,7 +64,20 @@ struct aa_sk_ctx {
 	struct path path;
 };
 
+<<<<<<< HEAD
 #define SK_CTX(X) (X)->sk_security
+=======
+extern struct lsm_blob_sizes apparmor_blob_sizes;
+static inline struct aa_sk_ctx *apparmor_sock(const struct sock *sk)
+{
+#ifdef CONFIG_SECURITY_STACKING
+	return sk->sk_security + apparmor_blob_sizes.lbs_sock;
+#else
+	return sk->sk_security;
+#endif
+}
+#define SK_CTX(X) apparmor_sock(X)
+>>>>>>> temp
 #define SOCK_ctx(X) SOCK_INODE(X)->i_security
 #define DEFINE_AUDIT_NET(NAME, OP, SK, F, T, P)				  \
 	struct lsm_network_audit NAME ## _net = { .sk = (SK),		  \
@@ -74,9 +95,15 @@ struct aa_sk_ctx {
 			 (SK)->sk_protocol)
 
 /* struct aa_net - network confinement data
+<<<<<<< HEAD
  * @allowed: basic network families permissions
  * @audit_network: which network permissions to force audit
  * @quiet_network: which network permissions to quiet rejects
+=======
+ * @allow: basic network families permissions
+ * @audit: which network permissions to force audit
+ * @quiet: which network permissions to quiet rejects
+>>>>>>> temp
  */
 struct aa_net {
 	u16 allow[AF_MAX];
@@ -85,7 +112,11 @@ struct aa_net {
 };
 
 
+<<<<<<< HEAD
 extern struct aa_fs_entry aa_fs_entry_network[];
+=======
+extern struct aa_sfs_entry aa_sfs_entry_network[];
+>>>>>>> temp
 
 void audit_net_cb(struct audit_buffer *ab, void *va);
 int aa_profile_af_perm(struct aa_profile *profile, struct common_audit_data *sa,

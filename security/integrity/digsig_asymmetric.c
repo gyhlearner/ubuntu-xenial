@@ -16,6 +16,7 @@
 #include <linux/ratelimit.h>
 #include <linux/key-type.h>
 #include <crypto/public_key.h>
+#include <crypto/hash_info.h>
 #include <keys/asymmetric-type.h>
 #include <keys/system_keyring.h>
 
@@ -91,19 +92,20 @@ int asymmetric_verify(struct key *keyring, const char *sig,
 
 	siglen -= sizeof(*hdr);
 
-	if (siglen != __be16_to_cpu(hdr->sig_size))
+	if (siglen != be16_to_cpu(hdr->sig_size))
 		return -EBADMSG;
 
-	if (hdr->hash_algo >= PKEY_HASH__LAST)
+	if (hdr->hash_algo >= HASH_ALGO__LAST)
 		return -ENOPKG;
 
-	key = request_asymmetric_key(keyring, __be32_to_cpu(hdr->keyid));
+	key = request_asymmetric_key(keyring, be32_to_cpu(hdr->keyid));
 	if (IS_ERR(key))
 		return PTR_ERR(key);
 
 	memset(&pks, 0, sizeof(pks));
 
-	pks.pkey_hash_algo = hdr->hash_algo;
+	pks.pkey_algo = "rsa";
+	pks.hash_algo = hash_algo_name[hdr->hash_algo];
 	pks.digest = (u8 *)data;
 	pks.digest_size = datalen;
 	pks.s = hdr->sig;

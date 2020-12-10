@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 include $(top_srcdir)/config/Rules.am
 
 DEFAULT_INCLUDES += \
@@ -9,3 +10,6 @@ splat_SOURCES = splat.c
 splat_LDFLAGS = $(top_builddir)/lib/libcommon.la
 
 EXTRA_DIST = splat.h
+=======
+SUBDIRS = splat splslab
+>>>>>>> temp

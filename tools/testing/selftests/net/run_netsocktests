@@ -1,4 +1,8 @@
 #!/bin/sh
+<<<<<<< HEAD
+=======
+# SPDX-License-Identifier: GPL-2.0
+>>>>>>> temp
 
 echo "--------------------"
 echo "running socket test"

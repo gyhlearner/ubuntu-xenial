@@ -9,6 +9,7 @@
 #ifndef _ASM_SPINLOCK_H
 #define _ASM_SPINLOCK_H
 
+<<<<<<< HEAD
 #include <linux/compiler.h>
 
 #include <asm/barrier.h>
@@ -426,5 +427,10 @@ static inline int arch_write_trylock(arch_rwlock_t *rw)
 #define arch_spin_relax(lock)	cpu_relax()
 #define arch_read_relax(lock)	cpu_relax()
 #define arch_write_relax(lock)	cpu_relax()
+=======
+#include <asm/processor.h>
+#include <asm/qrwlock.h>
+#include <asm/qspinlock.h>
+>>>>>>> temp
 
 #endif /* _ASM_SPINLOCK_H */

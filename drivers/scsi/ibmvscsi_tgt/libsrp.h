@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+/* SPDX-License-Identifier: GPL-2.0 */
+>>>>>>> temp
 #ifndef __LIBSRP_H__
 #define __LIBSRP_H__
 
@@ -30,10 +34,20 @@ enum srp_trans_event {
 	UNUSED_FORMAT = 0,
 	PARTNER_FAILED = 1,
 	PARTNER_DEREGISTER = 2,
+<<<<<<< HEAD
 	MIGRATED = 6
 };
 
 enum srp_status {
+=======
+	MIGRATED = 6,
+	PREPARE_FOR_SUSPEND = 9,
+	RESUME_FROM_SUSP = 0xA
+};
+
+enum srp_status {
+	CRQ_ENTRY_OVERWRITTEN = 0x20,
+>>>>>>> temp
 	HEADER_DESCRIPTOR = 0xF1,
 	PING = 0xF5,
 	PING_RESPONSE = 0xF6

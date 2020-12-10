@@ -29,6 +29,20 @@
 #include <linux/ratelimit.h>
 
 /*
+<<<<<<< HEAD
+=======
+ * It is often useful to actually have the panic crash the node so you
+ * can then get notified of the event, get the crashdump for later
+ * analysis and other such goodies.
+ * But we would still default to the current default of not to do that.
+ */
+unsigned int spl_panic_halt;
+module_param(spl_panic_halt, uint, 0644);
+MODULE_PARM_DESC(spl_panic_halt,
+		 "Cause kernel panic on assertion failures");
+
+/*
+>>>>>>> temp
  * Limit the number of stack traces dumped to not more than 5 every
  * 60 seconds to prevent denial-of-service attacks from debug code.
  */
@@ -62,10 +76,20 @@ spl_panic(const char *file, const char *func, int line, const char *fmt, ...) {
 
 	printk(KERN_EMERG "%s", msg);
 	printk(KERN_EMERG "PANIC at %s:%d:%s()\n", newfile, line, func);
+<<<<<<< HEAD
 	spl_dumpstack();
 
 	/* Halt the thread to facilitate further debugging */
 	set_task_state(current, TASK_UNINTERRUPTIBLE);
+=======
+	if (spl_panic_halt)
+		panic("%s", msg);
+
+	spl_dumpstack();
+
+	/* Halt the thread to facilitate further debugging */
+	set_current_state(TASK_UNINTERRUPTIBLE);
+>>>>>>> temp
 	while (1)
 		schedule();
 
@@ -98,7 +122,11 @@ vcmn_err(int ce, const char *fmt, va_list ap)
 		spl_dumpstack();
 
 		/* Halt the thread to facilitate further debugging */
+<<<<<<< HEAD
 		set_task_state(current, TASK_UNINTERRUPTIBLE);
+=======
+		set_current_state(TASK_UNINTERRUPTIBLE);
+>>>>>>> temp
 		while (1)
 			schedule();
 	}

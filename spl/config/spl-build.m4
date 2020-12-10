@@ -24,6 +24,10 @@ AC_DEFUN([SPL_AC_CONFIG_KERNEL], [
 	SPL_AC_ATOMIC_SPINLOCK
 	SPL_AC_SHRINKER_CALLBACK
 	SPL_AC_CTL_NAME
+<<<<<<< HEAD
+=======
+	SPL_AC_CONFIG_TRIM_UNUSED_KSYMS
+>>>>>>> temp
 	SPL_AC_PDE_DATA
 	SPL_AC_SET_FS_PWD_WITH_CONST
 	SPL_AC_2ARGS_VFS_UNLINK
@@ -32,18 +36,41 @@ AC_DEFUN([SPL_AC_CONFIG_KERNEL], [
 	SPL_AC_INODE_TRUNCATE_RANGE
 	SPL_AC_FS_STRUCT_SPINLOCK
 	SPL_AC_KUIDGID_T
+<<<<<<< HEAD
 	SPL_AC_PUT_TASK_STRUCT
+=======
+>>>>>>> temp
 	SPL_AC_KERNEL_FALLOCATE
 	SPL_AC_CONFIG_ZLIB_INFLATE
 	SPL_AC_CONFIG_ZLIB_DEFLATE
 	SPL_AC_2ARGS_ZLIB_DEFLATE_WORKSPACESIZE
 	SPL_AC_SHRINK_CONTROL_STRUCT
 	SPL_AC_RWSEM_SPINLOCK_IS_RAW
+<<<<<<< HEAD
 	SPL_AC_SCHED_RT_HEADER
+=======
+	SPL_AC_RWSEM_ACTIVITY
+	SPL_AC_RWSEM_ATOMIC_LONG_COUNT
+	SPL_AC_SCHED_RT_HEADER
+	SPL_AC_SCHED_SIGNAL_HEADER
+	SPL_AC_4ARGS_VFS_GETATTR
+	SPL_AC_3ARGS_VFS_GETATTR
+>>>>>>> temp
 	SPL_AC_2ARGS_VFS_GETATTR
 	SPL_AC_USLEEP_RANGE
 	SPL_AC_KMEM_CACHE_ALLOCFLAGS
 	SPL_AC_WAIT_ON_BIT
+<<<<<<< HEAD
+=======
+	SPL_AC_INODE_LOCK
+	SPL_AC_GROUP_INFO_GID
+	SPL_AC_KMEM_CACHE_CREATE_USERCOPY
+	SPL_AC_WAIT_QUEUE_ENTRY_T
+	SPL_AC_WAIT_QUEUE_HEAD_ENTRY
+	SPL_AC_KERNEL_WRITE
+	SPL_AC_KERNEL_READ
+	SPL_AC_TIMER_SETUP
+>>>>>>> temp
 ])
 
 AC_DEFUN([SPL_AC_MODULE_SYMVERS], [
@@ -104,6 +131,10 @@ AC_DEFUN([SPL_AC_KERNEL], [
 		if test "$kernelsrc" = "NONE"; then
 			kernsrcver=NONE
 		fi
+<<<<<<< HEAD
+=======
+		withlinux=yes
+>>>>>>> temp
 	fi
 
 	AC_MSG_RESULT([$kernelsrc])
@@ -116,7 +147,11 @@ AC_DEFUN([SPL_AC_KERNEL], [
 
 	AC_MSG_CHECKING([kernel build directory])
 	if test -z "$kernelbuild"; then
+<<<<<<< HEAD
 		if test -e "/lib/modules/$(uname -r)/build"; then
+=======
+		if test x$withlinux != xyes -a -e "/lib/modules/$(uname -r)/build"; then
+>>>>>>> temp
 			kernelbuild=`readlink -f /lib/modules/$(uname -r)/build`
 		elif test -d ${kernelsrc}-obj/${target_cpu}/${target_cpu}; then
 			kernelbuild=${kernelsrc}-obj/${target_cpu}/${target_cpu}
@@ -1076,6 +1111,7 @@ AC_DEFUN([SPL_AC_KUIDGID_T], [
 ])
 
 dnl #
+<<<<<<< HEAD
 dnl # 2.6.39 API change,
 dnl # __put_task_struct() was exported by the mainline kernel.
 dnl #
@@ -1095,6 +1131,8 @@ AC_DEFUN([SPL_AC_PUT_TASK_STRUCT],
 ])
 
 dnl #
+=======
+>>>>>>> temp
 dnl # 2.6.35 API change,
 dnl # Unused 'struct dentry *' removed from vfs_fsync() prototype.
 dnl #
@@ -1245,6 +1283,29 @@ AC_DEFUN([SPL_AC_CONFIG_ZLIB_DEFLATE], [
 ])
 
 dnl #
+<<<<<<< HEAD
+=======
+dnl # config trim unused symbols,
+dnl # Verify the kernel has CONFIG_TRIM_UNUSED_KSYMS DISABLED.
+dnl #
+AC_DEFUN([SPL_AC_CONFIG_TRIM_UNUSED_KSYMS], [
+	AC_MSG_CHECKING([whether CONFIG_TRIM_UNUSED_KSYM is disabled])
+	SPL_LINUX_TRY_COMPILE([
+		#if defined(CONFIG_TRIM_UNUSED_KSYMS)
+		#error CONFIG_TRIM_UNUSED_KSYMS not defined
+		#endif
+	],[ ],[
+		AC_MSG_RESULT([yes])
+	],[
+		AC_MSG_RESULT([no])
+		AC_MSG_ERROR([
+	*** This kernel has unused symbols trimming enabled, please disable.
+	*** Rebuild the kernel with CONFIG_TRIM_UNUSED_KSYMS=n set.])
+	])
+])
+
+dnl #
+>>>>>>> temp
 dnl # 2.6.39 API compat,
 dnl # The function zlib_deflate_workspacesize() now take 2 arguments.
 dnl # This was done to avoid always having to allocate the maximum size
@@ -1302,7 +1363,12 @@ AC_DEFUN([SPL_AC_RWSEM_SPINLOCK_IS_RAW], [
 		#include <linux/rwsem.h>
 	],[
 		struct rw_semaphore dummy_semaphore __attribute__ ((unused));
+<<<<<<< HEAD
 		raw_spinlock_t dummy_lock __attribute__ ((unused));
+=======
+		raw_spinlock_t dummy_lock __attribute__ ((unused)) =
+		    __RAW_SPIN_LOCK_INITIALIZER(dummy_lock);
+>>>>>>> temp
 		dummy_semaphore.wait_lock = dummy_lock;
 	],[
 		AC_MSG_RESULT(yes)
@@ -1315,6 +1381,58 @@ AC_DEFUN([SPL_AC_RWSEM_SPINLOCK_IS_RAW], [
 ])
 
 dnl #
+<<<<<<< HEAD
+=======
+dnl # 3.16 API Change
+dnl #
+dnl # rwsem-spinlock "->activity" changed to "->count"
+dnl #
+AC_DEFUN([SPL_AC_RWSEM_ACTIVITY], [
+	AC_MSG_CHECKING([whether struct rw_semaphore has member activity])
+	tmp_flags="$EXTRA_KCFLAGS"
+	EXTRA_KCFLAGS="-Werror"
+	SPL_LINUX_TRY_COMPILE([
+		#include <linux/rwsem.h>
+	],[
+		struct rw_semaphore dummy_semaphore __attribute__ ((unused));
+		dummy_semaphore.activity = 0;
+	],[
+		AC_MSG_RESULT(yes)
+		AC_DEFINE(HAVE_RWSEM_ACTIVITY, 1,
+		[struct rw_semaphore has member activity])
+	],[
+		AC_MSG_RESULT(no)
+	])
+	EXTRA_KCFLAGS="$tmp_flags"
+])
+
+dnl #
+dnl # 4.8 API Change
+dnl #
+dnl # rwsem "->count" changed to atomic_long_t type
+dnl #
+AC_DEFUN([SPL_AC_RWSEM_ATOMIC_LONG_COUNT], [
+	AC_MSG_CHECKING(
+	[whether struct rw_semaphore has atomic_long_t member count])
+	tmp_flags="$EXTRA_KCFLAGS"
+	EXTRA_KCFLAGS="-Werror"
+	SPL_LINUX_TRY_COMPILE([
+		#include <linux/rwsem.h>
+	],[
+		DECLARE_RWSEM(dummy_semaphore);
+		(void) atomic_long_read(&dummy_semaphore.count);
+	],[
+		AC_MSG_RESULT(yes)
+		AC_DEFINE(HAVE_RWSEM_ATOMIC_LONG_COUNT, 1,
+		[struct rw_semaphore has atomic_long_t member count])
+	],[
+		AC_MSG_RESULT(no)
+	])
+	EXTRA_KCFLAGS="$tmp_flags"
+])
+
+dnl #
+>>>>>>> temp
 dnl # 3.9 API change,
 dnl # Moved things from linux/sched.h to linux/sched/rt.h
 dnl #
@@ -1334,18 +1452,68 @@ AC_DEFUN([SPL_AC_SCHED_RT_HEADER],
 ])
 
 dnl #
+<<<<<<< HEAD
 dnl # 3.9 API change,
 dnl # vfs_getattr() uses 2 args
 dnl # It takes struct path * instead of struct vfsmount * and struct dentry *
 dnl #
 AC_DEFUN([SPL_AC_2ARGS_VFS_GETATTR], [
 	AC_MSG_CHECKING([whether vfs_getattr() wants])
+=======
+dnl # 4.11 API change,
+dnl # Moved things from linux/sched.h to linux/sched/signal.h
+dnl #
+AC_DEFUN([SPL_AC_SCHED_SIGNAL_HEADER],
+	[AC_MSG_CHECKING([whether header linux/sched/signal.h exists])
+	SPL_LINUX_TRY_COMPILE([
+		#include <linux/sched.h>
+		#include <linux/sched/signal.h>
+	],[
+		return 0;
+	],[
+		AC_DEFINE(HAVE_SCHED_SIGNAL_HEADER, 1, [linux/sched/signal.h exists])
+		AC_MSG_RESULT(yes)
+	],[
+		AC_MSG_RESULT(no)
+	])
+])
+
+dnl #
+dnl # 4.11 API, a528d35e@torvalds/linux
+dnl # vfs_getattr(const struct path *p, struct kstat *s, u32 m, unsigned int f)
+dnl #
+AC_DEFUN([SPL_AC_4ARGS_VFS_GETATTR], [
+	AC_MSG_CHECKING([whether vfs_getattr() wants 4 args])
+	SPL_LINUX_TRY_COMPILE([
+		#include <linux/fs.h>
+	],[
+		vfs_getattr((const struct path *)NULL,
+			(struct kstat *)NULL,
+			(u32)0,
+			(unsigned int)0);
+	],[
+		AC_MSG_RESULT(yes)
+		AC_DEFINE(HAVE_4ARGS_VFS_GETATTR, 1,
+		  [vfs_getattr wants 4 args])
+	],[
+		AC_MSG_RESULT(no)
+	])
+])
+
+dnl #
+dnl # 3.9 API 
+dnl # vfs_getattr(struct path *p, struct kstat *s)
+dnl #
+AC_DEFUN([SPL_AC_2ARGS_VFS_GETATTR], [
+	AC_MSG_CHECKING([whether vfs_getattr() wants 2 args])
+>>>>>>> temp
 	SPL_LINUX_TRY_COMPILE([
 		#include <linux/fs.h>
 	],[
 		vfs_getattr((struct path *) NULL,
 			(struct kstat *)NULL);
 	],[
+<<<<<<< HEAD
 		AC_MSG_RESULT(2 args)
 		AC_DEFINE(HAVE_2ARGS_VFS_GETATTR, 1,
 		          [vfs_getattr wants 2 args])
@@ -1361,6 +1529,34 @@ AC_DEFUN([SPL_AC_2ARGS_VFS_GETATTR], [
 		],[
 			AC_MSG_ERROR(unknown)
 		])
+=======
+		AC_MSG_RESULT(yes)
+		AC_DEFINE(HAVE_2ARGS_VFS_GETATTR, 1,
+			  [vfs_getattr wants 2 args])
+	],[
+		AC_MSG_RESULT(no)
+	])
+])
+
+dnl #
+dnl # <3.9 API 
+dnl # vfs_getattr(struct vfsmount *v, struct dentry *d, struct kstat *k)
+dnl #
+AC_DEFUN([SPL_AC_3ARGS_VFS_GETATTR], [
+	AC_MSG_CHECKING([whether vfs_getattr() wants 3 args])
+	SPL_LINUX_TRY_COMPILE([
+		#include <linux/fs.h>
+	],[
+		vfs_getattr((struct vfsmount *)NULL,
+			(struct dentry *)NULL,
+			(struct kstat *)NULL);
+	],[
+		AC_MSG_RESULT(yes)
+		AC_DEFINE(HAVE_3ARGS_VFS_GETATTR, 1,
+		  [vfs_getattr wants 3 args])
+	],[
+		AC_MSG_RESULT(no)
+>>>>>>> temp
 	])
 ])
 
@@ -1447,3 +1643,223 @@ AC_DEFUN([SPL_AC_WAIT_ON_BIT], [
 		AC_MSG_RESULT(no)
 	])
 ])
+<<<<<<< HEAD
+=======
+
+dnl #
+dnl # 4.7 API change
+dnl # i_mutex is changed to i_rwsem. Instead of directly using
+dnl # i_mutex/i_rwsem, we should use inode_lock() and inode_lock_shared()
+dnl # We test inode_lock_shared because inode_lock is introduced earlier.
+dnl #
+AC_DEFUN([SPL_AC_INODE_LOCK], [
+	AC_MSG_CHECKING([whether inode_lock_shared() exists])
+	tmp_flags="$EXTRA_KCFLAGS"
+	EXTRA_KCFLAGS="-Werror"
+	SPL_LINUX_TRY_COMPILE([
+		#include <linux/fs.h>
+	],[
+		struct inode *inode = NULL;
+		inode_lock_shared(inode);
+	],[
+		AC_MSG_RESULT(yes)
+		AC_DEFINE(HAVE_INODE_LOCK_SHARED, 1, [yes])
+	],[
+		AC_MSG_RESULT(no)
+	])
+	EXTRA_KCFLAGS="$tmp_flags"
+])
+
+dnl #
+dnl # 4.9 API change
+dnl # group_info changed from 2d array via >blocks to 1d array via ->gid
+dnl #
+AC_DEFUN([SPL_AC_GROUP_INFO_GID], [
+	AC_MSG_CHECKING([whether group_info->gid exists])
+	tmp_flags="$EXTRA_KCFLAGS"
+	EXTRA_KCFLAGS="-Werror"
+	SPL_LINUX_TRY_COMPILE([
+		#include <linux/cred.h>
+	],[
+		struct group_info *gi = groups_alloc(1);
+		gi->gid[0] = KGIDT_INIT(0);
+	],[
+		AC_MSG_RESULT(yes)
+		AC_DEFINE(HAVE_GROUP_INFO_GID, 1, [group_info->gid exists])
+	],[
+		AC_MSG_RESULT(no)
+	])
+	EXTRA_KCFLAGS="$tmp_flags"
+])
+
+dnl #
+dnl # grsecurity API change,
+dnl # kmem_cache_create() with SLAB_USERCOPY flag replaced by
+dnl # kmem_cache_create_usercopy().
+dnl #
+AC_DEFUN([SPL_AC_KMEM_CACHE_CREATE_USERCOPY], [
+	AC_MSG_CHECKING([whether kmem_cache_create_usercopy() exists])
+	tmp_flags="$EXTRA_KCFLAGS"
+	EXTRA_KCFLAGS="-Werror"
+	SPL_LINUX_TRY_COMPILE([
+		#include <linux/slab.h>
+		static void ctor(void *foo)
+		{
+			// fake ctor
+		}
+	],[
+		struct kmem_cache *skc_linux_cache;
+		const char *name = "test";
+		size_t size = 4096;
+		size_t align = 8;
+		unsigned long flags = 0;
+		size_t useroffset = 0;
+		size_t usersize = size - useroffset;
+
+		skc_linux_cache = kmem_cache_create_usercopy(
+			name, size, align, flags, useroffset, usersize, ctor);
+	],[
+		AC_MSG_RESULT(yes)
+		AC_DEFINE(HAVE_KMEM_CACHE_CREATE_USERCOPY, 1,
+				[kmem_cache_create_usercopy() exists])
+	],[
+		AC_MSG_RESULT(no)
+	])
+	EXTRA_KCFLAGS="$tmp_flags"
+])
+
+dnl #
+dnl # 4.13 API change
+dnl # Renamed struct wait_queue -> struct wait_queue_entry.
+dnl #
+AC_DEFUN([SPL_AC_WAIT_QUEUE_ENTRY_T], [
+	AC_MSG_CHECKING([whether wait_queue_entry_t exists])
+	SPL_LINUX_TRY_COMPILE([
+		#include <linux/wait.h>
+	],[
+		wait_queue_entry_t *entry __attribute__ ((unused));
+	],[
+		AC_MSG_RESULT(yes)
+		AC_DEFINE(HAVE_WAIT_QUEUE_ENTRY_T, 1,
+		    [wait_queue_entry_t exists])
+	],[
+		AC_MSG_RESULT(no)
+	])
+])
+
+dnl #
+dnl # 4.13 API change
+dnl # Renamed wait_queue_head::task_list -> wait_queue_head::head
+dnl # Renamed wait_queue_entry::task_list -> wait_queue_entry::entry
+dnl #
+AC_DEFUN([SPL_AC_WAIT_QUEUE_HEAD_ENTRY], [
+	AC_MSG_CHECKING([whether wq_head->head and wq_entry->entry exist])
+	SPL_LINUX_TRY_COMPILE([
+		#include <linux/wait.h>
+
+		#ifdef HAVE_WAIT_QUEUE_ENTRY_T
+		typedef wait_queue_head_t	spl_wait_queue_head_t;
+		typedef wait_queue_entry_t	spl_wait_queue_entry_t;
+		#else
+		typedef wait_queue_head_t	spl_wait_queue_head_t;
+		typedef wait_queue_t		spl_wait_queue_entry_t;
+		#endif
+	],[
+		spl_wait_queue_head_t wq_head;
+		spl_wait_queue_entry_t wq_entry;
+		struct list_head *head __attribute__ ((unused));
+		struct list_head *entry __attribute__ ((unused));
+
+		head = &wq_head.head;
+		entry = &wq_entry.entry;
+	],[
+		AC_MSG_RESULT(yes)
+		AC_DEFINE(HAVE_WAIT_QUEUE_HEAD_ENTRY, 1,
+		    [wq_head->head and wq_entry->entry exist])
+	],[
+		AC_MSG_RESULT(no)
+	])
+])
+
+dnl #
+dnl # 4.14 API change
+dnl # kernel_write() which was introduced in 3.9 was updated to take
+dnl # the offset as a pointer which is needed by vn_rdwr().
+dnl #
+AC_DEFUN([SPL_AC_KERNEL_WRITE], [
+	AC_MSG_CHECKING([whether kernel_write() takes loff_t pointer])
+	tmp_flags="$EXTRA_KCFLAGS"
+	EXTRA_KCFLAGS="-Werror"
+	SPL_LINUX_TRY_COMPILE([
+		#include <linux/fs.h>
+	],[
+		struct file *file = NULL;
+		const void *buf = NULL;
+		size_t count = 0;
+		loff_t *pos = NULL;
+		ssize_t ret;
+
+		ret = kernel_write(file, buf, count, pos);
+	],[
+		AC_MSG_RESULT(yes)
+		AC_DEFINE(HAVE_KERNEL_WRITE_PPOS, 1,
+		    [kernel_write() take loff_t pointer])
+	],[
+		AC_MSG_RESULT(no)
+	])
+	EXTRA_KCFLAGS="$tmp_flags"
+])
+
+dnl #
+dnl # 4.14 API change
+dnl # kernel_read() which has existed for forever was updated to take
+dnl # the offset as a pointer which is needed by vn_rdwr().
+dnl #
+AC_DEFUN([SPL_AC_KERNEL_READ], [
+	AC_MSG_CHECKING([whether kernel_read() takes loff_t pointer])
+	tmp_flags="$EXTRA_KCFLAGS"
+	EXTRA_KCFLAGS="-Werror"
+	SPL_LINUX_TRY_COMPILE([
+		#include <linux/fs.h>
+	],[
+		struct file *file = NULL;
+		void *buf = NULL;
+		size_t count = 0;
+		loff_t *pos = NULL;
+		ssize_t ret;
+
+		ret = kernel_read(file, buf, count, pos);
+	],[
+		AC_MSG_RESULT(yes)
+		AC_DEFINE(HAVE_KERNEL_READ_PPOS, 1,
+		    [kernel_read() take loff_t pointer])
+	],[
+		AC_MSG_RESULT(no)
+	])
+	EXTRA_KCFLAGS="$tmp_flags"
+])
+
+dnl #
+dnl # 4.16 new API
+dnl # new timer_setup()
+dnl #
+AC_DEFUN([SPL_AC_TIMER_SETUP], [
+	AC_MSG_CHECKING([whether timer_setup() exists])
+	tmp_flags="$EXTRA_KCFLAGS"
+        EXTRA_KCFLAGS="-Werror"
+	SPL_LINUX_TRY_COMPILE([
+                #include <linux/timer.h>
+        ],[
+		struct timer_list timer;
+
+		timer_setup(&timer, NULL, 0);
+        ],[
+                AC_MSG_RESULT(yes)
+                AC_DEFINE(HAVE_KERNEL_TIMER_SETUP, 1,
+                    [use timer_setup() for timer initialization])
+        ],[
+                AC_MSG_RESULT(no)
+        ])
+        EXTRA_KCFLAGS="$tmp_flags"
+])
+>>>>>>> temp

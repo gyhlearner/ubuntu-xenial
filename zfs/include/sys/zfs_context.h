@@ -19,6 +19,7 @@
  * CDDL HEADER END
  */
 /*
+<<<<<<< HEAD
  * Copyright 2009 Sun Microsystems, Inc.  All rights reserved.
  * Use is subject to license terms.
  */
@@ -26,6 +27,12 @@
  * Copyright 2011 Nexenta Systems, Inc. All rights reserved.
  * Copyright (c) 2012, Joyent, Inc. All rights reserved.
  * Copyright (c) 2012, 2014 by Delphix. All rights reserved.
+=======
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2011 Nexenta Systems, Inc.  All rights reserved.
+ * Copyright (c) 2012, 2016 by Delphix. All rights reserved.
+ * Copyright (c) 2012, Joyent, Inc. All rights reserved.
+>>>>>>> temp
  */
 
 #ifndef _SYS_ZFS_CONTEXT_H
@@ -62,9 +69,17 @@
 #include <vm/seg_kmem.h>
 #include <sys/zone.h>
 #include <sys/sdt.h>
+<<<<<<< HEAD
 #include <sys/zfs_debug.h>
 #include <sys/zfs_delay.h>
 #include <sys/fm/fs/zfs.h>
+=======
+#include <sys/kstat.h>
+#include <sys/zfs_debug.h>
+#include <sys/sysevent.h>
+#include <sys/sysevent/eventdefs.h>
+#include <sys/zfs_delay.h>
+>>>>>>> temp
 #include <sys/sunddi.h>
 #include <sys/ctype.h>
 #include <sys/disp.h>
@@ -118,7 +133,12 @@
 #include <sys/sdt.h>
 #include <sys/kstat.h>
 #include <sys/u8_textprep.h>
+<<<<<<< HEAD
 #include <sys/fm/fs/zfs.h>
+=======
+#include <sys/sysevent.h>
+#include <sys/sysevent/eventdefs.h>
+>>>>>>> temp
 #include <sys/sunddi.h>
 #include <sys/debug.h>
 #include <sys/utsname.h>
@@ -128,6 +148,10 @@
  */
 
 #define	noinline	__attribute__((noinline))
+<<<<<<< HEAD
+=======
+#define	likely(x)	__builtin_expect((x), 1)
+>>>>>>> temp
 
 /*
  * Debugging
@@ -160,8 +184,23 @@ extern int aok;
 
 /*
  * DTrace SDT probes have different signatures in userland than they do in
+<<<<<<< HEAD
  * kernel.  If they're being used in kernel code, re-define them out of
  * existence for their counterparts in libzpool.
+=======
+ * the kernel.  If they're being used in kernel code, re-define them out of
+ * existence for their counterparts in libzpool.
+ *
+ * Here's an example of how to use the set-error probes in userland:
+ * zfs$target:::set-error /arg0 == EBUSY/ {stack();}
+ *
+ * Here's an example of how to use DTRACE_PROBE probes in userland:
+ * If there is a probe declared as follows:
+ * DTRACE_PROBE2(zfs__probe_name, uint64_t, blkid, dnode_t *, dn);
+ * Then you can use it as follows:
+ * zfs$target:::probe2 /copyinstr(arg0) == "zfs__probe_name"/
+ *     {printf("%u %p\n", arg1, arg2);}
+>>>>>>> temp
  */
 
 #ifdef DTRACE_PROBE
@@ -196,6 +235,7 @@ extern int aok;
 	(unsigned long)i)
 
 /*
+<<<<<<< HEAD
  * We use the comma operator so that this macro can be used without much
  * additional code.  For example, "return (EINVAL);" becomes
  * "return (SET_ERROR(EINVAL));".  Note that the argument will be evaluated
@@ -205,6 +245,8 @@ extern int aok;
 #define	SET_ERROR(err) (ZFS_SET_ERROR(err), err)
 
 /*
+=======
+>>>>>>> temp
  * Threads.  TS_STACK_MIN is dictated by the minimum allowed pthread stack
  * size.  While TS_STACK_MAX is somewhat arbitrary, it was selected to be
  * large enough for the expected stack depth while small enough to avoid
@@ -212,7 +254,11 @@ extern int aok;
  */
 #define	TS_MAGIC		0x72f158ab4261e538ull
 #define	TS_RUN			0x00000002
+<<<<<<< HEAD
 #define	TS_STACK_MIN		PTHREAD_STACK_MIN
+=======
+#define	TS_STACK_MIN		MAX(PTHREAD_STACK_MIN, 32768)
+>>>>>>> temp
 #define	TS_STACK_MAX		(256 * 1024)
 
 /* in libzpool, p0 exists only to have its address taken */
@@ -248,7 +294,11 @@ typedef struct kthread {
 extern kthread_t *zk_thread_current(void);
 extern void zk_thread_exit(void);
 extern kthread_t *zk_thread_create(caddr_t stk, size_t  stksize,
+<<<<<<< HEAD
 	thread_func_t func, void *arg, size_t len,
+=======
+	thread_func_t func, void *arg, uint64_t len,
+>>>>>>> temp
 	proc_t *pp, int state, pri_t pri, int detachstate);
 extern void zk_thread_join(kt_did_t tid);
 
@@ -274,6 +324,10 @@ typedef struct kmutex {
 } kmutex_t;
 
 #define	MUTEX_DEFAULT	0
+<<<<<<< HEAD
+=======
+#define	MUTEX_NOLOCKDEP	MUTEX_DEFAULT
+>>>>>>> temp
 #define	MUTEX_HELD(m)	((m)->m_owner == curthread)
 #define	MUTEX_NOT_HELD(m) (!MUTEX_HELD(m))
 
@@ -305,6 +359,10 @@ typedef int krw_t;
 #define	RW_READER	0
 #define	RW_WRITER	1
 #define	RW_DEFAULT	RW_READER
+<<<<<<< HEAD
+=======
+#define	RW_NOLOCKDEP	RW_READER
+>>>>>>> temp
 
 #define	RW_READ_HELD(x)		((x)->rw_readers > 0)
 #define	RW_WRITE_HELD(x)	((x)->rw_wr_owner == curthread)
@@ -341,6 +399,10 @@ typedef struct kcondvar {
 } kcondvar_t;
 
 #define	CV_DEFAULT	0
+<<<<<<< HEAD
+=======
+#define	CALLOUT_FLAG_ABSOLUTE	0x2
+>>>>>>> temp
 
 extern void cv_init(kcondvar_t *cv, char *name, int type, void *arg);
 extern void cv_destroy(kcondvar_t *cv);
@@ -353,6 +415,11 @@ extern void cv_broadcast(kcondvar_t *cv);
 #define	cv_timedwait_sig(cv, mp, at)		cv_timedwait(cv, mp, at)
 #define	cv_wait_sig(cv, mp)			cv_wait(cv, mp)
 #define	cv_wait_io(cv, mp)			cv_wait(cv, mp)
+<<<<<<< HEAD
+=======
+#define	cv_timedwait_sig_hires(cv, mp, t, r, f) \
+	cv_timedwait_hires(cv, mp, t, r, f)
+>>>>>>> temp
 
 /*
  * Thread-specific data
@@ -375,6 +442,10 @@ extern void cv_broadcast(kcondvar_t *cv);
  */
 extern kstat_t *kstat_create(const char *, int,
     const char *, const char *, uchar_t, ulong_t, uchar_t);
+<<<<<<< HEAD
+=======
+extern void kstat_named_init(kstat_named_t *, const char *, uchar_t);
+>>>>>>> temp
 extern void kstat_install(kstat_t *);
 extern void kstat_delete(kstat_t *);
 extern void kstat_waitq_enter(kstat_io_t *);
@@ -430,7 +501,13 @@ typedef enum kmem_cbrc {
 /*
  * Task queues
  */
+<<<<<<< HEAD
 typedef struct taskq taskq_t;
+=======
+
+#define	TASKQ_NAMELEN	31
+
+>>>>>>> temp
 typedef uintptr_t taskqid_t;
 typedef void (task_func_t)(void *);
 
@@ -442,6 +519,28 @@ typedef struct taskq_ent {
 	uintptr_t		tqent_flags;
 } taskq_ent_t;
 
+<<<<<<< HEAD
+=======
+typedef struct taskq {
+	char		tq_name[TASKQ_NAMELEN + 1];
+	kmutex_t	tq_lock;
+	krwlock_t	tq_threadlock;
+	kcondvar_t	tq_dispatch_cv;
+	kcondvar_t	tq_wait_cv;
+	kthread_t	**tq_threadlist;
+	int		tq_flags;
+	int		tq_active;
+	int		tq_nthreads;
+	int		tq_nalloc;
+	int		tq_minalloc;
+	int		tq_maxalloc;
+	kcondvar_t	tq_maxalloc_cv;
+	int		tq_maxalloc_wait;
+	taskq_ent_t	*tq_freelist;
+	taskq_ent_t	tq_task;
+} taskq_t;
+
+>>>>>>> temp
 #define	TQENT_FLAG_PREALLOC	0x1	/* taskq_dispatch_ent used */
 
 #define	TASKQ_PREPOPULATE	0x0001
@@ -455,7 +554,14 @@ typedef struct taskq_ent {
 #define	TQ_NOQUEUE	0x02		/* Do not enqueue if can't dispatch */
 #define	TQ_FRONT	0x08		/* Queue in front */
 
+<<<<<<< HEAD
 extern taskq_t *system_taskq;
+=======
+#define	TASKQID_INVALID		((taskqid_t)0)
+
+extern taskq_t *system_taskq;
+extern taskq_t *system_delay_taskq;
+>>>>>>> temp
 
 extern taskq_t	*taskq_create(const char *, int, pri_t, int, int, uint_t);
 #define	taskq_create_proc(a, b, c, d, e, p, f) \
@@ -488,8 +594,15 @@ typedef struct vnode {
 	uint64_t	v_size;
 	int		v_fd;
 	char		*v_path;
+<<<<<<< HEAD
 } vnode_t;
 
+=======
+	int		v_dump_fd;
+} vnode_t;
+
+extern char *vn_dumpdir;
+>>>>>>> temp
 #define	AV_SCANSTAMP_SZ	32		/* length of anti-virus scanstamp */
 
 typedef struct xoptattr {
@@ -623,7 +736,11 @@ extern void delay(clock_t ticks);
 #define	maxclsyspri	-20
 #define	defclsyspri	0
 
+<<<<<<< HEAD
 #define	CPU_SEQID	(pthread_self() & (max_ncpus - 1))
+=======
+#define	CPU_SEQID	((uintptr_t)pthread_self() & (max_ncpus - 1))
+>>>>>>> temp
 
 #define	kcred		NULL
 #define	CRED()		NULL
@@ -633,15 +750,32 @@ extern void delay(clock_t ticks);
 extern uint64_t physmem;
 
 extern int highbit64(uint64_t i);
+<<<<<<< HEAD
+=======
+extern int lowbit64(uint64_t i);
+extern int highbit(ulong_t i);
+extern int lowbit(ulong_t i);
+>>>>>>> temp
 extern int random_get_bytes(uint8_t *ptr, size_t len);
 extern int random_get_pseudo_bytes(uint8_t *ptr, size_t len);
 
 extern void kernel_init(int);
 extern void kernel_fini(void);
+<<<<<<< HEAD
+=======
+extern void thread_init(void);
+extern void thread_fini(void);
+extern void random_init(void);
+extern void random_fini(void);
+>>>>>>> temp
 
 struct spa;
 extern void nicenum(uint64_t num, char *buf);
 extern void show_pool_stats(struct spa *);
+<<<<<<< HEAD
+=======
+extern int set_global_var(char *arg);
+>>>>>>> temp
 
 typedef struct callb_cpr {
 	kmutex_t	*cc_lockp;
@@ -718,6 +852,10 @@ extern int zfs_secpolicy_snapshot_perms(const char *name, cred_t *cr);
 extern int zfs_secpolicy_rename_perms(const char *from, const char *to,
     cred_t *cr);
 extern int zfs_secpolicy_destroy_perms(const char *name, cred_t *cr);
+<<<<<<< HEAD
+=======
+extern int secpolicy_zfs(const cred_t *cr);
+>>>>>>> temp
 extern zoneid_t getzoneid(void);
 
 /* SID stuff */
@@ -747,7 +885,11 @@ typedef int fstrans_cookie_t;
 
 extern fstrans_cookie_t spl_fstrans_mark(void);
 extern void spl_fstrans_unmark(fstrans_cookie_t);
+<<<<<<< HEAD
 extern int spl_fstrans_check(void);
+=======
+extern int __spl_pf_fstrans_check(void);
+>>>>>>> temp
 
 #endif /* _KERNEL */
 #endif	/* _SYS_ZFS_CONTEXT_H */

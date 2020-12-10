@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright (C) 2005-2015 Junjiro R. Okajima
+=======
+ * Copyright (C) 2005-2017 Junjiro R. Okajima
+>>>>>>> temp
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -82,7 +86,12 @@ static int au_dpages_append(struct au_dcsub_pages *dpages,
 		err = -ENOMEM;
 		sz = dpages->ndpage * sizeof(*dpages->dpages);
 		p = au_kzrealloc(dpages->dpages, sz,
+<<<<<<< HEAD
 				 sz + sizeof(*dpages->dpages), gfp);
+=======
+				 sz + sizeof(*dpages->dpages), gfp,
+				 /*may_shrink*/0);
+>>>>>>> temp
 		if (unlikely(!p))
 			goto out;
 

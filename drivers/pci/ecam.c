@@ -27,7 +27,11 @@
  * since we have enough virtual address range available.  On 32-bit, we
  * ioremap the config space for each bus individually.
  */
+<<<<<<< HEAD
 static const bool per_bus_mapping = !config_enabled(CONFIG_64BIT);
+=======
+static const bool per_bus_mapping = !IS_ENABLED(CONFIG_64BIT);
+>>>>>>> temp
 
 /*
  * Create a PCI config space window
@@ -84,12 +88,22 @@ struct pci_config_window *pci_ecam_create(struct device *dev,
 		if (!cfg->winp)
 			goto err_exit_malloc;
 		for (i = 0; i < bus_range; i++) {
+<<<<<<< HEAD
 			cfg->winp[i] = ioremap(cfgres->start + i * bsz, bsz);
+=======
+			cfg->winp[i] =
+				pci_remap_cfgspace(cfgres->start + i * bsz,
+						   bsz);
+>>>>>>> temp
 			if (!cfg->winp[i])
 				goto err_exit_iomap;
 		}
 	} else {
+<<<<<<< HEAD
 		cfg->win = ioremap(cfgres->start, bus_range * bsz);
+=======
+		cfg->win = pci_remap_cfgspace(cfgres->start, bus_range * bsz);
+>>>>>>> temp
 		if (!cfg->win)
 			goto err_exit_iomap;
 	}
@@ -162,3 +176,18 @@ struct pci_ecam_ops pci_generic_ecam_ops = {
 		.write		= pci_generic_config_write,
 	}
 };
+<<<<<<< HEAD
+=======
+
+#if defined(CONFIG_ACPI) && defined(CONFIG_PCI_QUIRKS)
+/* ECAM ops for 32-bit access only (non-compliant) */
+struct pci_ecam_ops pci_32b_ops = {
+	.bus_shift	= 20,
+	.pci_ops	= {
+		.map_bus	= pci_ecam_map_bus,
+		.read		= pci_generic_config_read32,
+		.write		= pci_generic_config_write32,
+	}
+};
+#endif
+>>>>>>> temp

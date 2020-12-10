@@ -44,6 +44,10 @@
 #include <string.h>
 #endif
 
+<<<<<<< HEAD
+=======
+#include <sys/dsl_dir.h>
+>>>>>>> temp
 #include <sys/param.h>
 #include <sys/nvpair.h>
 #include "zfs_namecheck.h"
@@ -69,7 +73,11 @@ zfs_component_namecheck(const char *path, namecheck_err_t *why, char *what)
 {
 	const char *loc;
 
+<<<<<<< HEAD
 	if (strlen(path) >= MAXNAMELEN) {
+=======
+	if (strlen(path) >= ZFS_MAX_DATASET_NAME_LEN) {
+>>>>>>> temp
 		if (why)
 			*why = NAME_ERR_TOOLONG;
 		return (-1);
@@ -120,9 +128,15 @@ permset_namecheck(const char *path, namecheck_err_t *why, char *what)
 }
 
 /*
+<<<<<<< HEAD
  * Dataset names must be of the following form:
  *
  * 	[component][/]*[component][@component]
+=======
+ * Entity names must be of the following form:
+ *
+ * 	[component/]*[component][(@|#)component]?
+>>>>>>> temp
  *
  * Where each component is made up of alphanumeric characters plus the following
  * characters:
@@ -133,6 +147,7 @@ permset_namecheck(const char *path, namecheck_err_t *why, char *what)
  * names for temporary clones (for online recv).
  */
 int
+<<<<<<< HEAD
 dataset_namecheck(const char *path, namecheck_err_t *why, char *what)
 {
 	const char *loc, *end;
@@ -161,6 +176,17 @@ dataset_namecheck(const char *path, namecheck_err_t *why, char *what)
 #else
 	if (strlen(path) >= MAXNAMELEN) {
 #endif /* HAVE_KOBJ_NAME_LEN */
+=======
+entity_namecheck(const char *path, namecheck_err_t *why, char *what)
+{
+	const char *start, *end, *loc;
+	int found_delim;
+
+	/*
+	 * Make sure the name is not too long.
+	 */
+	if (strlen(path) >= ZFS_MAX_DATASET_NAME_LEN) {
+>>>>>>> temp
 		if (why)
 			*why = NAME_ERR_TOOLONG;
 		return (-1);
@@ -179,12 +205,22 @@ dataset_namecheck(const char *path, namecheck_err_t *why, char *what)
 		return (-1);
 	}
 
+<<<<<<< HEAD
 	loc = path;
 	found_snapshot = 0;
 	for (;;) {
 		/* Find the end of this component */
 		end = loc;
 		while (*end != '/' && *end != '@' && *end != '\0')
+=======
+	start = path;
+	found_delim = 0;
+	for (;;) {
+		/* Find the end of this component */
+		end = start;
+		while (*end != '/' && *end != '@' && *end != '#' &&
+		    *end != '\0')
+>>>>>>> temp
 			end++;
 
 		if (*end == '\0' && end[-1] == '/') {
@@ -194,6 +230,7 @@ dataset_namecheck(const char *path, namecheck_err_t *why, char *what)
 			return (-1);
 		}
 
+<<<<<<< HEAD
 		/* Zero-length components are not allowed */
 		if (loc == end) {
 			if (why) {
@@ -213,6 +250,10 @@ dataset_namecheck(const char *path, namecheck_err_t *why, char *what)
 
 		/* Validate the contents of this component */
 		while (loc != end) {
+=======
+		/* Validate the contents of this component */
+		for (loc = start; loc != end; loc++) {
+>>>>>>> temp
 			if (!valid_char(*loc) && *loc != '%') {
 				if (why) {
 					*why = NAME_ERR_INVALCHAR;
@@ -220,6 +261,7 @@ dataset_namecheck(const char *path, namecheck_err_t *why, char *what)
 				}
 				return (-1);
 			}
+<<<<<<< HEAD
 			loc++;
 		}
 
@@ -247,16 +289,73 @@ dataset_namecheck(const char *path, namecheck_err_t *why, char *what)
 		 * then report an error
 		 */
 		if (*end == '/' && found_snapshot) {
+=======
+		}
+
+		/* Snapshot or bookmark delimiter found */
+		if (*end == '@' || *end == '#') {
+			/* Multiple delimiters are not allowed */
+			if (found_delim != 0) {
+				if (why)
+					*why = NAME_ERR_MULTIPLE_DELIMITERS;
+				return (-1);
+			}
+
+			found_delim = 1;
+		}
+
+		/* Zero-length components are not allowed */
+		if (start == end) {
+			if (why)
+				*why = NAME_ERR_EMPTY_COMPONENT;
+			return (-1);
+		}
+
+		/* If we've reached the end of the string, we're OK */
+		if (*end == '\0')
+			return (0);
+
+		/*
+		 * If there is a '/' in a snapshot or bookmark name
+		 * then report an error
+		 */
+		if (*end == '/' && found_delim != 0) {
+>>>>>>> temp
 			if (why)
 				*why = NAME_ERR_TRAILING_SLASH;
 			return (-1);
 		}
 
 		/* Update to the next component */
+<<<<<<< HEAD
 		loc = end + 1;
 	}
 }
 
+=======
+		start = end + 1;
+	}
+}
+
+/*
+ * Dataset is any entity, except bookmark
+ */
+int
+dataset_namecheck(const char *path, namecheck_err_t *why, char *what)
+{
+	int ret = entity_namecheck(path, why, what);
+
+	if (ret == 0 && strchr(path, '#') != NULL) {
+		if (why != NULL) {
+			*why = NAME_ERR_INVALCHAR;
+			*what = '#';
+		}
+		return (-1);
+	}
+
+	return (ret);
+}
+>>>>>>> temp
 
 /*
  * mountpoint names must be of the following form:
@@ -289,7 +388,11 @@ mountpoint_namecheck(const char *path, namecheck_err_t *why)
 		while (*end != '/' && *end != '\0')
 			end++;
 
+<<<<<<< HEAD
 		if (end - start >= MAXNAMELEN) {
+=======
+		if (end - start >= ZFS_MAX_DATASET_NAME_LEN) {
+>>>>>>> temp
 			if (why)
 				*why = NAME_ERR_TOOLONG;
 			return (-1);
@@ -314,6 +417,7 @@ pool_namecheck(const char *pool, namecheck_err_t *why, char *what)
 
 	/*
 	 * Make sure the name is not too long.
+<<<<<<< HEAD
 	 *
 	 * ZPOOL_MAXNAMELEN is the maximum pool length used in the userland
 	 * which is the same as MAXNAMELEN used in the kernel.
@@ -335,6 +439,16 @@ pool_namecheck(const char *pool, namecheck_err_t *why, char *what)
 #else
 	if (strlen(pool) >= MAXNAMELEN) {
 #endif /* HAVE_KOBJ_NAME_LEN */
+=======
+	 * If we're creating a pool with version >= SPA_VERSION_DSL_SCRUB (v11)
+	 * we need to account for additional space needed by the origin ds which
+	 * will also be snapshotted: "poolname"+"/"+"$ORIGIN"+"@"+"$ORIGIN".
+	 * Play it safe and enforce this limit even if the pool version is < 11
+	 * so it can be upgraded without issues.
+	 */
+	if (strlen(pool) >= (ZFS_MAX_DATASET_NAME_LEN - 2 -
+	    strlen(ORIGIN_DIR_NAME) * 2)) {
+>>>>>>> temp
 		if (why)
 			*why = NAME_ERR_TOOLONG;
 		return (-1);

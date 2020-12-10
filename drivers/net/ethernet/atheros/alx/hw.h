@@ -37,6 +37,7 @@
 #include <linux/types.h>
 #include <linux/mdio.h>
 #include <linux/pci.h>
+#include <linux/if_vlan.h>
 #include "reg.h"
 
 /* Transmit Packet Descriptor, contains 4 32-bit words.
@@ -343,12 +344,13 @@ struct alx_rrd {
 					 ALX_RSS_HASH_TYPE_IPV4_TCP | \
 					 ALX_RSS_HASH_TYPE_IPV6 | \
 					 ALX_RSS_HASH_TYPE_IPV6_TCP)
-#define ALX_DEF_RXBUF_SIZE	1536
+#define ALX_FRAME_PAD		16
+#define ALX_RAW_MTU(_mtu)	(_mtu + ETH_HLEN + ETH_FCS_LEN + VLAN_HLEN)
+#define ALX_MAX_FRAME_LEN(_mtu)	(ALIGN((ALX_RAW_MTU(_mtu) + ALX_FRAME_PAD), 8))
+#define ALX_DEF_RXBUF_SIZE	ALX_MAX_FRAME_LEN(1500)
 #define ALX_MAX_JUMBO_PKT_SIZE	(9*1024)
 #define ALX_MAX_TSO_PKT_SIZE	(7*1024)
 #define ALX_MAX_FRAME_SIZE	ALX_MAX_JUMBO_PKT_SIZE
-#define ALX_MIN_FRAME_SIZE	68
-#define ALX_RAW_MTU(_mtu)	(_mtu + ETH_HLEN + ETH_FCS_LEN + VLAN_HLEN)
 
 #define ALX_MAX_RX_QUEUES	8
 #define ALX_MAX_TX_QUEUES	4
@@ -485,6 +487,8 @@ struct alx_hw {
 	u8 flowctrl;
 	u32 adv_cfg;
 
+	u32 sleep_ctrl;
+
 	spinlock_t mdio_lock;
 	struct mdio_if_info mdio;
 	u16 phy_id[2];
@@ -547,19 +551,23 @@ void alx_reset_pcie(struct alx_hw *hw);
 void alx_enable_aspm(struct alx_hw *hw, bool l0s_en, bool l1_en);
 int alx_setup_speed_duplex(struct alx_hw *hw, u32 ethadv, u8 flowctrl);
 void alx_post_phy_link(struct alx_hw *hw);
+int alx_pre_suspend(struct alx_hw *hw, int speed, u8 duplex);
 int alx_read_phy_reg(struct alx_hw *hw, u16 reg, u16 *phy_data);
 int alx_write_phy_reg(struct alx_hw *hw, u16 reg, u16 phy_data);
 int alx_read_phy_ext(struct alx_hw *hw, u8 dev, u16 reg, u16 *pdata);
 int alx_write_phy_ext(struct alx_hw *hw, u8 dev, u16 reg, u16 data);
 int alx_read_phy_link(struct alx_hw *hw);
 int alx_clear_phy_intr(struct alx_hw *hw);
+int alx_config_wol(struct alx_hw *hw);
 void alx_cfg_mac_flowcontrol(struct alx_hw *hw, u8 fc);
 void alx_start_mac(struct alx_hw *hw);
 int alx_reset_mac(struct alx_hw *hw);
 void alx_set_macaddr(struct alx_hw *hw, const u8 *addr);
 bool alx_phy_configured(struct alx_hw *hw);
 void alx_configure_basic(struct alx_hw *hw);
+void alx_mask_msix(struct alx_hw *hw, int index, bool mask);
 void alx_disable_rss(struct alx_hw *hw);
+int alx_select_powersaving_speed(struct alx_hw *hw, int *speed, u8 *duplex);
 bool alx_get_phy_info(struct alx_hw *hw);
 void alx_update_hw_stats(struct alx_hw *hw);
 

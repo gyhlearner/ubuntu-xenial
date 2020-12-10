@@ -3,7 +3,11 @@
  *
  * This file contains AppArmor file mediation function definitions.
  *
+<<<<<<< HEAD
  * Copyright 2012 Canonical Ltd.
+=======
+ * Copyright 2017 Canonical Ltd.
+>>>>>>> temp
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as

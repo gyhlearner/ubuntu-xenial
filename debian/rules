@@ -35,6 +35,11 @@ include $(DROOT)/rules.d/1-maintainer.mk
 
 do_linux_tools=$(sort $(filter-out false,$(do_tools_usbip) $(do_tools_cpupower) $(do_tools_perf) $(do_tools_x86)))
 do_cloud_tools=$(sort $(filter-out false,$(do_tools_hyperv)))
+<<<<<<< HEAD
+=======
+do_tools_common?=true
+do_tools_host?=false
+>>>>>>> temp
 
 # Don't build tools or udebs in a cross compile environment.
 ifneq ($(DEB_HOST_ARCH),$(DEB_BUILD_ARCH))
@@ -43,6 +48,17 @@ ifneq ($(DEB_HOST_ARCH),$(DEB_BUILD_ARCH))
 	do_zfs=false
 endif
 
+<<<<<<< HEAD
+=======
+# Are any of the kernel signing options enabled.
+any_signed=$(sort $(filter-out false,$(uefi_signed) $(opal_signed)))
+ifeq ($(any_signed),true)
+bin_pkg_name=$(bin_pkg_name_unsigned)
+else
+bin_pkg_name=$(bin_pkg_name_signed)
+endif
+
+>>>>>>> temp
 # Stages -- support both DEB_STAGE=stage1 and DEB_BUILD_PROFILE=bootstrap
 ifeq ($(DEB_STAGE),stage1)
     DEB_BUILD_PROFILES=stage1
@@ -74,6 +90,10 @@ ifneq ($(do_tools),true)
 	do_linux_tools=
 	do_cloud_tools=
 	do_tools_common=
+<<<<<<< HEAD
+=======
+	do_tools_host=
+>>>>>>> temp
 endif
 
 ifeq ($(do_zfs),false)
@@ -87,6 +107,10 @@ do_any_tools=$(sort $(filter-out false,$(do_linux_tools) $(do_cloud_tools)))
 #  only build the first flavour on the assumption it is representative
 ifneq ($(filter autopkgtest,$(DEB_BUILD_PROFILES)),)
 flavours := $(firstword $(flavours))
+<<<<<<< HEAD
+=======
+disable_d_i=true
+>>>>>>> temp
 endif
 
 # Debian Build System targets
@@ -102,7 +126,11 @@ clean: debian/control
 	# d-i stuff
 	rm -rf $(DEBIAN)/d-i-$(arch)
 	# Generated on the fly.
+<<<<<<< HEAD
 	rm -f $(DEBIAN)/d-i/firmware/kernel-image
+=======
+	rm -f $(DEBIAN)/d-i/firmware/$(arch)/kernel-image
+>>>>>>> temp
 
 	# normal build junk
 	rm -rf $(DEBIAN)/abi/$(release)-$(revision)
@@ -124,8 +152,12 @@ clean: debian/control
 	[ -f $(DEBIAN)/reconstruct ] && bash $(DEBIAN)/reconstruct
 
 	# Remove generated intermediate files
+<<<<<<< HEAD
 	rm -f $(DROOT)/control.stub $(DEBIAN)/control.stub \
 		$(DEBIAN)/d-i/kernel-versions
+=======
+	rm -f $(DROOT)/control.stub $(DEBIAN)/control.stub
+>>>>>>> temp
 
 distclean: clean
 	rm -rf $(DROOT)/control debian/changelog \
@@ -146,12 +178,20 @@ include $(DROOT)/rules.d/4-checks.mk
 
 # Misc stuff
 .PHONY: $(DEBIAN)/control.stub
+<<<<<<< HEAD
 $(DEBIAN)/control.stub: $(DEBIAN)/d-i/kernel-versions.in	\
+=======
+$(DEBIAN)/control.stub: 				\
+>>>>>>> temp
 		$(DROOT)/scripts/control-create		\
 		$(DEBIAN)/control.stub.in			\
 		$(DEBIAN)/changelog			\
 		$(wildcard $(DEBIAN)/control.d/* $(DEBIAN)/sub-flavours/*.vars)
+<<<<<<< HEAD
 	for i in $(DEBIAN)/d-i/kernel-versions.in $(DEBIAN)/control.stub.in; do	\
+=======
+	for i in $(DEBIAN)/control.stub.in; do					\
+>>>>>>> temp
 	  new=`echo $$i | sed 's/\.in$$//'`;					\
 	  cat $$i | sed -e 's/PKGVER/$(release)/g'                              \
 	        -e 's/ABINUM/$(abinum)/g'                                       \
@@ -161,7 +201,11 @@ $(DEBIAN)/control.stub: $(DEBIAN)/d-i/kernel-versions.in	\
 	done
 	flavours="$(sort $(wildcard $(DEBIAN)/control.d/vars.* $(DEBIAN)/sub-flavours/*.vars))";\
 	for i in $$flavours; do							\
+<<<<<<< HEAD
 	  $(SHELL) $(DROOT)/scripts/control-create $$i |				\
+=======
+	  $(SHELL) $(DROOT)/scripts/control-create $$i "$(any_signed)" |	\
+>>>>>>> temp
 		sed -e 's/PKGVER/$(release)/g'                                  \
 		-e 's/ABINUM/$(abinum)/g'                                       \
 		-e 's/SRCPKGNAME/$(src_pkg_name)/g'                             \
@@ -171,6 +215,7 @@ $(DEBIAN)/control.stub: $(DEBIAN)/d-i/kernel-versions.in	\
 
 .PHONY: debian/control
 debian/control: $(DEBIAN)/control.stub
+<<<<<<< HEAD
 	rm -rf $(builddir)/modules $(builddir)/firmware			\
 		$(builddir)/kernel-versions $(builddir)/package-list	\
 		$(builddir)/$(DEBIAN)
@@ -299,3 +344,12 @@ debian/control: $(DEBIAN)/control.stub
 	echo "# placebo control.stub for kernel-wedge flow change" >debian/control.stub
 	cp $(DEBIAN)/control.stub debian/control
 	cd $(builddir) && LANG=C kernel-wedge gen-control >> $(CURDIR)/debian/control
+=======
+	echo "# placebo control.stub for kernel-wedge flow change" >debian/control.stub
+	cp $(DEBIAN)/control.stub debian/control
+	export KW_DEFCONFIG_DIR=$(DEBIAN)/d-i && \
+	export KW_CONFIG_DIR=$(DEBIAN)/d-i && \
+	LANG=C kernel-wedge gen-control $(release)-$(abinum) | \
+		perl -f $(DROOT)/scripts/misc/kernel-wedge-arch.pl $(arch) \
+		>>$(CURDIR)/debian/control
+>>>>>>> temp

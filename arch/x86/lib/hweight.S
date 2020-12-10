@@ -1,4 +1,10 @@
+<<<<<<< HEAD
 #include <linux/linkage.h>
+=======
+/* SPDX-License-Identifier: GPL-2.0 */
+#include <linux/linkage.h>
+#include <asm/export.h>
+>>>>>>> temp
 
 #include <asm/asm.h>
 
@@ -32,6 +38,10 @@ ENTRY(__sw_hweight32)
 	__ASM_SIZE(pop,) %__ASM_REG(dx)
 	ret
 ENDPROC(__sw_hweight32)
+<<<<<<< HEAD
+=======
+EXPORT_SYMBOL(__sw_hweight32)
+>>>>>>> temp
 
 ENTRY(__sw_hweight64)
 #ifdef CONFIG_X86_64
@@ -77,3 +87,7 @@ ENTRY(__sw_hweight64)
 	ret
 #endif
 ENDPROC(__sw_hweight64)
+<<<<<<< HEAD
+=======
+EXPORT_SYMBOL(__sw_hweight64)
+>>>>>>> temp

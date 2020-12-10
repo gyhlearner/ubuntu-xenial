@@ -434,6 +434,7 @@ splat_list_init(void)
         spin_lock_init(&sub->test_lock);
         sub->desc.id = SPLAT_SUBSYSTEM_LIST;
 
+<<<<<<< HEAD
         SPLAT_TEST_INIT(sub, SPLAT_LIST_TEST1_NAME, SPLAT_LIST_TEST1_DESC,
 	                SPLAT_LIST_TEST1_ID, splat_list_test1);
         SPLAT_TEST_INIT(sub, SPLAT_LIST_TEST2_NAME, SPLAT_LIST_TEST2_DESC,
@@ -447,6 +448,21 @@ splat_list_init(void)
         SPLAT_TEST_INIT(sub, SPLAT_LIST_TEST6_NAME, SPLAT_LIST_TEST6_DESC,
 	                SPLAT_LIST_TEST6_ID, splat_list_test6);
         SPLAT_TEST_INIT(sub, SPLAT_LIST_TEST7_NAME, SPLAT_LIST_TEST7_DESC,
+=======
+        splat_test_init(sub, SPLAT_LIST_TEST1_NAME, SPLAT_LIST_TEST1_DESC,
+	                SPLAT_LIST_TEST1_ID, splat_list_test1);
+        splat_test_init(sub, SPLAT_LIST_TEST2_NAME, SPLAT_LIST_TEST2_DESC,
+	                SPLAT_LIST_TEST2_ID, splat_list_test2);
+        splat_test_init(sub, SPLAT_LIST_TEST3_NAME, SPLAT_LIST_TEST3_DESC,
+	                SPLAT_LIST_TEST3_ID, splat_list_test3);
+        splat_test_init(sub, SPLAT_LIST_TEST4_NAME, SPLAT_LIST_TEST4_DESC,
+	                SPLAT_LIST_TEST4_ID, splat_list_test4);
+        splat_test_init(sub, SPLAT_LIST_TEST5_NAME, SPLAT_LIST_TEST5_DESC,
+	                SPLAT_LIST_TEST5_ID, splat_list_test5);
+        splat_test_init(sub, SPLAT_LIST_TEST6_NAME, SPLAT_LIST_TEST6_DESC,
+	                SPLAT_LIST_TEST6_ID, splat_list_test6);
+        splat_test_init(sub, SPLAT_LIST_TEST7_NAME, SPLAT_LIST_TEST7_DESC,
+>>>>>>> temp
 	                SPLAT_LIST_TEST7_ID, splat_list_test7);
 
         return sub;
@@ -457,6 +473,7 @@ splat_list_fini(splat_subsystem_t *sub)
 {
         ASSERT(sub);
 
+<<<<<<< HEAD
         SPLAT_TEST_FINI(sub, SPLAT_LIST_TEST7_ID);
         SPLAT_TEST_FINI(sub, SPLAT_LIST_TEST6_ID);
         SPLAT_TEST_FINI(sub, SPLAT_LIST_TEST5_ID);
@@ -464,6 +481,15 @@ splat_list_fini(splat_subsystem_t *sub)
         SPLAT_TEST_FINI(sub, SPLAT_LIST_TEST3_ID);
         SPLAT_TEST_FINI(sub, SPLAT_LIST_TEST2_ID);
         SPLAT_TEST_FINI(sub, SPLAT_LIST_TEST1_ID);
+=======
+        splat_test_fini(sub, SPLAT_LIST_TEST7_ID);
+        splat_test_fini(sub, SPLAT_LIST_TEST6_ID);
+        splat_test_fini(sub, SPLAT_LIST_TEST5_ID);
+        splat_test_fini(sub, SPLAT_LIST_TEST4_ID);
+        splat_test_fini(sub, SPLAT_LIST_TEST3_ID);
+        splat_test_fini(sub, SPLAT_LIST_TEST2_ID);
+        splat_test_fini(sub, SPLAT_LIST_TEST1_ID);
+>>>>>>> temp
 
         kfree(sub);
 }

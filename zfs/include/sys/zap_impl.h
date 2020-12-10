@@ -18,9 +18,18 @@
  *
  * CDDL HEADER END
  */
+<<<<<<< HEAD
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014 Spectra Logic Corporation, All rights reserved.
+=======
+
+/*
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014 Spectra Logic Corporation, All rights reserved.
+ * Copyright (c) 2013, 2016 by Delphix. All rights reserved.
+ * Copyright 2017 Nexenta Systems, Inc.
+>>>>>>> temp
  */
 
 #ifndef	_SYS_ZAP_IMPL_H
@@ -187,6 +196,10 @@ typedef struct zap_name {
 	int zn_key_norm_numints;
 	uint64_t zn_hash;
 	matchtype_t zn_matchtype;
+<<<<<<< HEAD
+=======
+	int zn_normflags;
+>>>>>>> temp
 	char zn_normbuf[ZAP_MAXNAMELEN];
 } zap_name_t;
 
@@ -195,9 +208,15 @@ typedef struct zap_name {
 
 boolean_t zap_match(zap_name_t *zn, const char *matchname);
 int zap_lockdir(objset_t *os, uint64_t obj, dmu_tx_t *tx,
+<<<<<<< HEAD
     krw_t lti, boolean_t fatreader, boolean_t adding, zap_t **zapp);
 void zap_unlockdir(zap_t *zap);
 void zap_evict(void *dbu);
+=======
+    krw_t lti, boolean_t fatreader, boolean_t adding, void *tag, zap_t **zapp);
+void zap_unlockdir(zap_t *zap, void *tag);
+void zap_evict_sync(void *dbu);
+>>>>>>> temp
 zap_name_t *zap_name_alloc(zap_t *zap, const char *key, matchtype_t mt);
 void zap_name_free(zap_name_t *zn);
 int zap_hashbits(zap_t *zap);
@@ -212,12 +231,20 @@ int fzap_lookup(zap_name_t *zn,
     uint64_t integer_size, uint64_t num_integers, void *buf,
     char *realname, int rn_len, boolean_t *normalization_conflictp);
 void fzap_prefetch(zap_name_t *zn);
+<<<<<<< HEAD
 int fzap_count_write(zap_name_t *zn, int add, uint64_t *towrite,
     uint64_t *tooverwrite);
 int fzap_add(zap_name_t *zn, uint64_t integer_size, uint64_t num_integers,
     const void *val, dmu_tx_t *tx);
 int fzap_update(zap_name_t *zn,
     int integer_size, uint64_t num_integers, const void *val, dmu_tx_t *tx);
+=======
+int fzap_add(zap_name_t *zn, uint64_t integer_size, uint64_t num_integers,
+    const void *val, void *tag, dmu_tx_t *tx);
+int fzap_update(zap_name_t *zn,
+    int integer_size, uint64_t num_integers, const void *val,
+    void *tag, dmu_tx_t *tx);
+>>>>>>> temp
 int fzap_length(zap_name_t *zn,
     uint64_t *integer_size, uint64_t *num_integers);
 int fzap_remove(zap_name_t *zn, dmu_tx_t *tx);
@@ -227,7 +254,11 @@ void zap_put_leaf(struct zap_leaf *l);
 
 int fzap_add_cd(zap_name_t *zn,
     uint64_t integer_size, uint64_t num_integers,
+<<<<<<< HEAD
     const void *val, uint32_t cd, dmu_tx_t *tx);
+=======
+    const void *val, uint32_t cd, void *tag, dmu_tx_t *tx);
+>>>>>>> temp
 void fzap_upgrade(zap_t *zap, dmu_tx_t *tx, zap_flags_t flags);
 
 #ifdef	__cplusplus

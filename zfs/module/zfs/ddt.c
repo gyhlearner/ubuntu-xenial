@@ -21,7 +21,11 @@
 
 /*
  * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+<<<<<<< HEAD
  * Copyright (c) 2012, 2014 by Delphix. All rights reserved.
+=======
+ * Copyright (c) 2012, 2016 by Delphix. All rights reserved.
+>>>>>>> temp
  */
 
 #include <sys/zfs_context.h>
@@ -36,6 +40,10 @@
 #include <sys/zio_checksum.h>
 #include <sys/zio_compress.h>
 #include <sys/dsl_scan.h>
+<<<<<<< HEAD
+=======
+#include <sys/abd.h>
+>>>>>>> temp
 
 static kmem_cache_t *ddt_cache;
 static kmem_cache_t *ddt_entry_cache;
@@ -62,7 +70,12 @@ ddt_object_create(ddt_t *ddt, enum ddt_type type, enum ddt_class class,
 	spa_t *spa = ddt->ddt_spa;
 	objset_t *os = ddt->ddt_os;
 	uint64_t *objectp = &ddt->ddt_object[type][class];
+<<<<<<< HEAD
 	boolean_t prehash = zio_checksum_table[ddt->ddt_checksum].ci_dedup;
+=======
+	boolean_t prehash = zio_checksum_table[ddt->ddt_checksum].ci_flags &
+	    ZCHECKSUM_FLAG_DEDUP;
+>>>>>>> temp
 	char name[DDT_NAMELEN];
 
 	ddt_object_name(ddt, type, class, name);
@@ -527,10 +540,24 @@ ddt_get_dedup_stats(spa_t *spa, ddt_stat_t *dds_total)
 uint64_t
 ddt_get_dedup_dspace(spa_t *spa)
 {
+<<<<<<< HEAD
 	ddt_stat_t dds_total = { 0 };
 
 	ddt_get_dedup_stats(spa, &dds_total);
 	return (dds_total.dds_ref_dsize - dds_total.dds_dsize);
+=======
+	ddt_stat_t dds_total;
+
+	if (spa->spa_dedup_dspace != ~0ULL)
+		return (spa->spa_dedup_dspace);
+
+	bzero(&dds_total, sizeof (ddt_stat_t));
+
+	/* Calculate and cache the stats */
+	ddt_get_dedup_stats(spa, &dds_total);
+	spa->spa_dedup_dspace = dds_total.dds_ref_dsize - dds_total.dds_dsize;
+	return (spa->spa_dedup_dspace);
+>>>>>>> temp
 }
 
 uint64_t
@@ -705,9 +732,14 @@ ddt_free(ddt_entry_t *dde)
 	for (p = 0; p < DDT_PHYS_TYPES; p++)
 		ASSERT(dde->dde_lead_zio[p] == NULL);
 
+<<<<<<< HEAD
 	if (dde->dde_repair_data != NULL)
 		zio_buf_free(dde->dde_repair_data,
 		    DDK_GET_PSIZE(&dde->dde_key));
+=======
+	if (dde->dde_repair_abd != NULL)
+		abd_free(dde->dde_repair_abd);
+>>>>>>> temp
 
 	cv_destroy(&dde->dde_cv);
 	kmem_cache_free(ddt_entry_cache, dde);
@@ -811,11 +843,24 @@ ddt_prefetch(spa_t *spa, const blkptr_t *bp)
 	}
 }
 
+<<<<<<< HEAD
+=======
+/*
+ * Opaque struct used for ddt_key comparison
+ */
+#define	DDT_KEY_CMP_LEN	(sizeof (ddt_key_t) / sizeof (uint16_t))
+
+typedef struct ddt_key_cmp {
+	uint16_t	u16[DDT_KEY_CMP_LEN];
+} ddt_key_cmp_t;
+
+>>>>>>> temp
 int
 ddt_entry_compare(const void *x1, const void *x2)
 {
 	const ddt_entry_t *dde1 = x1;
 	const ddt_entry_t *dde2 = x2;
+<<<<<<< HEAD
 	const uint64_t *u1 = (const uint64_t *)&dde1->dde_key;
 	const uint64_t *u2 = (const uint64_t *)&dde2->dde_key;
 	int i;
@@ -828,6 +873,20 @@ ddt_entry_compare(const void *x1, const void *x2)
 	}
 
 	return (0);
+=======
+	const ddt_key_cmp_t *k1 = (const ddt_key_cmp_t *)&dde1->dde_key;
+	const ddt_key_cmp_t *k2 = (const ddt_key_cmp_t *)&dde2->dde_key;
+	int32_t cmp = 0;
+	int i;
+
+	for (i = 0; i < DDT_KEY_CMP_LEN; i++) {
+		cmp = (int32_t)k1->u16[i] - (int32_t)k2->u16[i];
+		if (likely(cmp))
+			break;
+	}
+
+	return (AVL_ISIGN(cmp));
+>>>>>>> temp
 }
 
 static ddt_t *
@@ -905,6 +964,10 @@ ddt_load(spa_t *spa)
 		 */
 		bcopy(ddt->ddt_histogram, &ddt->ddt_histogram_cache,
 		    sizeof (ddt->ddt_histogram));
+<<<<<<< HEAD
+=======
+		spa->spa_dedup_dspace = ~0ULL;
+>>>>>>> temp
 	}
 
 	return (0);
@@ -992,7 +1055,11 @@ ddt_repair_done(ddt_t *ddt, ddt_entry_t *dde)
 
 	ddt_enter(ddt);
 
+<<<<<<< HEAD
 	if (dde->dde_repair_data != NULL && spa_writeable(ddt->ddt_spa) &&
+=======
+	if (dde->dde_repair_abd != NULL && spa_writeable(ddt->ddt_spa) &&
+>>>>>>> temp
 	    avl_find(&ddt->ddt_repair_tree, dde, &where) == NULL)
 		avl_insert(&ddt->ddt_repair_tree, dde, where);
 	else
@@ -1030,7 +1097,11 @@ ddt_repair_entry(ddt_t *ddt, ddt_entry_t *dde, ddt_entry_t *rdde, zio_t *rio)
 			continue;
 		ddt_bp_create(ddt->ddt_checksum, ddk, ddp, &blk);
 		zio_nowait(zio_rewrite(zio, zio->io_spa, 0, &blk,
+<<<<<<< HEAD
 		    rdde->dde_repair_data, DDK_GET_PSIZE(rddk), NULL, NULL,
+=======
+		    rdde->dde_repair_abd, DDK_GET_PSIZE(rddk), NULL, NULL,
+>>>>>>> temp
 		    ZIO_PRIORITY_SYNC_WRITE, ZIO_DDT_CHILD_FLAGS(zio), NULL));
 	}
 
@@ -1172,6 +1243,10 @@ ddt_sync_table(ddt_t *ddt, dmu_tx_t *tx, uint64_t txg)
 
 	bcopy(ddt->ddt_histogram, &ddt->ddt_histogram_cache,
 	    sizeof (ddt->ddt_histogram));
+<<<<<<< HEAD
+=======
+	spa->spa_dedup_dspace = ~0ULL;
+>>>>>>> temp
 }
 
 void

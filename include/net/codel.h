@@ -87,27 +87,6 @@ static inline codel_time_t codel_get_time(void)
 	 ((s32)((a) - (b)) >= 0))
 #define codel_time_before_eq(a, b)	codel_time_after_eq(b, a)
 
-/* Qdiscs using codel plugin must use codel_skb_cb in their own cb[] */
-struct codel_skb_cb {
-	codel_time_t enqueue_time;
-};
-
-static struct codel_skb_cb *get_codel_cb(const struct sk_buff *skb)
-{
-	qdisc_cb_private_validate(skb, sizeof(struct codel_skb_cb));
-	return (struct codel_skb_cb *)qdisc_skb_cb(skb)->data;
-}
-
-static codel_time_t codel_get_enqueue_time(const struct sk_buff *skb)
-{
-	return get_codel_cb(skb)->enqueue_time;
-}
-
-static void codel_set_enqueue_time(struct sk_buff *skb)
-{
-	get_codel_cb(skb)->enqueue_time = codel_get_time();
-}
-
 static inline u32 codel_time_to_us(codel_time_t val)
 {
 	u64 valns = ((u64)val << CODEL_SHIFT);
@@ -176,97 +155,13 @@ struct codel_stats {
 
 #define CODEL_DISABLED_THRESHOLD INT_MAX
 
-static void codel_params_init(struct codel_params *params,
-			      const struct Qdisc *sch)
-{
-	params->interval = MS2TIME(100);
-	params->target = MS2TIME(5);
-	params->mtu = psched_mtu(qdisc_dev(sch));
-	params->ce_threshold = CODEL_DISABLED_THRESHOLD;
-	params->ecn = false;
-}
-
-static void codel_vars_init(struct codel_vars *vars)
-{
-	memset(vars, 0, sizeof(*vars));
-}
-
-static void codel_stats_init(struct codel_stats *stats)
-{
-	stats->maxpacket = 0;
-}
-
-/*
- * http://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Iterative_methods_for_reciprocal_square_roots
- * new_invsqrt = (invsqrt / 2) * (3 - count * invsqrt^2)
- *
- * Here, invsqrt is a fixed point number (< 1.0), 32bit mantissa, aka Q0.32
- */
-static void codel_Newton_step(struct codel_vars *vars)
-{
-	u32 invsqrt = ((u32)vars->rec_inv_sqrt) << REC_INV_SQRT_SHIFT;
-	u32 invsqrt2 = ((u64)invsqrt * invsqrt) >> 32;
-	u64 val = (3LL << 32) - ((u64)vars->count * invsqrt2);
-
-	val >>= 2; /* avoid overflow in following multiply */
-	val = (val * invsqrt) >> (32 - 2 + 1);
-
-	vars->rec_inv_sqrt = val >> REC_INV_SQRT_SHIFT;
-}
-
-/*
- * CoDel control_law is t + interval/sqrt(count)
- * We maintain in rec_inv_sqrt the reciprocal value of sqrt(count) to avoid
- * both sqrt() and divide operation.
- */
-static codel_time_t codel_control_law(codel_time_t t,
-				      codel_time_t interval,
-				      u32 rec_inv_sqrt)
-{
-	return t + reciprocal_scale(interval, rec_inv_sqrt << REC_INV_SQRT_SHIFT);
-}
-
-static bool codel_should_drop(const struct sk_buff *skb,
-			      struct Qdisc *sch,
-			      struct codel_vars *vars,
-			      struct codel_params *params,
-			      struct codel_stats *stats,
-			      codel_time_t now)
-{
-	bool ok_to_drop;
-
-	if (!skb) {
-		vars->first_above_time = 0;
-		return false;
-	}
-
-	vars->ldelay = now - codel_get_enqueue_time(skb);
-	sch->qstats.backlog -= qdisc_pkt_len(skb);
-
-	if (unlikely(qdisc_pkt_len(skb) > stats->maxpacket))
-		stats->maxpacket = qdisc_pkt_len(skb);
-
-	if (codel_time_before(vars->ldelay, params->target) ||
-	    sch->qstats.backlog <= params->mtu) {
-		/* went below - stay below for at least interval */
-		vars->first_above_time = 0;
-		return false;
-	}
-	ok_to_drop = false;
-	if (vars->first_above_time == 0) {
-		/* just went above from below. If we stay above
-		 * for at least interval we'll say it's ok to drop
-		 */
-		vars->first_above_time = now + params->interval;
-	} else if (codel_time_after(now, vars->first_above_time)) {
-		ok_to_drop = true;
-	}
-	return ok_to_drop;
-}
-
+typedef u32 (*codel_skb_len_t)(const struct sk_buff *skb);
+typedef codel_time_t (*codel_skb_time_t)(const struct sk_buff *skb);
+typedef void (*codel_skb_drop_t)(struct sk_buff *skb, void *ctx);
 typedef struct sk_buff * (*codel_skb_dequeue_t)(struct codel_vars *vars,
-						struct Qdisc *sch);
+						void *ctx);
 
+<<<<<<< HEAD
 static struct sk_buff *codel_dequeue(struct Qdisc *sch,
 				     struct codel_params *params,
 				     struct codel_vars *vars,
@@ -370,4 +265,6 @@ end:
 		stats->ce_mark++;
 	return skb;
 }
+=======
+>>>>>>> temp
 #endif

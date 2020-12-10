@@ -18,9 +18,17 @@
  *
  * CDDL HEADER END
  */
+<<<<<<< HEAD
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013 by Delphix. All rights reserved.
+=======
+
+/*
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013 by Delphix. All rights reserved.
+ * Copyright 2017 Nexenta Systems, Inc.
+>>>>>>> temp
  */
 
 #ifndef	_SYS_ZAP_H
@@ -87,6 +95,7 @@ extern "C" {
 
 /*
  * Specifies matching criteria for ZAP lookups.
+<<<<<<< HEAD
  */
 typedef enum matchtype
 {
@@ -103,6 +112,17 @@ typedef enum matchtype
 	 * set of entries with this normalization doesn't change.
 	 */
 	MT_FIRST
+=======
+ * MT_NORMALIZE		Use ZAP normalization flags, which can include both
+ *			unicode normalization and case-insensitivity.
+ * MT_MATCH_CASE	Do case-sensitive lookups even if MT_NORMALIZE is
+ *			specified and ZAP normalization flags include
+ *			U8_TEXTPREP_TOUPPER.
+ */
+typedef enum matchtype {
+	MT_NORMALIZE = 1 << 0,
+	MT_MATCH_CASE = 1 << 1,
+>>>>>>> temp
 } matchtype_t;
 
 typedef enum zap_flags {
@@ -119,6 +139,7 @@ typedef enum zap_flags {
 
 /*
  * Create a new zapobj with no attributes and return its object number.
+<<<<<<< HEAD
  * MT_EXACT will cause the zap object to only support MT_EXACT lookups,
  * otherwise any matchtype can be used for lookups.
  *
@@ -139,6 +160,29 @@ uint64_t zap_create_flags(objset_t *os, int normflags, zap_flags_t flags,
     dmu_object_type_t bonustype, int bonuslen, dmu_tx_t *tx);
 uint64_t zap_create_link(objset_t *os, dmu_object_type_t ot,
     uint64_t parent_obj, const char *name, dmu_tx_t *tx);
+=======
+ */
+uint64_t zap_create(objset_t *ds, dmu_object_type_t ot,
+    dmu_object_type_t bonustype, int bonuslen, dmu_tx_t *tx);
+uint64_t zap_create_dnsize(objset_t *ds, dmu_object_type_t ot,
+    dmu_object_type_t bonustype, int bonuslen, int dnodesize, dmu_tx_t *tx);
+uint64_t zap_create_norm(objset_t *ds, int normflags, dmu_object_type_t ot,
+    dmu_object_type_t bonustype, int bonuslen, dmu_tx_t *tx);
+uint64_t zap_create_norm_dnsize(objset_t *ds, int normflags,
+    dmu_object_type_t ot, dmu_object_type_t bonustype, int bonuslen,
+    int dnodesize, dmu_tx_t *tx);
+uint64_t zap_create_flags(objset_t *os, int normflags, zap_flags_t flags,
+    dmu_object_type_t ot, int leaf_blockshift, int indirect_blockshift,
+    dmu_object_type_t bonustype, int bonuslen, dmu_tx_t *tx);
+uint64_t zap_create_flags_dnsize(objset_t *os, int normflags,
+    zap_flags_t flags, dmu_object_type_t ot, int leaf_blockshift,
+    int indirect_blockshift, dmu_object_type_t bonustype, int bonuslen,
+    int dnodesize, dmu_tx_t *tx);
+uint64_t zap_create_link(objset_t *os, dmu_object_type_t ot,
+    uint64_t parent_obj, const char *name, dmu_tx_t *tx);
+uint64_t zap_create_link_dnsize(objset_t *os, dmu_object_type_t ot,
+    uint64_t parent_obj, const char *name, int dnodesize, dmu_tx_t *tx);
+>>>>>>> temp
 
 /*
  * Initialize an already-allocated object.
@@ -152,9 +196,20 @@ void mzap_create_impl(objset_t *os, uint64_t obj, int normflags,
  */
 int zap_create_claim(objset_t *ds, uint64_t obj, dmu_object_type_t ot,
     dmu_object_type_t bonustype, int bonuslen, dmu_tx_t *tx);
+<<<<<<< HEAD
 int zap_create_claim_norm(objset_t *ds, uint64_t obj,
     int normflags, dmu_object_type_t ot,
     dmu_object_type_t bonustype, int bonuslen, dmu_tx_t *tx);
+=======
+int zap_create_claim_dnsize(objset_t *ds, uint64_t obj, dmu_object_type_t ot,
+    dmu_object_type_t bonustype, int bonuslen, int dnodesize, dmu_tx_t *tx);
+int zap_create_claim_norm(objset_t *ds, uint64_t obj,
+    int normflags, dmu_object_type_t ot,
+    dmu_object_type_t bonustype, int bonuslen, dmu_tx_t *tx);
+int zap_create_claim_norm_dnsize(objset_t *ds, uint64_t obj,
+    int normflags, dmu_object_type_t ot,
+    dmu_object_type_t bonustype, int bonuslen, int dnodesize, dmu_tx_t *tx);
+>>>>>>> temp
 
 /*
  * The zapobj passed in must be a valid ZAP object for all of the
@@ -217,8 +272,20 @@ int zap_prefetch(objset_t *os, uint64_t zapobj, const char *name);
 int zap_prefetch_uint64(objset_t *os, uint64_t zapobj, const uint64_t *key,
     int key_numints);
 
+<<<<<<< HEAD
 int zap_count_write(objset_t *os, uint64_t zapobj, const char *name,
     int add, uint64_t *towrite, uint64_t *tooverwrite);
+=======
+int zap_lookup_by_dnode(dnode_t *dn, const char *name,
+    uint64_t integer_size, uint64_t num_integers, void *buf);
+int zap_lookup_norm_by_dnode(dnode_t *dn, const char *name,
+    uint64_t integer_size, uint64_t num_integers, void *buf,
+    matchtype_t mt, char *realname, int rn_len,
+    boolean_t *ncp);
+
+int zap_count_write_by_dnode(dnode_t *dn, const char *name,
+    int add, refcount_t *towrite, refcount_t *tooverwrite);
+>>>>>>> temp
 
 /*
  * Create an attribute with the given name and value.
@@ -229,6 +296,12 @@ int zap_count_write(objset_t *os, uint64_t zapobj, const char *name,
 int zap_add(objset_t *ds, uint64_t zapobj, const char *key,
     int integer_size, uint64_t num_integers,
     const void *val, dmu_tx_t *tx);
+<<<<<<< HEAD
+=======
+int zap_add_by_dnode(dnode_t *dn, const char *key,
+    int integer_size, uint64_t num_integers,
+    const void *val, dmu_tx_t *tx);
+>>>>>>> temp
 int zap_add_uint64(objset_t *ds, uint64_t zapobj, const uint64_t *key,
     int key_numints, int integer_size, uint64_t num_integers,
     const void *val, dmu_tx_t *tx);
@@ -268,6 +341,10 @@ int zap_length_uint64(objset_t *os, uint64_t zapobj, const uint64_t *key,
 int zap_remove(objset_t *ds, uint64_t zapobj, const char *name, dmu_tx_t *tx);
 int zap_remove_norm(objset_t *ds, uint64_t zapobj, const char *name,
     matchtype_t mt, dmu_tx_t *tx);
+<<<<<<< HEAD
+=======
+int zap_remove_by_dnode(dnode_t *dn, const char *name, dmu_tx_t *tx);
+>>>>>>> temp
 int zap_remove_uint64(objset_t *os, uint64_t zapobj, const uint64_t *key,
     int key_numints, dmu_tx_t *tx);
 
@@ -344,7 +421,11 @@ typedef struct {
 	boolean_t za_normalization_conflict;
 	uint64_t za_num_integers;
 	uint64_t za_first_integer;	/* no sign extension for <8byte ints */
+<<<<<<< HEAD
 	char za_name[MAXNAMELEN];
+=======
+	char za_name[ZAP_MAXNAMELEN];
+>>>>>>> temp
 } zap_attribute_t;
 
 /*

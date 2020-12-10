@@ -5,6 +5,10 @@
 #define VBOX_VENDOR_SHORT "Oracle"
 #define VBOX_PRODUCT "Oracle VM VirtualBox"
 #define VBOX_BUILD_PUBLISHER "_Ubuntu"
+<<<<<<< HEAD
 #define VBOX_C_YEAR "2016"
+=======
+#define VBOX_C_YEAR "2018"
+>>>>>>> temp
 
 #endif

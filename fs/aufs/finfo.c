@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright (C) 2005-2015 Junjiro R. Okajima
+=======
+ * Copyright (C) 2005-2017 Junjiro R. Okajima
+>>>>>>> temp
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +25,7 @@
 
 #include "aufs.h"
 
+<<<<<<< HEAD
 void au_hfput(struct au_hfile *hf, struct file *file)
 {
 	/* todo: direct access f_flags */
@@ -29,6 +34,15 @@ void au_hfput(struct au_hfile *hf, struct file *file)
 	fput(hf->hf_file);
 	hf->hf_file = NULL;
 	atomic_dec(&hf->hf_br->br_count);
+=======
+void au_hfput(struct au_hfile *hf, int execed)
+{
+	if (execed)
+		allow_write_access(hf->hf_file);
+	fput(hf->hf_file);
+	hf->hf_file = NULL;
+	au_br_put(hf->hf_br);
+>>>>>>> temp
 	hf->hf_br = NULL;
 }
 
@@ -46,7 +60,11 @@ void au_set_h_fptr(struct file *file, aufs_bindex_t bindex, struct file *val)
 		hf = fidir->fd_hfile + bindex;
 
 	if (hf && hf->hf_file)
+<<<<<<< HEAD
 		au_hfput(hf, file);
+=======
+		au_hfput(hf, vfsub_file_execed(file));
+>>>>>>> temp
 	if (val) {
 		FiMustWriteLock(file);
 		AuDebugOn(IS_ERR_OR_NULL(file->f_path.dentry));
@@ -68,7 +86,11 @@ struct au_fidir *au_fidir_alloc(struct super_block *sb)
 	struct au_fidir *fidir;
 	int nbr;
 
+<<<<<<< HEAD
 	nbr = au_sbend(sb) + 1;
+=======
+	nbr = au_sbbot(sb) + 1;
+>>>>>>> temp
 	if (nbr < 2)
 		nbr = 2; /* initial allocate for 2 branches */
 	fidir = kzalloc(au_fidir_sz(nbr), GFP_NOFS);
@@ -80,7 +102,11 @@ struct au_fidir *au_fidir_alloc(struct super_block *sb)
 	return fidir;
 }
 
+<<<<<<< HEAD
 int au_fidir_realloc(struct au_finfo *finfo, int nbr)
+=======
+int au_fidir_realloc(struct au_finfo *finfo, int nbr, int may_shrink)
+>>>>>>> temp
 {
 	int err;
 	struct au_fidir *fidir, *p;
@@ -91,7 +117,11 @@ int au_fidir_realloc(struct au_finfo *finfo, int nbr)
 
 	err = -ENOMEM;
 	p = au_kzrealloc(fidir, au_fidir_sz(fidir->fd_nent), au_fidir_sz(nbr),
+<<<<<<< HEAD
 			 GFP_NOFS);
+=======
+			 GFP_NOFS, may_shrink);
+>>>>>>> temp
 	if (p) {
 		p->fd_nent = nbr;
 		finfo->fi_hdir = p;
@@ -118,10 +148,15 @@ void au_finfo_fin(struct file *file)
 void au_fi_init_once(void *_finfo)
 {
 	struct au_finfo *finfo = _finfo;
+<<<<<<< HEAD
 	static struct lock_class_key aufs_fi;
 
 	au_rw_init(&finfo->fi_rwsem);
 	au_rw_class(&finfo->fi_rwsem, &aufs_fi);
+=======
+
+	au_rw_init(&finfo->fi_rwsem);
+>>>>>>> temp
 }
 
 int au_finfo_init(struct file *file, struct au_fidir *fidir)
@@ -138,11 +173,14 @@ int au_finfo_init(struct file *file, struct au_fidir *fidir)
 
 	err = 0;
 	au_nfiles_inc(dentry->d_sb);
+<<<<<<< HEAD
 	/* verbose coding for lock class name */
 	if (!fidir)
 		au_rw_class(&finfo->fi_rwsem, au_lc_key + AuLcNonDir_FIINFO);
 	else
 		au_rw_class(&finfo->fi_rwsem, au_lc_key + AuLcDir_FIINFO);
+=======
+>>>>>>> temp
 	au_rw_write_lock(&finfo->fi_rwsem);
 	finfo->fi_btop = -1;
 	finfo->fi_hdir = fidir;

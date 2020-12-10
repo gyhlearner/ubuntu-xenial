@@ -184,10 +184,16 @@ void core_tmr_abort_task(
 		printk("ABORT_TASK: Found referenced %s task_tag: %llu\n",
 			se_cmd->se_tfo->get_fabric_name(), ref_tag);
 
+<<<<<<< HEAD
 		if (!__target_check_io_state(se_cmd, se_sess, 0)) {
 			spin_unlock_irqrestore(&se_sess->sess_cmd_lock, flags);
 			goto out;
 		}
+=======
+		if (!__target_check_io_state(se_cmd, se_sess, 0))
+			continue;
+
+>>>>>>> temp
 		list_del_init(&se_cmd->se_cmd_list);
 		spin_unlock_irqrestore(&se_sess->sess_cmd_lock, flags);
 
@@ -200,14 +206,15 @@ void core_tmr_abort_task(
 		printk("ABORT_TASK: Sending TMR_FUNCTION_COMPLETE for"
 				" ref_tag: %llu\n", ref_tag);
 		tmr->response = TMR_FUNCTION_COMPLETE;
+		atomic_long_inc(&dev->aborts_complete);
 		return;
 	}
 	spin_unlock_irqrestore(&se_sess->sess_cmd_lock, flags);
 
-out:
 	printk("ABORT_TASK: Sending TMR_TASK_DOES_NOT_EXIST for ref_tag: %lld\n",
 			tmr->ref_task_tag);
 	tmr->response = TMR_TASK_DOES_NOT_EXIST;
+	atomic_long_inc(&dev->aborts_no_task);
 }
 
 static void core_tmr_drain_tmr_list(
@@ -226,13 +233,9 @@ static void core_tmr_drain_tmr_list(
 	 * LUN_RESET tmr..
 	 */
 	spin_lock_irqsave(&dev->se_tmr_lock, flags);
+	if (tmr)
+		list_del_init(&tmr->tmr_list);
 	list_for_each_entry_safe(tmr_p, tmr_pp, &dev->dev_tmr_list, tmr_list) {
-		/*
-		 * Allow the received TMR to return with FUNCTION_COMPLETE.
-		 */
-		if (tmr_p == tmr)
-			continue;
-
 		cmd = tmr_p->task_cmd;
 		if (!cmd) {
 			pr_err("Unable to locate struct se_cmd for TMR\n");
@@ -241,7 +244,7 @@ static void core_tmr_drain_tmr_list(
 		/*
 		 * If this function was called with a valid pr_res_key
 		 * parameter (eg: for PROUT PREEMPT_AND_ABORT service action
-		 * skip non regisration key matching TMRs.
+		 * skip non registration key matching TMRs.
 		 */
 		if (target_check_cdb_and_preempt(preempt_and_abort_list, cmd))
 			continue;
@@ -261,6 +264,7 @@ static void core_tmr_drain_tmr_list(
 		if (cmd->t_state == TRANSPORT_ISTATE_PROCESSING) {
 			spin_unlock(&cmd->t_state_lock);
 			spin_unlock(&sess->sess_cmd_lock);
+<<<<<<< HEAD
 			continue;
 		}
 		if (sess->sess_tearing_down || cmd->cmd_wait_set) {
@@ -268,6 +272,15 @@ static void core_tmr_drain_tmr_list(
 			spin_unlock(&sess->sess_cmd_lock);
 			continue;
 		}
+=======
+			continue;
+		}
+		if (sess->sess_tearing_down || cmd->cmd_wait_set) {
+			spin_unlock(&cmd->t_state_lock);
+			spin_unlock(&sess->sess_cmd_lock);
+			continue;
+		}
+>>>>>>> temp
 		cmd->transport_state |= CMD_T_ABORTED;
 		spin_unlock(&cmd->t_state_lock);
 
@@ -369,6 +382,7 @@ static void core_tmr_drain_state_list(
 		cmd = list_entry(drain_task_list.next, struct se_cmd, state_list);
 		list_del_init(&cmd->state_list);
 
+<<<<<<< HEAD
 		pr_debug("LUN_RESET: %s cmd: %p"
 			" ITT/CmdSN: 0x%08llx/0x%08x, i_state: %d, t_state: %d"
 			"cdb: 0x%02x\n",
@@ -383,6 +397,12 @@ static void core_tmr_drain_state_list(
 			(cmd->transport_state & CMD_T_ACTIVE) != 0,
 			(cmd->transport_state & CMD_T_STOP) != 0,
 			(cmd->transport_state & CMD_T_SENT) != 0);
+=======
+		target_show_cmd("LUN_RESET: ", cmd);
+		pr_debug("LUN_RESET: ITT[0x%08llx] - %s pr_res_key: 0x%016Lx\n",
+			 cmd->tag, (preempt_and_abort_list) ? "preempt" : "",
+			 cmd->pr_res_key);
+>>>>>>> temp
 
 		/*
 		 * If the command may be queued onto a workqueue cancel it now.

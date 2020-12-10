@@ -21,6 +21,10 @@ parts:
       cp debian/scripts/retpoline-extract-one \
         $SNAPCRAFT_PART_BUILD/scripts/ubuntu-retpoline-extract-one
       snapcraftctl build
+<<<<<<< HEAD
+=======
+    kernel-with-firmware: false
+>>>>>>> temp
   firmware:
     plugin: nil
     stage-packages:
@@ -33,4 +37,7 @@ parts:
     build-packages:
       - cpio
       - libssl-dev
+<<<<<<< HEAD
       - dpkg-dev
+=======
+>>>>>>> temp

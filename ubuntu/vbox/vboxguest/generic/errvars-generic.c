@@ -4,7 +4,11 @@
  */
 
 /*
+<<<<<<< HEAD
  * Copyright (C) 2011-2015 Oracle Corporation
+=======
+ * Copyright (C) 2011-2017 Oracle Corporation
+>>>>>>> temp
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -46,6 +50,10 @@ RTDECL(PRTERRVARS) RTErrVarsSave(PRTERRVARS pVars)
 RTDECL(void) RTErrVarsRestore(PCRTERRVARS pVars)
 {
     Assert(pVars->ai32Vars[0] == RTERRVARS_MAGIC);
+<<<<<<< HEAD
+=======
+    RT_NOREF_PV(pVars);
+>>>>>>> temp
 }
 
 
@@ -61,6 +69,10 @@ RTDECL(bool) RTErrVarsAreEqual(PCRTERRVARS pVars1, PCRTERRVARS pVars2)
 RTDECL(bool) RTErrVarsHaveChanged(PCRTERRVARS pVars)
 {
     Assert(pVars->ai32Vars[0] == RTERRVARS_MAGIC);
+<<<<<<< HEAD
+=======
+    RT_NOREF_PV(pVars);
+>>>>>>> temp
     return false;
 }
 

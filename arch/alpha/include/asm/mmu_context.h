@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 #ifndef __ALPHA_MMU_CONTEXT_H
 #define __ALPHA_MMU_CONTEXT_H
 
@@ -7,7 +8,13 @@
  * Copyright (C) 1996, Linus Torvalds
  */
 
+<<<<<<< HEAD
 #include <linux/sched.h>
+=======
+#include <linux/mm_types.h>
+#include <linux/sched.h>
+
+>>>>>>> temp
 #include <asm/machvec.h>
 #include <asm/compiler.h>
 #include <asm-generic/mm_hooks.h>

@@ -28,8 +28,13 @@
 #include <asm/page.h>
 
 /* Pages to bytes and back */
+<<<<<<< HEAD
 #define ptob(pages)			(pages << PAGE_SHIFT)
 #define btop(bytes)			(bytes >> PAGE_SHIFT)
+=======
+#define ptob(pages)			((pages) << PAGE_SHIFT)
+#define btop(bytes)			((bytes) >> PAGE_SHIFT)
+>>>>>>> temp
 
 #define MAXUID				UINT32_MAX
 

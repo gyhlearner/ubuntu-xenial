@@ -3,18 +3,39 @@
 . debian/debian.env
 
 vars=$1
+<<<<<<< HEAD
+=======
+any_signed=$2
+>>>>>>> temp
 
 . $vars
 
 if [ "$is_sub" = "" ]; then
 	flavour=$(basename $vars | sed 's/.*\.//')
+<<<<<<< HEAD
 	stub=${DEBIAN}/control.d/flavour-control.stub
+=======
+	stub="${DEBIAN}/control.d/flavour-control.stub debian/control.d/flavour-buildinfo.stub"
+	if [ "$any_signed" = 'true' ]; then
+		sign_me_pkg="-unsigned"
+		sign_me_txt=" unsigned"
+		sign_peer_pkg=""
+	else
+		sign_me_pkg=""
+		sign_me_txt=""
+		sign_peer_pkg="-unsigned"
+	fi
+>>>>>>> temp
 else
 	flavour=$(basename $vars .vars)
 	stub=${DEBIAN}/sub-flavours/control.stub
 fi
 
+<<<<<<< HEAD
 cat $stub | grep -v '^#' | sed			\
+=======
+cat $stub | grep -v '^#' | sed \
+>>>>>>> temp
 	-e "s#FLAVOUR#$flavour#g"		\
 	-e "s#DESC#$desc#g"			\
 	-e "s#ARCH#$arch#g"			\
@@ -22,4 +43,11 @@ cat $stub | grep -v '^#' | sed			\
 	-e "s#TARGET#$target#g"			\
 	-e "s#BOOTLOADER#$bootloader#g" 	\
 	-e "s#=PROVIDES=#$provides#g"		\
+<<<<<<< HEAD
 	-e "s#=CONFLICTS=#$conflicts#g"
+=======
+	-e "s#=CONFLICTS=#$conflicts#g"		\
+	-e "s#=SIGN-ME-PKG=#$sign_me_pkg#g"	\
+	-e "s#=SIGN-ME-TXT=#$sign_me_txt#g"	\
+	-e "s#=SIGN-PEER-PKG=#$sign_peer_pkg#g"
+>>>>>>> temp

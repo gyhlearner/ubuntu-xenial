@@ -102,7 +102,11 @@
  * ereport with information about the differences.
  */
 #ifdef _KERNEL
+<<<<<<< HEAD
 static void
+=======
+void
+>>>>>>> temp
 zfs_zevent_post_cb(nvlist_t *nvl, nvlist_t *detector)
 {
 	if (nvl)
@@ -112,9 +116,38 @@ zfs_zevent_post_cb(nvlist_t *nvl, nvlist_t *detector)
 		fm_nvlist_destroy(detector, FM_NVA_FREE);
 }
 
+<<<<<<< HEAD
 static void
 zfs_zevent_post_cb_noop(nvlist_t *nvl, nvlist_t *detector)
 {
+=======
+/*
+ * We want to rate limit ZIO delay and checksum events so as to not
+ * flood ZED when a disk is acting up.
+ *
+ * Returns 1 if we're ratelimiting, 0 if not.
+ */
+static int
+zfs_is_ratelimiting_event(const char *subclass, vdev_t *vd)
+{
+	int rc = 0;
+	/*
+	 * __ratelimit() returns 1 if we're *not* ratelimiting and 0 if we
+	 * are.  Invert it to get our return value.
+	 */
+	if (strcmp(subclass, FM_EREPORT_ZFS_DELAY) == 0) {
+		rc = !zfs_ratelimit(&vd->vdev_delay_rl);
+	} else if (strcmp(subclass, FM_EREPORT_ZFS_CHECKSUM) == 0) {
+		rc = !zfs_ratelimit(&vd->vdev_checksum_rl);
+	}
+
+	if (rc)	{
+		/* We're rate limiting */
+		fm_erpt_dropped_increment();
+	}
+
+	return (rc);
+>>>>>>> temp
 }
 
 static void
@@ -187,6 +220,15 @@ zfs_ereport_start(nvlist_t **ereport_out, nvlist_t **detector_out,
 	    (vd->vdev_remove_wanted || vd->vdev_state == VDEV_STATE_REMOVED))
 		return;
 
+<<<<<<< HEAD
+=======
+	if ((strcmp(subclass, FM_EREPORT_ZFS_DELAY) == 0) &&
+	    (zio != NULL) && (!zio->io_timestamp)) {
+		/* Ignore bogus delay events */
+		return;
+	}
+
+>>>>>>> temp
 	if ((ereport = fm_nvlist_create(NULL)) == NULL)
 		return;
 
@@ -237,6 +279,7 @@ zfs_ereport_start(nvlist_t **ereport_out, nvlist_t **detector_out,
 	/*
 	 * Generic payload members common to all ereports.
 	 */
+<<<<<<< HEAD
 	fm_payload_set(ereport, FM_EREPORT_PAYLOAD_ZFS_POOL,
 	    DATA_TYPE_STRING, spa_name(spa), FM_EREPORT_PAYLOAD_ZFS_POOL_GUID,
 	    DATA_TYPE_UINT64, spa_guid(spa),
@@ -252,6 +295,23 @@ zfs_ereport_start(nvlist_t **ereport_out, nvlist_t **detector_out,
 		    FM_EREPORT_FAILMODE_CONTINUE : FM_EREPORT_FAILMODE_PANIC,
 		    NULL);
 	}
+=======
+	fm_payload_set(ereport,
+	    FM_EREPORT_PAYLOAD_ZFS_POOL, DATA_TYPE_STRING, spa_name(spa),
+	    FM_EREPORT_PAYLOAD_ZFS_POOL_GUID, DATA_TYPE_UINT64, spa_guid(spa),
+	    FM_EREPORT_PAYLOAD_ZFS_POOL_STATE, DATA_TYPE_UINT64,
+	    (uint64_t)spa_state(spa),
+	    FM_EREPORT_PAYLOAD_ZFS_POOL_CONTEXT, DATA_TYPE_INT32,
+	    (int32_t)spa_load_state(spa), NULL);
+
+	fm_payload_set(ereport, FM_EREPORT_PAYLOAD_ZFS_POOL_FAILMODE,
+	    DATA_TYPE_STRING,
+	    spa_get_failmode(spa) == ZIO_FAILURE_MODE_WAIT ?
+	    FM_EREPORT_FAILMODE_WAIT :
+	    spa_get_failmode(spa) == ZIO_FAILURE_MODE_CONTINUE ?
+	    FM_EREPORT_FAILMODE_CONTINUE : FM_EREPORT_FAILMODE_PANIC,
+	    NULL);
+>>>>>>> temp
 
 	if (vd != NULL) {
 		vdev_t *pvd = vd->vdev_parent;
@@ -278,6 +338,13 @@ zfs_ereport_start(nvlist_t **ereport_out, nvlist_t **detector_out,
 			fm_payload_set(ereport,
 			    FM_EREPORT_PAYLOAD_ZFS_VDEV_FRU,
 			    DATA_TYPE_STRING, vd->vdev_fru, NULL);
+<<<<<<< HEAD
+=======
+		if (vd->vdev_enc_sysfs_path != NULL)
+			fm_payload_set(ereport,
+			    FM_EREPORT_PAYLOAD_ZFS_VDEV_ENC_SYSFS_PATH,
+			    DATA_TYPE_STRING, vd->vdev_enc_sysfs_path, NULL);
+>>>>>>> temp
 		if (vd->vdev_ashift)
 			fm_payload_set(ereport,
 			    FM_EREPORT_PAYLOAD_ZFS_VDEV_ASHIFT,
@@ -422,8 +489,13 @@ zfs_ereport_start(nvlist_t **ereport_out, nvlist_t **detector_out,
 
 typedef struct zfs_ecksum_info {
 	/* histograms of set and cleared bits by bit number in a 64-bit word */
+<<<<<<< HEAD
 	uint16_t zei_histogram_set[sizeof (uint64_t) * NBBY];
 	uint16_t zei_histogram_cleared[sizeof (uint64_t) * NBBY];
+=======
+	uint32_t zei_histogram_set[sizeof (uint64_t) * NBBY];
+	uint32_t zei_histogram_cleared[sizeof (uint64_t) * NBBY];
+>>>>>>> temp
 
 	/* inline arrays of bits set and cleared. */
 	uint64_t zei_bits_set[ZFM_MAX_INLINE];
@@ -448,7 +520,11 @@ typedef struct zfs_ecksum_info {
 } zfs_ecksum_info_t;
 
 static void
+<<<<<<< HEAD
 update_histogram(uint64_t value_arg, uint16_t *hist, uint32_t *count)
+=======
+update_histogram(uint64_t value_arg, uint32_t *hist, uint32_t *count)
+>>>>>>> temp
 {
 	size_t i;
 	size_t bits = 0;
@@ -457,8 +533,12 @@ update_histogram(uint64_t value_arg, uint16_t *hist, uint32_t *count)
 	/* We store the bits in big-endian (largest-first) order */
 	for (i = 0; i < 64; i++) {
 		if (value & (1ull << i)) {
+<<<<<<< HEAD
 			if (hist[63 - i] < UINT16_MAX)
 				hist[63 - i]++;
+=======
+			hist[63 - i]++;
+>>>>>>> temp
 			++bits;
 		}
 	}
@@ -565,11 +645,19 @@ zei_range_total_size(zfs_ecksum_info_t *eip)
 
 static zfs_ecksum_info_t *
 annotate_ecksum(nvlist_t *ereport, zio_bad_cksum_t *info,
+<<<<<<< HEAD
     const uint8_t *goodbuf, const uint8_t *badbuf, size_t size,
     boolean_t drop_if_identical)
 {
 	const uint64_t *good = (const uint64_t *)goodbuf;
 	const uint64_t *bad = (const uint64_t *)badbuf;
+=======
+    const abd_t *goodabd, const abd_t *badabd, size_t size,
+    boolean_t drop_if_identical)
+{
+	const uint64_t *good;
+	const uint64_t *bad;
+>>>>>>> temp
 
 	uint64_t allset = 0;
 	uint64_t allcleared = 0;
@@ -613,13 +701,26 @@ annotate_ecksum(nvlist_t *ereport, zio_bad_cksum_t *info,
 		}
 	}
 
+<<<<<<< HEAD
 	if (badbuf == NULL || goodbuf == NULL)
 		return (eip);
 
+=======
+	if (badabd == NULL || goodabd == NULL)
+		return (eip);
+
+	ASSERT3U(nui64s, <=, UINT32_MAX);
+>>>>>>> temp
 	ASSERT3U(size, ==, nui64s * sizeof (uint64_t));
 	ASSERT3U(size, <=, SPA_MAXBLOCKSIZE);
 	ASSERT3U(size, <=, UINT32_MAX);
 
+<<<<<<< HEAD
+=======
+	good = (const uint64_t *) abd_borrow_buf_copy((abd_t *)goodabd, size);
+	bad = (const uint64_t *) abd_borrow_buf_copy((abd_t *)badabd, size);
+
+>>>>>>> temp
 	/* build up the range list by comparing the two buffers. */
 	for (idx = 0; idx < nui64s; idx++) {
 		if (good[idx] == bad[idx]) {
@@ -649,6 +750,11 @@ annotate_ecksum(nvlist_t *ereport, zio_bad_cksum_t *info,
 	 */
 	if (inline_size == 0 && drop_if_identical) {
 		kmem_free(eip, sizeof (*eip));
+<<<<<<< HEAD
+=======
+		abd_return_buf((abd_t *)goodabd, (void *)good, size);
+		abd_return_buf((abd_t *)badabd, (void *)bad, size);
+>>>>>>> temp
 		return (NULL);
 	}
 
@@ -689,6 +795,13 @@ annotate_ecksum(nvlist_t *ereport, zio_bad_cksum_t *info,
 		eip->zei_ranges[range].zr_start	*= sizeof (uint64_t);
 		eip->zei_ranges[range].zr_end	*= sizeof (uint64_t);
 	}
+<<<<<<< HEAD
+=======
+
+	abd_return_buf((abd_t *)goodabd, (void *)good, size);
+	abd_return_buf((abd_t *)badabd, (void *)bad, size);
+
+>>>>>>> temp
 	eip->zei_allowed_mingap	*= sizeof (uint64_t);
 	inline_size		*= sizeof (uint64_t);
 
@@ -717,10 +830,17 @@ annotate_ecksum(nvlist_t *ereport, zio_bad_cksum_t *info,
 	} else {
 		fm_payload_set(ereport,
 		    FM_EREPORT_PAYLOAD_ZFS_BAD_SET_HISTOGRAM,
+<<<<<<< HEAD
 		    DATA_TYPE_UINT16_ARRAY,
 		    NBBY * sizeof (uint64_t), eip->zei_histogram_set,
 		    FM_EREPORT_PAYLOAD_ZFS_BAD_CLEARED_HISTOGRAM,
 		    DATA_TYPE_UINT16_ARRAY,
+=======
+		    DATA_TYPE_UINT32_ARRAY,
+		    NBBY * sizeof (uint64_t), eip->zei_histogram_set,
+		    FM_EREPORT_PAYLOAD_ZFS_BAD_CLEARED_HISTOGRAM,
+		    DATA_TYPE_UINT32_ARRAY,
+>>>>>>> temp
 		    NBBY * sizeof (uint64_t), eip->zei_histogram_cleared,
 		    NULL);
 	}
@@ -736,6 +856,12 @@ zfs_ereport_post(const char *subclass, spa_t *spa, vdev_t *vd, zio_t *zio,
 	nvlist_t *ereport = NULL;
 	nvlist_t *detector = NULL;
 
+<<<<<<< HEAD
+=======
+	if (zfs_is_ratelimiting_event(subclass, vd))
+		return;
+
+>>>>>>> temp
 	zfs_ereport_start(&ereport, &detector,
 	    subclass, spa, vd, zio, stateoroffset, size);
 
@@ -752,7 +878,19 @@ zfs_ereport_start_checksum(spa_t *spa, vdev_t *vd,
     struct zio *zio, uint64_t offset, uint64_t length, void *arg,
     zio_bad_cksum_t *info)
 {
+<<<<<<< HEAD
 	zio_cksum_report_t *report = kmem_zalloc(sizeof (*report), KM_SLEEP);
+=======
+	zio_cksum_report_t *report;
+
+
+#ifdef _KERNEL
+	if (zfs_is_ratelimiting_event(FM_EREPORT_ZFS_CHECKSUM, vd))
+		return;
+#endif
+
+	report = kmem_zalloc(sizeof (*report), KM_SLEEP);
+>>>>>>> temp
 
 	if (zio->io_vsd != NULL)
 		zio->io_vsd_ops->vsd_cksum_report(zio, report, arg);
@@ -785,8 +923,13 @@ zfs_ereport_start_checksum(spa_t *spa, vdev_t *vd,
 }
 
 void
+<<<<<<< HEAD
 zfs_ereport_finish_checksum(zio_cksum_report_t *report,
     const void *good_data, const void *bad_data, boolean_t drop_if_identical)
+=======
+zfs_ereport_finish_checksum(zio_cksum_report_t *report, const abd_t *good_data,
+    const abd_t *bad_data, boolean_t drop_if_identical)
+>>>>>>> temp
 {
 #ifdef _KERNEL
 	zfs_ecksum_info_t *info;
@@ -824,6 +967,7 @@ zfs_ereport_free_checksum(zio_cksum_report_t *rpt)
 	kmem_free(rpt, sizeof (*rpt));
 }
 
+<<<<<<< HEAD
 void
 zfs_ereport_send_interim_checksum(zio_cksum_report_t *report)
 {
@@ -832,11 +976,17 @@ zfs_ereport_send_interim_checksum(zio_cksum_report_t *report)
 	    zfs_zevent_post_cb_noop);
 #endif
 }
+=======
+>>>>>>> temp
 
 void
 zfs_ereport_post_checksum(spa_t *spa, vdev_t *vd,
     struct zio *zio, uint64_t offset, uint64_t length,
+<<<<<<< HEAD
     const void *good_data, const void *bad_data, zio_bad_cksum_t *zbc)
+=======
+    const abd_t *good_data, const abd_t *bad_data, zio_bad_cksum_t *zbc)
+>>>>>>> temp
 {
 #ifdef _KERNEL
 	nvlist_t *ereport = NULL;
@@ -859,6 +1009,7 @@ zfs_ereport_post_checksum(spa_t *spa, vdev_t *vd,
 #endif
 }
 
+<<<<<<< HEAD
 static void
 zfs_post_common(spa_t *spa, vdev_t *vd, const char *name)
 {
@@ -878,6 +1029,38 @@ zfs_post_common(spa_t *spa, vdev_t *vd, const char *name)
 	VERIFY0(nvlist_add_string(resource, FM_CLASS, class));
 	VERIFY0(nvlist_add_uint64(resource,
 	    FM_EREPORT_PAYLOAD_ZFS_POOL_GUID, spa_guid(spa)));
+=======
+/*
+ * The 'sysevent.fs.zfs.*' events are signals posted to notify user space of
+ * change in the pool.  All sysevents are listed in sys/sysevent/eventdefs.h
+ * and are designed to be consumed by the ZFS Event Daemon (ZED).  For
+ * additional details refer to the zed(8) man page.
+ */
+nvlist_t *
+zfs_event_create(spa_t *spa, vdev_t *vd, const char *type, const char *name,
+    nvlist_t *aux)
+{
+	nvlist_t *resource = NULL;
+#ifdef _KERNEL
+	char class[64];
+
+	if (spa_load_state(spa) == SPA_LOAD_TRYIMPORT)
+		return (NULL);
+
+	if ((resource = fm_nvlist_create(NULL)) == NULL)
+		return (NULL);
+
+	(void) snprintf(class, sizeof (class), "%s.%s.%s", type,
+	    ZFS_ERROR_CLASS, name);
+	VERIFY0(nvlist_add_uint8(resource, FM_VERSION, FM_RSRC_VERSION));
+	VERIFY0(nvlist_add_string(resource, FM_CLASS, class));
+	VERIFY0(nvlist_add_string(resource,
+	    FM_EREPORT_PAYLOAD_ZFS_POOL, spa_name(spa)));
+	VERIFY0(nvlist_add_uint64(resource,
+	    FM_EREPORT_PAYLOAD_ZFS_POOL_GUID, spa_guid(spa)));
+	VERIFY0(nvlist_add_uint64(resource,
+	    FM_EREPORT_PAYLOAD_ZFS_POOL_STATE, spa_state(spa)));
+>>>>>>> temp
 	VERIFY0(nvlist_add_int32(resource,
 	    FM_EREPORT_PAYLOAD_ZFS_POOL_CONTEXT, spa_load_state(spa)));
 
@@ -886,9 +1069,49 @@ zfs_post_common(spa_t *spa, vdev_t *vd, const char *name)
 		    FM_EREPORT_PAYLOAD_ZFS_VDEV_GUID, vd->vdev_guid));
 		VERIFY0(nvlist_add_uint64(resource,
 		    FM_EREPORT_PAYLOAD_ZFS_VDEV_STATE, vd->vdev_state));
+<<<<<<< HEAD
 	}
 
 	zfs_zevent_post(resource, NULL, zfs_zevent_post_cb);
+=======
+		if (vd->vdev_path != NULL)
+			VERIFY0(nvlist_add_string(resource,
+			    FM_EREPORT_PAYLOAD_ZFS_VDEV_PATH, vd->vdev_path));
+		if (vd->vdev_devid != NULL)
+			VERIFY0(nvlist_add_string(resource,
+			    FM_EREPORT_PAYLOAD_ZFS_VDEV_DEVID, vd->vdev_devid));
+		if (vd->vdev_fru != NULL)
+			VERIFY0(nvlist_add_string(resource,
+			    FM_EREPORT_PAYLOAD_ZFS_VDEV_FRU, vd->vdev_fru));
+		if (vd->vdev_enc_sysfs_path != NULL)
+			VERIFY0(nvlist_add_string(resource,
+			    FM_EREPORT_PAYLOAD_ZFS_VDEV_ENC_SYSFS_PATH,
+			    vd->vdev_enc_sysfs_path));
+	}
+
+	/* also copy any optional payload data */
+	if (aux) {
+		nvpair_t *elem = NULL;
+
+		while ((elem = nvlist_next_nvpair(aux, elem)) != NULL)
+			(void) nvlist_add_nvpair(resource, elem);
+	}
+
+#endif
+	return (resource);
+}
+
+static void
+zfs_post_common(spa_t *spa, vdev_t *vd, const char *type, const char *name,
+    nvlist_t *aux)
+{
+#ifdef _KERNEL
+	nvlist_t *resource;
+
+	resource = zfs_event_create(spa, vd, type, name, aux);
+	if (resource)
+		zfs_zevent_post(resource, NULL, zfs_zevent_post_cb);
+>>>>>>> temp
 #endif
 }
 
@@ -901,7 +1124,11 @@ zfs_post_common(spa_t *spa, vdev_t *vd, const char *name)
 void
 zfs_post_remove(spa_t *spa, vdev_t *vd)
 {
+<<<<<<< HEAD
 	zfs_post_common(spa, vd, FM_EREPORT_RESOURCE_REMOVED);
+=======
+	zfs_post_common(spa, vd, FM_RSRC_CLASS, FM_RESOURCE_REMOVED, NULL);
+>>>>>>> temp
 }
 
 /*
@@ -912,7 +1139,11 @@ zfs_post_remove(spa_t *spa, vdev_t *vd)
 void
 zfs_post_autoreplace(spa_t *spa, vdev_t *vd)
 {
+<<<<<<< HEAD
 	zfs_post_common(spa, vd, FM_EREPORT_RESOURCE_AUTOREPLACE);
+=======
+	zfs_post_common(spa, vd, FM_RSRC_CLASS, FM_RESOURCE_AUTOREPLACE, NULL);
+>>>>>>> temp
 }
 
 /*
@@ -922,9 +1153,43 @@ zfs_post_autoreplace(spa_t *spa, vdev_t *vd)
  * open because the device was not found (fault.fs.zfs.device).
  */
 void
+<<<<<<< HEAD
 zfs_post_state_change(spa_t *spa, vdev_t *vd)
 {
 	zfs_post_common(spa, vd, FM_EREPORT_RESOURCE_STATECHANGE);
+=======
+zfs_post_state_change(spa_t *spa, vdev_t *vd, uint64_t laststate)
+{
+#ifdef _KERNEL
+	nvlist_t *aux;
+
+	/*
+	 * Add optional supplemental keys to payload
+	 */
+	aux = fm_nvlist_create(NULL);
+	if (vd && aux) {
+		if (vd->vdev_physpath) {
+			(void) nvlist_add_string(aux,
+			    FM_EREPORT_PAYLOAD_ZFS_VDEV_PHYSPATH,
+			    vd->vdev_physpath);
+		}
+		if (vd->vdev_enc_sysfs_path) {
+			(void) nvlist_add_string(aux,
+			    FM_EREPORT_PAYLOAD_ZFS_VDEV_ENC_SYSFS_PATH,
+			    vd->vdev_enc_sysfs_path);
+		}
+
+		(void) nvlist_add_uint64(aux,
+		    FM_EREPORT_PAYLOAD_ZFS_VDEV_LASTSTATE, laststate);
+	}
+
+	zfs_post_common(spa, vd, FM_RSRC_CLASS, FM_RESOURCE_STATECHANGE,
+	    aux);
+
+	if (aux)
+		fm_nvlist_destroy(aux, FM_NVA_FREE);
+#endif
+>>>>>>> temp
 }
 
 #if defined(_KERNEL) && defined(HAVE_SPL)

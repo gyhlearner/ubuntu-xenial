@@ -1,2 +1,7 @@
 source "drivers/ntb/hw/amd/Kconfig"
+<<<<<<< HEAD
+=======
+source "drivers/ntb/hw/idt/Kconfig"
+>>>>>>> temp
 source "drivers/ntb/hw/intel/Kconfig"
+source "drivers/ntb/hw/mscc/Kconfig"

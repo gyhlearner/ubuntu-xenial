@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright (C) 2010-2015 Junjiro R. Okajima
+=======
+ * Copyright (C) 2010-2017 Junjiro R. Okajima
+>>>>>>> temp
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,6 +53,10 @@ static int au_procfs_plm_write_si(struct file *file, unsigned long id)
 	int err;
 	struct super_block *sb;
 	struct au_sbinfo *sbinfo;
+<<<<<<< HEAD
+=======
+	struct hlist_bl_node *pos;
+>>>>>>> temp
 
 	err = -EBUSY;
 	if (unlikely(file->private_data))
@@ -56,14 +64,23 @@ static int au_procfs_plm_write_si(struct file *file, unsigned long id)
 
 	sb = NULL;
 	/* don't use au_sbilist_lock() here */
+<<<<<<< HEAD
 	spin_lock(&au_sbilist.spin);
 	list_for_each_entry(sbinfo, &au_sbilist.head, si_list)
+=======
+	hlist_bl_lock(&au_sbilist);
+	hlist_bl_for_each_entry(sbinfo, pos, &au_sbilist, si_list)
+>>>>>>> temp
 		if (id == sysaufs_si_id(sbinfo)) {
 			kobject_get(&sbinfo->si_kobj);
 			sb = sbinfo->si_sb;
 			break;
 		}
+<<<<<<< HEAD
 	spin_unlock(&au_sbilist.spin);
+=======
+	hlist_bl_unlock(&au_sbilist);
+>>>>>>> temp
 
 	err = -EINVAL;
 	if (unlikely(!sb))

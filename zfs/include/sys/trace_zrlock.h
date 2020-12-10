@@ -40,7 +40,11 @@
  *     zrlock_t *, ...,
  *     uint32_t, ...);
  */
+<<<<<<< HEAD
 
+=======
+/* BEGIN CSTYLED */
+>>>>>>> temp
 DECLARE_EVENT_CLASS(zfs_zrlock_class,
 	TP_PROTO(zrlock_t *zrl, uint32_t n),
 	TP_ARGS(zrl, n),
@@ -48,7 +52,11 @@ DECLARE_EVENT_CLASS(zfs_zrlock_class,
 	    __field(int32_t,		refcount)
 #ifdef	ZFS_DEBUG
 	    __field(pid_t,		owner_pid)
+<<<<<<< HEAD
 	    __field(const char *,	caller)
+=======
+	    __string(caller, zrl->zr_caller)
+>>>>>>> temp
 #endif
 	    __field(uint32_t,		n)
 	),
@@ -56,19 +64,31 @@ DECLARE_EVENT_CLASS(zfs_zrlock_class,
 	    __entry->refcount	= zrl->zr_refcount;
 #ifdef	ZFS_DEBUG
 	    __entry->owner_pid	= zrl->zr_owner ? zrl->zr_owner->pid : 0;
+<<<<<<< HEAD
 	    __entry->caller	= zrl->zr_caller;
+=======
+	    __assign_str(caller, zrl->zr_caller);
+>>>>>>> temp
 #endif
 	    __entry->n		= n;
 	),
 #ifdef	ZFS_DEBUG
 	TP_printk("zrl { refcount %d owner_pid %d caller %s } n %u",
+<<<<<<< HEAD
 	    __entry->refcount, __entry->owner_pid, __entry->caller,
+=======
+	    __entry->refcount, __entry->owner_pid, __get_str(caller),
+>>>>>>> temp
 	    __entry->n)
 #else
 	TP_printk("zrl { refcount %d } n %u",
 	    __entry->refcount, __entry->n)
 #endif
 );
+<<<<<<< HEAD
+=======
+/* END_CSTYLED */
+>>>>>>> temp
 
 #define	DEFINE_ZRLOCK_EVENT(name) \
 DEFINE_EVENT(zfs_zrlock_class, name, \

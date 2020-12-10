@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+/* SPDX-License-Identifier: GPL-2.0 */
+>>>>>>> temp
 #ifndef _ASM_X86_TEXT_PATCHING_H
 #define _ASM_X86_TEXT_PATCHING_H
 

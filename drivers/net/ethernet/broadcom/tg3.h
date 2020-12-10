@@ -1,10 +1,12 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 /* $Id: tg3.h,v 1.37.2.32 2002/03/11 12:18:18 davem Exp $
  * tg3.h: Definitions for Broadcom Tigon3 ethernet driver.
  *
  * Copyright (C) 2001, 2002, 2003, 2004 David S. Miller (davem@redhat.com)
  * Copyright (C) 2001 Jeff Garzik (jgarzik@pobox.com)
  * Copyright (C) 2004 Sun Microsystems Inc.
- * Copyright (C) 2007-2014 Broadcom Corporation.
+ * Copyright (C) 2007-2016 Broadcom Corporation.
+ * Copyright (C) 2016-2017 Broadcom Limited.
  */
 
 #ifndef _T3_H
@@ -2497,6 +2499,7 @@
 #define TG3_APE_LOCK_PHY3		5
 #define TG3_APE_LOCK_GPIO		7
 
+#define TG3_APE_HB_INTERVAL             (tp->ape_hb_interval)
 #define TG3_EEPROM_SB_F1R2_MBA_OFF	0x10
 
 
@@ -3258,7 +3261,6 @@ struct tg3 {
 	int				pcie_readrq;
 
 	struct mii_bus			*mdio_bus;
-	int				mdio_irq[PHY_MAX_ADDR];
 	int				old_link;
 
 	u8				phy_addr;
@@ -3412,6 +3414,10 @@ struct tg3 {
 	struct device			*hwmon_dev;
 	bool				link_up;
 	bool				pcierr_recovery;
+
+	u32                             ape_hb;
+	unsigned long                   ape_hb_interval;
+	unsigned long                   ape_hb_jiffies;
 };
 
 /* Accessor macros for chip and asic attributes

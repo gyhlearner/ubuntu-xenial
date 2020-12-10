@@ -39,7 +39,11 @@ AC_CONFIG_MACRO_DIR([config])
 AC_CANONICAL_SYSTEM
 AM_MAINTAINER_MODE
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
+<<<<<<< HEAD
 AM_INIT_AUTOMAKE
+=======
+AM_INIT_AUTOMAKE([subdir-objects])
+>>>>>>> temp
 AC_CONFIG_HEADERS([zfs_config.h], [
 	(mv zfs_config.h zfs_config.h.tmp &&
 	awk -f ${ac_srcdir}/config/config.awk zfs_config.h.tmp >zfs_config.h &&
@@ -49,11 +53,16 @@ AC_PROG_INSTALL
 AC_PROG_CC
 AC_PROG_LIBTOOL
 AM_PROG_AS
+<<<<<<< HEAD
+=======
+AM_PROG_CC_C_O
+>>>>>>> temp
 
 ZFS_AC_LICENSE
 ZFS_AC_PACKAGE
 ZFS_AC_CONFIG
 ZFS_AC_DEBUG
+<<<<<<< HEAD
 ZFS_AC_DEBUG_DMU_TX
 
 AC_CONFIG_FILES([ 
@@ -116,6 +125,11 @@ AC_CONFIG_FILES([
 	contrib/dracut/Makefile
 	contrib/dracut/90zfs/Makefile
 	contrib/initramfs/Makefile
+=======
+
+AC_CONFIG_FILES([
+	Makefile
+>>>>>>> temp
 	module/Makefile
 	module/avl/Makefile
 	module/nvpair/Makefile
@@ -123,12 +137,17 @@ AC_CONFIG_FILES([
 	module/zcommon/Makefile
 	module/zfs/Makefile
 	module/zpios/Makefile
+<<<<<<< HEAD
+=======
+	module/icp/Makefile
+>>>>>>> temp
 	include/Makefile
 	include/linux/Makefile
 	include/sys/Makefile
 	include/sys/fs/Makefile
 	include/sys/fm/Makefile
 	include/sys/fm/fs/Makefile
+<<<<<<< HEAD
 	scripts/Makefile
 	scripts/zpios-profile/Makefile
 	scripts/zpios-test/Makefile
@@ -147,4 +166,12 @@ AC_CONFIG_FILES([
 	zfs.release
 ])
 
+=======
+	include/sys/crypto/Makefile
+	include/sys/sysevent/Makefile
+	zfs.release
+])
+
+
+>>>>>>> temp
 AC_OUTPUT

@@ -50,6 +50,7 @@ typedef union _fInt {
  * Function Declarations
  *  -------------------------------------------------------------------------------
  */
+<<<<<<< HEAD
 fInt ConvertToFraction(int);                       /* Use this to convert an INT to a FINT */
 fInt Convert_ULONG_ToFraction(uint32_t);              /* Use this to convert an uint32_t to a FINT */
 fInt GetScaledFraction(int, int);                  /* Use this to convert an INT to a FINT after scaling it by a factor */
@@ -73,18 +74,49 @@ bool GreaterThan(fInt A, fInt B);               /* Returns true if A > B */
 
 fInt fExponential(fInt exponent);                  /* Can be used to calculate e^exponent */
 fInt fNaturalLog(fInt value);                      /* Can be used to calculate ln(value) */
+=======
+static fInt ConvertToFraction(int);                       /* Use this to convert an INT to a FINT */
+static fInt Convert_ULONG_ToFraction(uint32_t);           /* Use this to convert an uint32_t to a FINT */
+static fInt GetScaledFraction(int, int);                  /* Use this to convert an INT to a FINT after scaling it by a factor */
+static int ConvertBackToInteger(fInt);                    /* Convert a FINT back to an INT that is scaled by 1000 (i.e. last 3 digits are the decimal digits) */
+
+static fInt fNegate(fInt);                                /* Returns -1 * input fInt value */
+static fInt fAdd (fInt, fInt);                            /* Returns the sum of two fInt numbers */
+static fInt fSubtract (fInt A, fInt B);                   /* Returns A-B - Sometimes easier than Adding negative numbers */
+static fInt fMultiply (fInt, fInt);                       /* Returns the product of two fInt numbers */
+static fInt fDivide (fInt A, fInt B);                     /* Returns A/B */
+static fInt fGetSquare(fInt);                             /* Returns the square of a fInt number */
+static fInt fSqrt(fInt);                                  /* Returns the Square Root of a fInt number */
+
+static int uAbs(int);                                     /* Returns the Absolute value of the Int */
+static int uPow(int base, int exponent);                  /* Returns base^exponent an INT */
+
+static void SolveQuadracticEqn(fInt, fInt, fInt, fInt[]); /* Returns the 2 roots via the array */
+static bool Equal(fInt, fInt);                            /* Returns true if two fInts are equal to each other */
+static bool GreaterThan(fInt A, fInt B);                  /* Returns true if A > B */
+
+static fInt fExponential(fInt exponent);                  /* Can be used to calculate e^exponent */
+static fInt fNaturalLog(fInt value);                      /* Can be used to calculate ln(value) */
+>>>>>>> temp
 
 /* Fuse decoding functions
  * -------------------------------------------------------------------------------------
  */
+<<<<<<< HEAD
 fInt fDecodeLinearFuse(uint32_t fuse_value, fInt f_min, fInt f_range, uint32_t bitlength);
 fInt fDecodeLogisticFuse(uint32_t fuse_value, fInt f_average, fInt f_range, uint32_t bitlength);
 fInt fDecodeLeakageID (uint32_t leakageID_fuse, fInt ln_max_div_min, fInt f_min, uint32_t bitlength);
+=======
+static fInt fDecodeLinearFuse(uint32_t fuse_value, fInt f_min, fInt f_range, uint32_t bitlength);
+static fInt fDecodeLogisticFuse(uint32_t fuse_value, fInt f_average, fInt f_range, uint32_t bitlength);
+static fInt fDecodeLeakageID (uint32_t leakageID_fuse, fInt ln_max_div_min, fInt f_min, uint32_t bitlength);
+>>>>>>> temp
 
 /* Internal Support Functions - Use these ONLY for testing or adding to internal functions
  * -------------------------------------------------------------------------------------
  * Some of the following functions take two INTs as their input - This is unsafe for a variety of reasons.
  */
+<<<<<<< HEAD
 fInt Add (int, int);                               /* Add two INTs and return Sum as FINT */
 fInt Multiply (int, int);                          /* Multiply two INTs and return Product as FINT */
 fInt Divide (int, int);                            /* You get the idea... */
@@ -99,6 +131,13 @@ int GetReal (fInt A);                              /* Internal function */
 int GetRoundedValue(fInt);                         /* Incomplete function - Useful only when Precision is lacking */
                                                    /* Let us say we have 2.126 but can only handle 2 decimal points. We could */
                                                    /* either chop of 6 and keep 2.12 or use this function to get 2.13, which is more accurate */
+=======
+static fInt Divide (int, int);                            /* Divide two INTs and return result as FINT */
+static fInt fNegate(fInt);
+
+static int uGetScaledDecimal (fInt);                      /* Internal function */
+static int GetReal (fInt A);                              /* Internal function */
+>>>>>>> temp
 
 /* -------------------------------------------------------------------------------------
  * TROUBLESHOOTING INFORMATION
@@ -115,7 +154,11 @@ int GetRoundedValue(fInt);                         /* Incomplete function - Usef
  * START OF CODE
  * -------------------------------------------------------------------------------------
  */
+<<<<<<< HEAD
 fInt fExponential(fInt exponent)        /*Can be used to calculate e^exponent*/
+=======
+static fInt fExponential(fInt exponent)        /*Can be used to calculate e^exponent*/
+>>>>>>> temp
 {
 	uint32_t i;
 	bool bNegated = false;
@@ -127,8 +170,13 @@ fInt fExponential(fInt exponent)        /*Can be used to calculate e^exponent*/
 	fInt solution = fPositiveOne; /*Starting off with baseline of 1 */
 	fInt error_term;
 
+<<<<<<< HEAD
 	uint32_t k_array[11] = {55452, 27726, 13863, 6931, 4055, 2231, 1178, 606, 308, 155, 78};
 	uint32_t expk_array[11] = {2560000, 160000, 40000, 20000, 15000, 12500, 11250, 10625, 10313, 10156, 10078};
+=======
+	static const uint32_t k_array[11] = {55452, 27726, 13863, 6931, 4055, 2231, 1178, 606, 308, 155, 78};
+	static const uint32_t expk_array[11] = {2560000, 160000, 40000, 20000, 15000, 12500, 11250, 10625, 10313, 10156, 10078};
+>>>>>>> temp
 
 	if (GreaterThan(fZERO, exponent)) {
 		exponent = fNegate(exponent);
@@ -154,7 +202,11 @@ fInt fExponential(fInt exponent)        /*Can be used to calculate e^exponent*/
 	return solution;
 }
 
+<<<<<<< HEAD
 fInt fNaturalLog(fInt value)
+=======
+static fInt fNaturalLog(fInt value)
+>>>>>>> temp
 {
 	uint32_t i;
 	fInt upper_bound = Divide(8, 1000);
@@ -162,8 +214,13 @@ fInt fNaturalLog(fInt value)
 	fInt solution = ConvertToFraction(0); /*Starting off with baseline of 0 */
 	fInt error_term;
 
+<<<<<<< HEAD
 	uint32_t k_array[10] = {160000, 40000, 20000, 15000, 12500, 11250, 10625, 10313, 10156, 10078};
 	uint32_t logk_array[10] = {27726, 13863, 6931, 4055, 2231, 1178, 606, 308, 155, 78};
+=======
+	static const uint32_t k_array[10] = {160000, 40000, 20000, 15000, 12500, 11250, 10625, 10313, 10156, 10078};
+	static const uint32_t logk_array[10] = {27726, 13863, 6931, 4055, 2231, 1178, 606, 308, 155, 78};
+>>>>>>> temp
 
 	while (GreaterThan(fAdd(value, fNegativeOne), upper_bound)) {
 		for (i = 0; i < 10; i++) {
@@ -179,7 +236,11 @@ fInt fNaturalLog(fInt value)
 	return (fAdd(solution, error_term));
 }
 
+<<<<<<< HEAD
 fInt fDecodeLinearFuse(uint32_t fuse_value, fInt f_min, fInt f_range, uint32_t bitlength)
+=======
+static fInt fDecodeLinearFuse(uint32_t fuse_value, fInt f_min, fInt f_range, uint32_t bitlength)
+>>>>>>> temp
 {
 	fInt f_fuse_value = Convert_ULONG_ToFraction(fuse_value);
 	fInt f_bit_max_value = Convert_ULONG_ToFraction((uPow(2, bitlength)) - 1);
@@ -194,7 +255,11 @@ fInt fDecodeLinearFuse(uint32_t fuse_value, fInt f_min, fInt f_range, uint32_t b
 }
 
 
+<<<<<<< HEAD
 fInt fDecodeLogisticFuse(uint32_t fuse_value, fInt f_average, fInt f_range, uint32_t bitlength)
+=======
+static fInt fDecodeLogisticFuse(uint32_t fuse_value, fInt f_average, fInt f_range, uint32_t bitlength)
+>>>>>>> temp
 {
 	fInt f_fuse_value = Convert_ULONG_ToFraction(fuse_value);
 	fInt f_bit_max_value = Convert_ULONG_ToFraction((uPow(2, bitlength)) - 1);
@@ -212,7 +277,11 @@ fInt fDecodeLogisticFuse(uint32_t fuse_value, fInt f_average, fInt f_range, uint
 	return f_decoded_value;
 }
 
+<<<<<<< HEAD
 fInt fDecodeLeakageID (uint32_t leakageID_fuse, fInt ln_max_div_min, fInt f_min, uint32_t bitlength)
+=======
+static fInt fDecodeLeakageID (uint32_t leakageID_fuse, fInt ln_max_div_min, fInt f_min, uint32_t bitlength)
+>>>>>>> temp
 {
 	fInt fLeakage;
 	fInt f_bit_max_value = Convert_ULONG_ToFraction((uPow(2, bitlength)) - 1);
@@ -225,7 +294,11 @@ fInt fDecodeLeakageID (uint32_t leakageID_fuse, fInt ln_max_div_min, fInt f_min,
 	return fLeakage;
 }
 
+<<<<<<< HEAD
 fInt ConvertToFraction(int X) /*Add all range checking here. Is it possible to make fInt a private declaration? */
+=======
+static fInt ConvertToFraction(int X) /*Add all range checking here. Is it possible to make fInt a private declaration? */
+>>>>>>> temp
 {
 	fInt temp;
 
@@ -237,13 +310,21 @@ fInt ConvertToFraction(int X) /*Add all range checking here. Is it possible to m
 	return temp;
 }
 
+<<<<<<< HEAD
 fInt fNegate(fInt X)
+=======
+static fInt fNegate(fInt X)
+>>>>>>> temp
 {
 	fInt CONSTANT_NEGONE = ConvertToFraction(-1);
 	return (fMultiply(X, CONSTANT_NEGONE));
 }
 
+<<<<<<< HEAD
 fInt Convert_ULONG_ToFraction(uint32_t X)
+=======
+static fInt Convert_ULONG_ToFraction(uint32_t X)
+>>>>>>> temp
 {
 	fInt temp;
 
@@ -255,7 +336,11 @@ fInt Convert_ULONG_ToFraction(uint32_t X)
 	return temp;
 }
 
+<<<<<<< HEAD
 fInt GetScaledFraction(int X, int factor)
+=======
+static fInt GetScaledFraction(int X, int factor)
+>>>>>>> temp
 {
 	int times_shifted, factor_shifted;
 	bool bNEGATED;
@@ -293,7 +378,11 @@ fInt GetScaledFraction(int X, int factor)
 	}
 
 	if (factor == 1)
+<<<<<<< HEAD
 	return (ConvertToFraction(X));
+=======
+		return ConvertToFraction(X);
+>>>>>>> temp
 
 	fValue = fDivide(ConvertToFraction(X * uPow(-1, bNEGATED)), ConvertToFraction(factor));
 
@@ -304,7 +393,11 @@ fInt GetScaledFraction(int X, int factor)
 }
 
 /* Addition using two fInts */
+<<<<<<< HEAD
 fInt fAdd (fInt X, fInt Y)
+=======
+static fInt fAdd (fInt X, fInt Y)
+>>>>>>> temp
 {
 	fInt Sum;
 
@@ -314,7 +407,11 @@ fInt fAdd (fInt X, fInt Y)
 }
 
 /* Addition using two fInts */
+<<<<<<< HEAD
 fInt fSubtract (fInt X, fInt Y)
+=======
+static fInt fSubtract (fInt X, fInt Y)
+>>>>>>> temp
 {
 	fInt Difference;
 
@@ -323,7 +420,11 @@ fInt fSubtract (fInt X, fInt Y)
 	return Difference;
 }
 
+<<<<<<< HEAD
 bool Equal(fInt A, fInt B)
+=======
+static bool Equal(fInt A, fInt B)
+>>>>>>> temp
 {
 	if (A.full == B.full)
 		return true;
@@ -331,7 +432,11 @@ bool Equal(fInt A, fInt B)
 		return false;
 }
 
+<<<<<<< HEAD
 bool GreaterThan(fInt A, fInt B)
+=======
+static bool GreaterThan(fInt A, fInt B)
+>>>>>>> temp
 {
 	if (A.full > B.full)
 		return true;
@@ -339,7 +444,11 @@ bool GreaterThan(fInt A, fInt B)
 		return false;
 }
 
+<<<<<<< HEAD
 fInt fMultiply (fInt X, fInt Y) /* Uses 64-bit integers (int64_t) */
+=======
+static fInt fMultiply (fInt X, fInt Y) /* Uses 64-bit integers (int64_t) */
+>>>>>>> temp
 {
 	fInt Product;
 	int64_t tempProduct;
@@ -363,7 +472,11 @@ fInt fMultiply (fInt X, fInt Y) /* Uses 64-bit integers (int64_t) */
 	return Product;
 }
 
+<<<<<<< HEAD
 fInt fDivide (fInt X, fInt Y)
+=======
+static fInt fDivide (fInt X, fInt Y)
+>>>>>>> temp
 {
 	fInt fZERO, fQuotient;
 	int64_t longlongX, longlongY;
@@ -371,7 +484,11 @@ fInt fDivide (fInt X, fInt Y)
 	fZERO = ConvertToFraction(0);
 
 	if (Equal(Y, fZERO))
+<<<<<<< HEAD
 	return fZERO;
+=======
+		return fZERO;
+>>>>>>> temp
 
 	longlongX = (int64_t)X.full;
 	longlongY = (int64_t)Y.full;
@@ -384,7 +501,11 @@ fInt fDivide (fInt X, fInt Y)
 	return fQuotient;
 }
 
+<<<<<<< HEAD
 int ConvertBackToInteger (fInt A) /*THIS is the function that will be used to check with the Golden settings table*/
+=======
+static int ConvertBackToInteger (fInt A) /*THIS is the function that will be used to check with the Golden settings table*/
+>>>>>>> temp
 {
 	fInt fullNumber, scaledDecimal, scaledReal;
 
@@ -397,13 +518,21 @@ int ConvertBackToInteger (fInt A) /*THIS is the function that will be used to ch
 	return fullNumber.full;
 }
 
+<<<<<<< HEAD
 fInt fGetSquare(fInt A)
+=======
+static fInt fGetSquare(fInt A)
+>>>>>>> temp
 {
 	return fMultiply(A,A);
 }
 
 /* x_new = x_old - (x_old^2 - C) / (2 * x_old) */
+<<<<<<< HEAD
 fInt fSqrt(fInt num)
+=======
+static fInt fSqrt(fInt num)
+>>>>>>> temp
 {
 	fInt F_divide_Fprime, Fprime;
 	fInt test;
@@ -460,7 +589,11 @@ fInt fSqrt(fInt num)
 	return (x_new);
 }
 
+<<<<<<< HEAD
 void SolveQuadracticEqn(fInt A, fInt B, fInt C, fInt Roots[])
+=======
+static void SolveQuadracticEqn(fInt A, fInt B, fInt C, fInt Roots[])
+>>>>>>> temp
 {
 	fInt *pRoots = &Roots[0];
 	fInt temp, root_first, root_second;
@@ -498,6 +631,7 @@ void SolveQuadracticEqn(fInt A, fInt B, fInt C, fInt Roots[])
  * -----------------------------------------------------------------------------
  */
 
+<<<<<<< HEAD
 /* Addition using two normal ints - Temporary - Use only for testing purposes?. */
 fInt Add (int X, int Y)
 {
@@ -513,10 +647,15 @@ fInt Add (int X, int Y)
 
 /* Conversion Functions */
 int GetReal (fInt A)
+=======
+/* Conversion Functions */
+static int GetReal (fInt A)
+>>>>>>> temp
 {
 	return (A.full >> SHIFT_AMOUNT);
 }
 
+<<<<<<< HEAD
 /* Temporarily Disabled */
 int GetRoundedValue(fInt A) /*For now, round the 3rd decimal place */
 {
@@ -544,6 +683,9 @@ fInt Multiply (int X, int Y)
 }
 
 fInt Divide (int X, int Y)
+=======
+static fInt Divide (int X, int Y)
+>>>>>>> temp
 {
 	fInt A, B, Quotient;
 
@@ -555,7 +697,11 @@ fInt Divide (int X, int Y)
 	return Quotient;
 }
 
+<<<<<<< HEAD
 int uGetScaledDecimal (fInt A) /*Converts the fractional portion to whole integers - Costly function */
+=======
+static int uGetScaledDecimal (fInt A) /*Converts the fractional portion to whole integers - Costly function */
+>>>>>>> temp
 {
 	int dec[PRECISION];
 	int i, scaledDecimal = 0, tmp = A.partial.decimal;
@@ -570,7 +716,11 @@ int uGetScaledDecimal (fInt A) /*Converts the fractional portion to whole intege
 	return scaledDecimal;
 }
 
+<<<<<<< HEAD
 int uPow(int base, int power)
+=======
+static int uPow(int base, int power)
+>>>>>>> temp
 {
 	if (power == 0)
 		return 1;
@@ -578,6 +728,7 @@ int uPow(int base, int power)
 		return (base)*uPow(base, power - 1);
 }
 
+<<<<<<< HEAD
 fInt fAbs(fInt A)
 {
 	if (A.partial.real < 0)
@@ -587,6 +738,9 @@ fInt fAbs(fInt A)
 }
 
 int uAbs(int X)
+=======
+static int uAbs(int X)
+>>>>>>> temp
 {
 	if (X < 0)
 		return (X * -1);
@@ -594,7 +748,11 @@ int uAbs(int X)
 		return X;
 }
 
+<<<<<<< HEAD
 fInt fRoundUpByStepSize(fInt A, fInt fStepSize, bool error_term)
+=======
+static fInt fRoundUpByStepSize(fInt A, fInt fStepSize, bool error_term)
+>>>>>>> temp
 {
 	fInt solution;
 

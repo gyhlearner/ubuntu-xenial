@@ -60,7 +60,31 @@
 static int sd_srv_version;
 static int ts_srv_version;
 static int hb_srv_version;
-static int util_fw_version;
+
+#define SD_VER_COUNT 2
+static const int sd_versions[] = {
+	SD_VERSION,
+	SD_VERSION_1
+};
+
+#define TS_VER_COUNT 3
+static const int ts_versions[] = {
+	TS_VERSION,
+	TS_VERSION_3,
+	TS_VERSION_1
+};
+
+#define HB_VER_COUNT 2
+static const int hb_versions[] = {
+	HB_VERSION,
+	HB_VERSION_1
+};
+
+#define FW_VER_COUNT 2
+static const int fw_versions[] = {
+	UTIL_FW_VERSION,
+	UTIL_WS2K8_FW_VERSION
+};
 
 static void shutdown_onchannelcallback(void *context);
 static struct hv_util_service util_shutdown = {
@@ -121,7 +145,6 @@ static void shutdown_onchannelcallback(void *context)
 	struct shutdown_msg_data *shutdown_msg;
 
 	struct icmsg_hdr *icmsghdrp;
-	struct icmsg_negotiate *negop = NULL;
 
 	vmbus_recvpacket(channel, shut_txf_buf,
 			 PAGE_SIZE, &recvlen, &requestid);
@@ -131,9 +154,14 @@ static void shutdown_onchannelcallback(void *context)
 			sizeof(struct vmbuspipe_hdr)];
 
 		if (icmsghdrp->icmsgtype == ICMSGTYPE_NEGOTIATE) {
-			vmbus_prep_negotiate_resp(icmsghdrp, negop,
-					shut_txf_buf, util_fw_version,
-					sd_srv_version);
+			if (vmbus_prep_negotiate_resp(icmsghdrp, shut_txf_buf,
+					fw_versions, FW_VER_COUNT,
+					sd_versions, SD_VER_COUNT,
+					NULL, &sd_srv_version)) {
+				pr_info("Shutdown IC version %d.%d\n",
+					sd_srv_version >> 16,
+					sd_srv_version & 0xFFFF);
+			}
 		} else {
 			shutdown_msg =
 				(struct shutdown_msg_data *)&shut_txf_buf[
@@ -236,6 +264,7 @@ static inline void adj_guesttime(u64 hosttime, u64 reftime, u8 adj_flags)
 	cur_reftime = hyperv_cs->read(hyperv_cs);
 	host_ts.host_time = hosttime;
 	host_ts.ref_time = cur_reftime;
+<<<<<<< HEAD
 
 	/*
 	 * TimeSync v4 messages contain reference time (guest's Hyper-V
@@ -246,6 +275,18 @@ static inline void adj_guesttime(u64 hosttime, u64 reftime, u8 adj_flags)
 	 */
 	host_ts.host_time += (cur_reftime - reftime);
 
+=======
+
+	/*
+	 * TimeSync v4 messages contain reference time (guest's Hyper-V
+	 * clocksource read when the time sample was generated), we can
+	 * improve the precision by adding the delta between now and the
+	 * time of generation. For older protocols we set
+	 * reftime == cur_reftime on call.
+	 */
+	host_ts.host_time += (cur_reftime - reftime);
+
+>>>>>>> temp
 	spin_unlock_irqrestore(&host_ts.lock, flags);
 
 	/* Schedule work to do do_settimeofday64() */
@@ -265,7 +306,6 @@ static void timesync_onchannelcallback(void *context)
 	struct ictimesync_data *timedatap;
 	struct ictimesync_ref_data *refdata;
 	u8 *time_txf_buf = util_timesynch.recv_buffer;
-	struct icmsg_negotiate *negop = NULL;
 
 	vmbus_recvpacket(channel, time_txf_buf,
 			 PAGE_SIZE, &recvlen, &requestid);
@@ -275,12 +315,23 @@ static void timesync_onchannelcallback(void *context)
 				sizeof(struct vmbuspipe_hdr)];
 
 		if (icmsghdrp->icmsgtype == ICMSGTYPE_NEGOTIATE) {
+<<<<<<< HEAD
 			vmbus_prep_negotiate_resp(icmsghdrp, negop,
 						time_txf_buf,
 						util_fw_version,
 						ts_srv_version);
 			pr_info("Using TimeSync version %d.%d\n",
 				ts_srv_version >> 16, ts_srv_version & 0xFFFF);
+=======
+			if (vmbus_prep_negotiate_resp(icmsghdrp, time_txf_buf,
+						fw_versions, FW_VER_COUNT,
+						ts_versions, TS_VER_COUNT,
+						NULL, &ts_srv_version)) {
+				pr_info("TimeSync IC version %d.%d\n",
+					ts_srv_version >> 16,
+					ts_srv_version & 0xFFFF);
+			}
+>>>>>>> temp
 		} else {
 			if (ts_srv_version > TS_VERSION_3) {
 				refdata = (struct ictimesync_ref_data *)
@@ -324,7 +375,6 @@ static void heartbeat_onchannelcallback(void *context)
 	struct icmsg_hdr *icmsghdrp;
 	struct heartbeat_msg_data *heartbeat_msg;
 	u8 *hbeat_txf_buf = util_heartbeat.recv_buffer;
-	struct icmsg_negotiate *negop = NULL;
 
 	while (1) {
 
@@ -338,9 +388,16 @@ static void heartbeat_onchannelcallback(void *context)
 				sizeof(struct vmbuspipe_hdr)];
 
 		if (icmsghdrp->icmsgtype == ICMSGTYPE_NEGOTIATE) {
-			vmbus_prep_negotiate_resp(icmsghdrp, negop,
-				hbeat_txf_buf, util_fw_version,
-				hb_srv_version);
+			if (vmbus_prep_negotiate_resp(icmsghdrp,
+					hbeat_txf_buf,
+					fw_versions, FW_VER_COUNT,
+					hb_versions, HB_VER_COUNT,
+					NULL, &hb_srv_version)) {
+
+				pr_info("Heartbeat IC version %d.%d\n",
+					hb_srv_version >> 16,
+					hb_srv_version & 0xFFFF);
+			}
 		} else {
 			heartbeat_msg =
 				(struct heartbeat_msg_data *)&hbeat_txf_buf[
@@ -385,11 +442,11 @@ static int util_probe(struct hv_device *dev,
 	 * Turn off batched reading for all util drivers before we open the
 	 * channel.
 	 */
-
-	set_channel_read_state(dev->channel, false);
+	set_channel_read_mode(dev->channel, HV_CALL_DIRECT);
 
 	hv_set_drvdata(dev, srv);
 
+<<<<<<< HEAD
 	/*
 	 * Based on the host; initialize the framework and
 	 * service version numbers we will negotiate.
@@ -414,6 +471,8 @@ static int util_probe(struct hv_device *dev,
 		hb_srv_version = HB_VERSION;
 	}
 
+=======
+>>>>>>> temp
 	ret = vmbus_open(dev->channel, 4 * PAGE_SIZE, 4 * PAGE_SIZE, NULL, 0,
 			srv->util_cb, dev->channel);
 	if (ret)

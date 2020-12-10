@@ -113,6 +113,10 @@ MODULE_DEVICE_TABLE(spi, hts221_spi_id_table);
 static struct spi_driver hts221_driver = {
 	.driver = {
 		.name = "hts221_spi",
+<<<<<<< HEAD
+=======
+		.pm = &hts221_pm_ops,
+>>>>>>> temp
 		.of_match_table = of_match_ptr(hts221_spi_of_match),
 	},
 	.probe = hts221_spi_probe,

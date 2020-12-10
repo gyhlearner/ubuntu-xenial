@@ -127,6 +127,7 @@ static void ccid2_change_l_seq_window(struct sock *sk, u64 val)
 }
 
 static void dccp_tasklet_schedule(struct sock *sk)
+<<<<<<< HEAD
 {
 	struct tasklet_struct *t = &dccp_sk(sk)->dccps_xmitlet;
 
@@ -137,9 +138,21 @@ static void dccp_tasklet_schedule(struct sock *sk)
 }
 
 static void ccid2_hc_tx_rto_expire(unsigned long data)
+=======
+>>>>>>> temp
 {
-	struct sock *sk = (struct sock *)data;
-	struct ccid2_hc_tx_sock *hc = ccid2_hc_tx_sk(sk);
+	struct tasklet_struct *t = &dccp_sk(sk)->dccps_xmitlet;
+
+	if (!test_and_set_bit(TASKLET_STATE_SCHED, &t->state)) {
+		sock_hold(sk);
+		__tasklet_schedule(t);
+	}
+}
+
+static void ccid2_hc_tx_rto_expire(struct timer_list *t)
+{
+	struct ccid2_hc_tx_sock *hc = from_timer(hc, t, tx_rtotimer);
+	struct sock *sk = hc->sk;
 	const bool sender_was_blocked = ccid2_cwnd_network_limited(hc);
 
 	bh_lock_sock(sk);
@@ -248,7 +261,7 @@ static void ccid2_hc_tx_packet_sent(struct sock *sk, unsigned int len)
 {
 	struct dccp_sock *dp = dccp_sk(sk);
 	struct ccid2_hc_tx_sock *hc = ccid2_hc_tx_sk(sk);
-	const u32 now = ccid2_time_stamp;
+	const u32 now = ccid2_jiffies32;
 	struct ccid2_seq *next;
 
 	/* slow-start after idle periods (RFC 2581, RFC 2861) */
@@ -481,7 +494,7 @@ static void ccid2_new_ack(struct sock *sk, struct ccid2_seq *seqp,
 	 * The cleanest solution is to not use the ccid2s_sent field at all
 	 * and instead use DCCP timestamps: requires changes in other places.
 	 */
-	ccid2_rtt_estimator(sk, ccid2_time_stamp - seqp->ccid2s_sent);
+	ccid2_rtt_estimator(sk, ccid2_jiffies32 - seqp->ccid2s_sent);
 }
 
 static void ccid2_congestion_event(struct sock *sk, struct ccid2_seq *seqp)
@@ -493,7 +506,7 @@ static void ccid2_congestion_event(struct sock *sk, struct ccid2_seq *seqp)
 		return;
 	}
 
-	hc->tx_last_cong = ccid2_time_stamp;
+	hc->tx_last_cong = ccid2_jiffies32;
 
 	hc->tx_cwnd      = hc->tx_cwnd / 2 ? : 1U;
 	hc->tx_ssthresh  = max(hc->tx_cwnd, 2U);
@@ -746,10 +759,10 @@ static int ccid2_hc_tx_init(struct ccid *ccid, struct sock *sk)
 
 	hc->tx_rto	 = DCCP_TIMEOUT_INIT;
 	hc->tx_rpdupack  = -1;
-	hc->tx_last_cong = hc->tx_lsndtime = hc->tx_cwnd_stamp = ccid2_time_stamp;
+	hc->tx_last_cong = hc->tx_lsndtime = hc->tx_cwnd_stamp = ccid2_jiffies32;
 	hc->tx_cwnd_used = 0;
-	setup_timer(&hc->tx_rtotimer, ccid2_hc_tx_rto_expire,
-			(unsigned long)sk);
+	hc->sk		 = sk;
+	timer_setup(&hc->tx_rtotimer, ccid2_hc_tx_rto_expire, 0);
 	INIT_LIST_HEAD(&hc->tx_av_chunks);
 	return 0;
 }

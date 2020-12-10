@@ -4,7 +4,11 @@
  * This file contains AppArmor ipc mediation function definitions.
  *
  * Copyright (C) 1998-2008 Novell/SUSE
+<<<<<<< HEAD
  * Copyright 2009-2013 Canonical Ltd.
+=======
+ * Copyright 2009-2017 Canonical Ltd.
+>>>>>>> temp
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -29,7 +33,11 @@ struct aa_profile;
 			     AA_MAY_BE_READ | AA_MAY_BE_TRACED)
 #define AA_SIGNAL_PERM_MASK (MAY_READ | MAY_WRITE)
 
+<<<<<<< HEAD
 #define AA_FS_SIG_MASK "hup int quit ill trap abrt bus fpe kill usr1 " \
+=======
+#define AA_SFS_SIG_MASK "hup int quit ill trap abrt bus fpe kill usr1 " \
+>>>>>>> temp
 	"segv usr2 pipe alrm term stkflt chld cont stop stp ttin ttou urg " \
 	"xcpu xfsz vtalrm prof winch io pwr sys emt lost"
 

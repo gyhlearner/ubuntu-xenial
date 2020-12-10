@@ -10,6 +10,7 @@ menu "Ubuntu Supplied Third-Party Device Drivers"
 ##
 ##
 ##
+<<<<<<< HEAD
 source "ubuntu/dm-raid4-5/Kconfig"
 ##
 ##
@@ -18,10 +19,13 @@ source "ubuntu/i915/Kconfig"
 ##
 ##
 ##
+=======
+>>>>>>> temp
 source "ubuntu/hio/Kconfig"
 ##
 ##
 ##
+<<<<<<< HEAD
 source "ubuntu/rsi/Kconfig"
 ##
 ##
@@ -41,6 +45,8 @@ source "ubuntu/ixxat/Kconfig"
 ##
 ##
 ##
+=======
+>>>>>>> temp
 ##
 ##
 ##

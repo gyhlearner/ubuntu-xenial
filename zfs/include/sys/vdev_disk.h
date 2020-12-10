@@ -37,9 +37,12 @@ typedef struct vdev_disk {
 	struct block_device	*vd_bdev;
 } vdev_disk_t;
 
+<<<<<<< HEAD
 extern int vdev_disk_physio(struct block_device *, caddr_t,
 			    size_t, uint64_t, int);
 extern int vdev_disk_read_rootlabel(char *, char *, nvlist_t **);
 
+=======
+>>>>>>> temp
 #endif /* _KERNEL */
 #endif /* _SYS_VDEV_DISK_H */

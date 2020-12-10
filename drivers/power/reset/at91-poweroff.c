@@ -97,7 +97,11 @@ static void at91_lpddr_poweroff(void)
 		  "r" cpu_to_le32(AT91_DDRSDRC_LPDDR2_PWOFF),
 		  "r" (at91_shdwc_base),
 		  "r" cpu_to_le32(AT91_SHDW_KEY | AT91_SHDW_SHDW)
+<<<<<<< HEAD
 		: "r0");
+=======
+		: "r6");
+>>>>>>> temp
 }
 
 static int at91_poweroff_get_wakeup_mode(struct device_node *np)
@@ -221,6 +225,7 @@ static const struct of_device_id at91_poweroff_of_match[] = {
 	{ .compatible = "atmel,at91sam9x5-shdwc", },
 	{ /*sentinel*/ }
 };
+MODULE_DEVICE_TABLE(of, at91_poweroff_of_match);
 
 static struct platform_driver at91_poweroff_driver = {
 	.remove = __exit_p(at91_poweroff_remove),

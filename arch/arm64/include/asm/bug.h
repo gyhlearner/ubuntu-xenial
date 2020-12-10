@@ -18,8 +18,9 @@
 #ifndef _ARCH_ARM64_ASM_BUG_H
 #define _ARCH_ARM64_ASM_BUG_H
 
-#include <asm/debug-monitors.h>
+#include <linux/stringify.h>
 
+<<<<<<< HEAD
 #ifdef CONFIG_DEBUG_BUGVERBOSE
 #define _BUGVERBOSE_LOCATION(file, line) __BUGVERBOSE_LOCATION(file, line)
 #define __BUGVERBOSE_LOCATION(file, line)				\
@@ -54,13 +55,24 @@ _BUGVERBOSE_LOCATION(__FILE__, __LINE__)		\
 	);
 
 
+=======
+#include <asm/asm-bug.h>
+
+#define __BUG_FLAGS(flags)				\
+	asm volatile (__stringify(ASM_BUG_FLAGS(flags)));
+
+>>>>>>> temp
 #define BUG() do {					\
 	__BUG_FLAGS(0);					\
 	unreachable();					\
 } while (0)
 
+<<<<<<< HEAD
 #define __WARN_TAINT(taint) 				\
 	__BUG_FLAGS(BUGFLAG_TAINT(taint))
+=======
+#define __WARN_FLAGS(flags) __BUG_FLAGS(BUGFLAG_WARNING|(flags))
+>>>>>>> temp
 
 #define HAVE_ARCH_BUG
 

@@ -34,7 +34,10 @@ Currently, these files are in /proc/sys/fs:
 - overflowgid
 - pipe-user-pages-hard
 - pipe-user-pages-soft
+<<<<<<< HEAD
 - protected_fifos
+=======
+>>>>>>> temp
 - protected_hardlinks
 - protected_regular
 - protected_symlinks
@@ -184,6 +187,7 @@ applied.
 
 ==============================================================
 
+<<<<<<< HEAD
 protected_fifos:
 
 The intent of this protection is to avoid unintentional writes to
@@ -202,6 +206,8 @@ This protection is based on the restrictions in Openwall.
 
 ==============================================================
 
+=======
+>>>>>>> temp
 protected_hardlinks:
 
 A long-standing class of security issues is the hardlink-based
@@ -313,7 +319,7 @@ in a mount namespace.
 ----------------------------------------------------------
 
 Documentation for the files in /proc/sys/fs/binfmt_misc is
-in Documentation/binfmt_misc.txt.
+in Documentation/admin-guide/binfmt-misc.rst.
 
 
 3. /proc/sys/fs/mqueue - POSIX message queues filesystem

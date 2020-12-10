@@ -385,6 +385,10 @@ ppa_zero_params_offset:
 ENDPROC(omap_do_wfi)
 
 	.data
+<<<<<<< HEAD
+=======
+	.align	2
+>>>>>>> temp
 ppa_zero_params:
 	.word		0
 

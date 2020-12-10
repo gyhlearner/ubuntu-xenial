@@ -55,8 +55,17 @@
 #define SPLAT_RWLOCK_TEST5_DESC		"Write downgrade"
 
 #define SPLAT_RWLOCK_TEST6_ID		0x0706
+<<<<<<< HEAD
 #define SPLAT_RWLOCK_TEST6_NAME		"rw_tryupgrade"
 #define SPLAT_RWLOCK_TEST6_DESC		"Read upgrade"
+=======
+#define SPLAT_RWLOCK_TEST6_NAME		"rw_tryupgrade-1"
+#define SPLAT_RWLOCK_TEST6_DESC		"rwsem->count value"
+
+#define SPLAT_RWLOCK_TEST7_ID		0x0707
+#define SPLAT_RWLOCK_TEST7_NAME		"rw_tryupgrade-2"
+#define SPLAT_RWLOCK_TEST7_DESC		"Read upgrade"
+>>>>>>> temp
 
 #define SPLAT_RWLOCK_TEST_MAGIC		0x115599DDUL
 #define SPLAT_RWLOCK_TEST_NAME		"rwlock_test"
@@ -72,7 +81,11 @@ typedef struct rw_priv {
 	struct file *rw_file;
 	krwlock_t rw_rwlock;
 	spinlock_t rw_lock;
+<<<<<<< HEAD
 	wait_queue_head_t rw_waitq;
+=======
+	spl_wait_queue_head_t rw_waitq;
+>>>>>>> temp
 	int rw_completed;
 	int rw_holders;
 	int rw_waiters;
@@ -102,6 +115,20 @@ void splat_init_rw_priv(rw_priv_t *rwp, struct file *file)
 	rwp->rw_type = 0;
 }
 
+<<<<<<< HEAD
+=======
+#if defined(CONFIG_PREEMPT_RT_FULL)
+static int
+splat_rwlock_test1(struct file *file, void *arg)
+{
+	/*
+	 * This test will never succeed on PREEMPT_RT_FULL because these
+	 * kernels only allow a single thread to hold the lock.
+	 */
+	return 0;
+}
+#else
+>>>>>>> temp
 static int
 splat_rwlock_wr_thr(void *arg)
 {
@@ -293,6 +320,10 @@ splat_rwlock_test1(struct file *file, void *arg)
 
 	return rc;
 }
+<<<<<<< HEAD
+=======
+#endif
+>>>>>>> temp
 
 static void
 splat_rwlock_test2_func(void *arg)
@@ -344,7 +375,12 @@ splat_rwlock_test2(struct file *file, void *arg)
 	 * rwlock is implemented right this will never happy, that's a pass.
 	 */
 	for (i = 0; i < tq_count; i++) {
+<<<<<<< HEAD
 		if (!taskq_dispatch(tq,splat_rwlock_test2_func,rwp,TQ_SLEEP)) {
+=======
+		if (taskq_dispatch(tq, splat_rwlock_test2_func, rwp,
+		    TQ_SLEEP) == TASKQID_INVALID) {
+>>>>>>> temp
 			splat_vprint(file, SPLAT_RWLOCK_TEST2_NAME,
 				     "Failed to queue task %d\n", i);
 			rc = -EINVAL;
@@ -465,7 +501,11 @@ splat_rwlock_test4_type(taskq_t *tq, rw_priv_t *rwp, int expected_rc,
 		rw_enter(&rwp->rw_rwlock, holder_type);
 
 	id = taskq_dispatch(tq, splat_rwlock_test4_func, rwp, TQ_SLEEP);
+<<<<<<< HEAD
 	if (id == 0) {
+=======
+	if (id == TASKQID_INVALID) {
+>>>>>>> temp
 		splat_vprint(rwp->rw_file, SPLAT_RWLOCK_TEST4_NAME, "%s",
 			     "taskq_dispatch() failed\n");
 		rc = -EINVAL;
@@ -509,11 +549,30 @@ splat_rwlock_test4(struct file *file, void *arg)
 
 	splat_init_rw_priv(rwp, file);
 
+<<<<<<< HEAD
 	/* Validate all combinations of rw_tryenter() contention */
 	rc1 = splat_rwlock_test4_type(tq, rwp, -EBUSY, RW_WRITER, RW_WRITER);
 	rc2 = splat_rwlock_test4_type(tq, rwp, -EBUSY, RW_WRITER, RW_READER);
 	rc3 = splat_rwlock_test4_type(tq, rwp, -EBUSY, RW_READER, RW_WRITER);
 	rc4 = splat_rwlock_test4_type(tq, rwp, 0,      RW_READER, RW_READER);
+=======
+	/*
+	 * Validate all combinations of rw_tryenter() contention.
+	 *
+	 * The concurrent reader test is modified for PREEMPT_RT_FULL
+	 * kernels which do not permit concurrent read locks to be taken
+	 * from different threads.  The same thread is allowed to take
+	 * the read lock multiple times.
+	 */
+	rc1 = splat_rwlock_test4_type(tq, rwp, -EBUSY, RW_WRITER, RW_WRITER);
+	rc2 = splat_rwlock_test4_type(tq, rwp, -EBUSY, RW_WRITER, RW_READER);
+	rc3 = splat_rwlock_test4_type(tq, rwp, -EBUSY, RW_READER, RW_WRITER);
+#if defined(CONFIG_PREEMPT_RT_FULL)
+	rc4 = splat_rwlock_test4_type(tq, rwp, -EBUSY, RW_READER, RW_READER);
+#else
+	rc4 = splat_rwlock_test4_type(tq, rwp, 0,      RW_READER, RW_READER);
+#endif
+>>>>>>> temp
 	rc5 = splat_rwlock_test4_type(tq, rwp, 0,      RW_NONE,   RW_WRITER);
 	rc6 = splat_rwlock_test4_type(tq, rwp, 0,      RW_NONE,   RW_READER);
 
@@ -580,19 +639,78 @@ splat_rwlock_test6(struct file *file, void *arg)
 	splat_init_rw_priv(rwp, file);
 
 	rw_enter(&rwp->rw_rwlock, RW_READER);
+<<<<<<< HEAD
 	if (!RW_READ_HELD(&rwp->rw_rwlock)) {
 		splat_vprint(file, SPLAT_RWLOCK_TEST6_NAME,
+=======
+	if (RWSEM_COUNT(SEM(&rwp->rw_rwlock)) !=
+	    SPL_RWSEM_SINGLE_READER_VALUE) {
+		splat_vprint(file, SPLAT_RWLOCK_TEST6_NAME,
+		    "We assumed single reader rwsem->count "
+		    "should be %ld, but is %ld\n",
+		    (long int)SPL_RWSEM_SINGLE_READER_VALUE,
+		    (long int)RWSEM_COUNT(SEM(&rwp->rw_rwlock)));
+		rc = -ENOLCK;
+		goto out;
+	}
+	rw_exit(&rwp->rw_rwlock);
+
+	rw_enter(&rwp->rw_rwlock, RW_WRITER);
+	if (RWSEM_COUNT(SEM(&rwp->rw_rwlock)) !=
+	    SPL_RWSEM_SINGLE_WRITER_VALUE) {
+		splat_vprint(file, SPLAT_RWLOCK_TEST6_NAME,
+		    "We assumed single writer rwsem->count "
+		    "should be %ld, but is %ld\n",
+		    (long int)SPL_RWSEM_SINGLE_WRITER_VALUE,
+		    (long int)RWSEM_COUNT(SEM(&rwp->rw_rwlock)));
+		rc = -ENOLCK;
+		goto out;
+	}
+	rc = 0;
+	splat_vprint(file, SPLAT_RWLOCK_TEST6_NAME, "%s",
+		     "rwsem->count same as we assumed\n");
+out:
+	rw_exit(&rwp->rw_rwlock);
+	rw_destroy(&rwp->rw_rwlock);
+	kfree(rwp);
+
+	return rc;
+}
+
+static int
+splat_rwlock_test7(struct file *file, void *arg)
+{
+	rw_priv_t *rwp;
+	int rc;
+
+	rwp = (rw_priv_t *)kmalloc(sizeof(*rwp), GFP_KERNEL);
+	if (rwp == NULL)
+		return -ENOMEM;
+
+	splat_init_rw_priv(rwp, file);
+
+	rw_enter(&rwp->rw_rwlock, RW_READER);
+	if (!RW_READ_HELD(&rwp->rw_rwlock)) {
+		splat_vprint(file, SPLAT_RWLOCK_TEST7_NAME,
+>>>>>>> temp
 		             "rwlock should be read lock: %d\n",
 			     RW_READ_HELD(&rwp->rw_rwlock));
 		rc = -ENOLCK;
 		goto out;
 	}
 
+<<<<<<< HEAD
 #if defined(CONFIG_RWSEM_GENERIC_SPINLOCK)
 	/* With one reader upgrade should never fail. */
 	rc = rw_tryupgrade(&rwp->rw_rwlock);
 	if (!rc) {
 		splat_vprint(file, SPLAT_RWLOCK_TEST6_NAME,
+=======
+	/* With one reader upgrade should never fail. */
+	rc = rw_tryupgrade(&rwp->rw_rwlock);
+	if (!rc) {
+		splat_vprint(file, SPLAT_RWLOCK_TEST7_NAME,
+>>>>>>> temp
 			     "rwlock failed upgrade from reader: %d\n",
 			     RW_READ_HELD(&rwp->rw_rwlock));
 		rc = -ENOLCK;
@@ -600,7 +718,11 @@ splat_rwlock_test6(struct file *file, void *arg)
 	}
 
 	if (RW_READ_HELD(&rwp->rw_rwlock) || !RW_WRITE_HELD(&rwp->rw_rwlock)) {
+<<<<<<< HEAD
 		splat_vprint(file, SPLAT_RWLOCK_TEST6_NAME, "rwlock should "
+=======
+		splat_vprint(file, SPLAT_RWLOCK_TEST7_NAME, "rwlock should "
+>>>>>>> temp
 			   "have 0 (not %d) reader and 1 (not %d) writer\n",
 			   RW_READ_HELD(&rwp->rw_rwlock),
 			   RW_WRITE_HELD(&rwp->rw_rwlock));
@@ -608,6 +730,7 @@ splat_rwlock_test6(struct file *file, void *arg)
 	}
 
 	rc = 0;
+<<<<<<< HEAD
 	splat_vprint(file, SPLAT_RWLOCK_TEST6_NAME, "%s",
 		     "rwlock properly upgraded\n");
 #else
@@ -615,6 +738,10 @@ splat_rwlock_test6(struct file *file, void *arg)
 	splat_vprint(file, SPLAT_RWLOCK_TEST6_NAME, "%s",
 		     "rw_tryupgrade() is disabled for this arch\n");
 #endif
+=======
+	splat_vprint(file, SPLAT_RWLOCK_TEST7_NAME, "%s",
+		     "rwlock properly upgraded\n");
+>>>>>>> temp
 out:
 	rw_exit(&rwp->rw_rwlock);
 	rw_destroy(&rwp->rw_rwlock);
@@ -640,6 +767,7 @@ splat_rwlock_init(void)
 	spin_lock_init(&sub->test_lock);
 	sub->desc.id = SPLAT_SUBSYSTEM_RWLOCK;
 
+<<<<<<< HEAD
 	SPLAT_TEST_INIT(sub, SPLAT_RWLOCK_TEST1_NAME, SPLAT_RWLOCK_TEST1_DESC,
 		      SPLAT_RWLOCK_TEST1_ID, splat_rwlock_test1);
 	SPLAT_TEST_INIT(sub, SPLAT_RWLOCK_TEST2_NAME, SPLAT_RWLOCK_TEST2_DESC,
@@ -652,6 +780,22 @@ splat_rwlock_init(void)
 		      SPLAT_RWLOCK_TEST5_ID, splat_rwlock_test5);
 	SPLAT_TEST_INIT(sub, SPLAT_RWLOCK_TEST6_NAME, SPLAT_RWLOCK_TEST6_DESC,
 		      SPLAT_RWLOCK_TEST6_ID, splat_rwlock_test6);
+=======
+	splat_test_init(sub, SPLAT_RWLOCK_TEST1_NAME, SPLAT_RWLOCK_TEST1_DESC,
+		      SPLAT_RWLOCK_TEST1_ID, splat_rwlock_test1);
+	splat_test_init(sub, SPLAT_RWLOCK_TEST2_NAME, SPLAT_RWLOCK_TEST2_DESC,
+		      SPLAT_RWLOCK_TEST2_ID, splat_rwlock_test2);
+	splat_test_init(sub, SPLAT_RWLOCK_TEST3_NAME, SPLAT_RWLOCK_TEST3_DESC,
+		      SPLAT_RWLOCK_TEST3_ID, splat_rwlock_test3);
+	splat_test_init(sub, SPLAT_RWLOCK_TEST4_NAME, SPLAT_RWLOCK_TEST4_DESC,
+		      SPLAT_RWLOCK_TEST4_ID, splat_rwlock_test4);
+	splat_test_init(sub, SPLAT_RWLOCK_TEST5_NAME, SPLAT_RWLOCK_TEST5_DESC,
+		      SPLAT_RWLOCK_TEST5_ID, splat_rwlock_test5);
+	splat_test_init(sub, SPLAT_RWLOCK_TEST6_NAME, SPLAT_RWLOCK_TEST6_DESC,
+		      SPLAT_RWLOCK_TEST6_ID, splat_rwlock_test6);
+	splat_test_init(sub, SPLAT_RWLOCK_TEST7_NAME, SPLAT_RWLOCK_TEST7_DESC,
+		      SPLAT_RWLOCK_TEST7_ID, splat_rwlock_test7);
+>>>>>>> temp
 
 	return sub;
 }
@@ -660,12 +804,22 @@ void
 splat_rwlock_fini(splat_subsystem_t *sub)
 {
 	ASSERT(sub);
+<<<<<<< HEAD
 	SPLAT_TEST_FINI(sub, SPLAT_RWLOCK_TEST6_ID);
 	SPLAT_TEST_FINI(sub, SPLAT_RWLOCK_TEST5_ID);
 	SPLAT_TEST_FINI(sub, SPLAT_RWLOCK_TEST4_ID);
 	SPLAT_TEST_FINI(sub, SPLAT_RWLOCK_TEST3_ID);
 	SPLAT_TEST_FINI(sub, SPLAT_RWLOCK_TEST2_ID);
 	SPLAT_TEST_FINI(sub, SPLAT_RWLOCK_TEST1_ID);
+=======
+	splat_test_fini(sub, SPLAT_RWLOCK_TEST7_ID);
+	splat_test_fini(sub, SPLAT_RWLOCK_TEST6_ID);
+	splat_test_fini(sub, SPLAT_RWLOCK_TEST5_ID);
+	splat_test_fini(sub, SPLAT_RWLOCK_TEST4_ID);
+	splat_test_fini(sub, SPLAT_RWLOCK_TEST3_ID);
+	splat_test_fini(sub, SPLAT_RWLOCK_TEST2_ID);
+	splat_test_fini(sub, SPLAT_RWLOCK_TEST1_ID);
+>>>>>>> temp
 	kfree(sub);
 }
 

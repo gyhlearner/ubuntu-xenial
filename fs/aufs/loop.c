@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright (C) 2005-2015 Junjiro R. Okajima
+=======
+ * Copyright (C) 2005-2017 Junjiro R. Okajima
+>>>>>>> temp
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -104,7 +108,12 @@ void au_warn_loopback(struct super_block *h_sb)
 	new_nelem = au_warn_loopback_nelem + au_warn_loopback_step;
 	a = au_kzrealloc(au_warn_loopback_array,
 			 au_warn_loopback_nelem * sizeof(unsigned long),
+<<<<<<< HEAD
 			 new_nelem * sizeof(unsigned long), GFP_ATOMIC);
+=======
+			 new_nelem * sizeof(unsigned long), GFP_ATOMIC,
+			 /*may_shrink*/0);
+>>>>>>> temp
 	if (a) {
 		au_warn_loopback_nelem = new_nelem;
 		au_warn_loopback_array = a;

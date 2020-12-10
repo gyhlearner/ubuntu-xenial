@@ -5,7 +5,11 @@
 #include <asm/dwarf2.h>
 #include <asm/cpufeatures.h>
 #include <asm/alternative-asm.h>
+<<<<<<< HEAD
 #include <asm-generic/export.h>
+=======
+#include <asm/export.h>
+>>>>>>> temp
 #include <asm/nospec-branch.h>
 
 .macro THUNK reg

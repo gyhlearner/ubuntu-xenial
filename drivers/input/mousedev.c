@@ -575,6 +575,7 @@ static void mousedev_packet(struct mousedev_client *client, u8 *ps2_data)
 {
 	struct mousedev_motion *p = &client->packets[client->tail];
 	s8 dx, dy, dz;
+<<<<<<< HEAD
 
 	dx = clamp_val(p->dx, -127, 127);
 	p->dx -= dx;
@@ -582,6 +583,15 @@ static void mousedev_packet(struct mousedev_client *client, u8 *ps2_data)
 	dy = clamp_val(p->dy, -127, 127);
 	p->dy -= dy;
 
+=======
+
+	dx = clamp_val(p->dx, -127, 127);
+	p->dx -= dx;
+
+	dy = clamp_val(p->dy, -127, 127);
+	p->dy -= dy;
+
+>>>>>>> temp
 	ps2_data[0] = BIT(3);
 	ps2_data[0] |= ((dx & BIT(7)) >> 3) | ((dy & BIT(7)) >> 2);
 	ps2_data[0] |= p->buttons & 0x07;
@@ -818,8 +828,6 @@ static void mousedev_cleanup(struct mousedev *mousedev)
 	mousedev_mark_dead(mousedev);
 	mousedev_hangup(mousedev);
 
-	cdev_del(&mousedev->cdev);
-
 	/* mousedev is marked dead so no one else accesses mousedev->open */
 	if (mousedev->open)
 		input_close_device(handle);
@@ -907,12 +915,8 @@ static struct mousedev *mousedev_create(struct input_dev *dev,
 	}
 
 	cdev_init(&mousedev->cdev, &mousedev_fops);
-	mousedev->cdev.kobj.parent = &mousedev->dev.kobj;
-	error = cdev_add(&mousedev->cdev, mousedev->dev.devt, 1);
-	if (error)
-		goto err_unregister_handle;
 
-	error = device_add(&mousedev->dev);
+	error = cdev_device_add(&mousedev->cdev, &mousedev->dev);
 	if (error)
 		goto err_cleanup_mousedev;
 
@@ -920,7 +924,6 @@ static struct mousedev *mousedev_create(struct input_dev *dev,
 
  err_cleanup_mousedev:
 	mousedev_cleanup(mousedev);
- err_unregister_handle:
 	if (!mixdev)
 		input_unregister_handle(&mousedev->handle);
  err_free_mousedev:
@@ -933,7 +936,7 @@ static struct mousedev *mousedev_create(struct input_dev *dev,
 
 static void mousedev_destroy(struct mousedev *mousedev)
 {
-	device_del(&mousedev->dev);
+	cdev_device_del(&mousedev->cdev, &mousedev->dev);
 	mousedev_cleanup(mousedev);
 	input_free_minor(MINOR(mousedev->dev.devt));
 	if (mousedev != mousedev_mix)

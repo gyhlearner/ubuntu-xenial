@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright (C) 2005-2015 Junjiro R. Okajima
+=======
+ * Copyright (C) 2005-2017 Junjiro R. Okajima
+>>>>>>> temp
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -141,10 +145,15 @@ static int do_pri_inode(aufs_bindex_t bindex, struct inode *inode, int hn,
 void au_dpri_inode(struct inode *inode)
 {
 	struct au_iinfo *iinfo;
+<<<<<<< HEAD
+=======
+	struct au_hinode *hi;
+>>>>>>> temp
 	aufs_bindex_t bindex;
 	int err, hn;
 
 	err = do_pri_inode(-1, inode, -1, NULL);
+<<<<<<< HEAD
 	if (err || !au_test_aufs(inode->i_sb))
 		return;
 
@@ -160,6 +169,21 @@ void au_dpri_inode(struct inode *inode)
 		hn = !!au_hn(iinfo->ii_hinode + bindex);
 		do_pri_inode(bindex, iinfo->ii_hinode[0 + bindex].hi_inode, hn,
 			     iinfo->ii_hinode[0 + bindex].hi_whdentry);
+=======
+	if (err || !au_test_aufs(inode->i_sb) || au_is_bad_inode(inode))
+		return;
+
+	iinfo = au_ii(inode);
+	dpri("i-1: btop %d, bbot %d, gen %d\n",
+	     iinfo->ii_btop, iinfo->ii_bbot, au_iigen(inode, NULL));
+	if (iinfo->ii_btop < 0)
+		return;
+	hn = 0;
+	for (bindex = iinfo->ii_btop; bindex <= iinfo->ii_bbot; bindex++) {
+		hi = au_hinode(iinfo, bindex);
+		hn = !!au_hn(hi);
+		do_pri_inode(bindex, hi->hi_inode, hn, hi->hi_whdentry);
+>>>>>>> temp
 	}
 }
 
@@ -177,7 +201,13 @@ static int do_pri_dentry(aufs_bindex_t bindex, struct dentry *dentry)
 {
 	struct dentry *wh = NULL;
 	int hn;
+<<<<<<< HEAD
 	struct au_iinfo *iinfo;
+=======
+	struct inode *inode;
+	struct au_iinfo *iinfo;
+	struct au_hinode *hi;
+>>>>>>> temp
 
 	if (!dentry || IS_ERR(dentry)) {
 		dpri("d%d: err %ld\n", bindex, PTR_ERR(dentry));
@@ -191,6 +221,7 @@ static int do_pri_dentry(aufs_bindex_t bindex, struct dentry *dentry)
 	     au_dcount(dentry), dentry->d_flags,
 	     d_unhashed(dentry) ? "un" : "");
 	hn = -1;
+<<<<<<< HEAD
 	if (bindex >= 0
 	    && d_is_positive(dentry)
 	    && au_test_aufs(dentry->d_sb)) {
@@ -201,6 +232,21 @@ static int do_pri_dentry(aufs_bindex_t bindex, struct dentry *dentry)
 		}
 	}
 	do_pri_inode(bindex, d_inode(dentry), hn, wh);
+=======
+	inode = NULL;
+	if (d_is_positive(dentry))
+		inode = d_inode(dentry);
+	if (inode
+	    && au_test_aufs(dentry->d_sb)
+	    && bindex >= 0
+	    && !au_is_bad_inode(inode)) {
+		iinfo = au_ii(inode);
+		hi = au_hinode(iinfo, bindex);
+		hn = !!au_hn(hi);
+		wh = hi->hi_whdentry;
+	}
+	do_pri_inode(bindex, inode, hn, wh);
+>>>>>>> temp
 	return 0;
 }
 
@@ -209,7 +255,10 @@ void au_dpri_dentry(struct dentry *dentry)
 	struct au_dinfo *dinfo;
 	aufs_bindex_t bindex;
 	int err;
+<<<<<<< HEAD
 	struct au_hdentry *hdp;
+=======
+>>>>>>> temp
 
 	err = do_pri_dentry(-1, dentry);
 	if (err || !au_test_aufs(dentry->d_sb))
@@ -218,6 +267,7 @@ void au_dpri_dentry(struct dentry *dentry)
 	dinfo = au_di(dentry);
 	if (!dinfo)
 		return;
+<<<<<<< HEAD
 	dpri("d-1: bstart %d, bend %d, bwh %d, bdiropq %d, gen %d, tmp %d\n",
 	     dinfo->di_bstart, dinfo->di_bend,
 	     dinfo->di_bwh, dinfo->di_bdiropq, au_digen(dentry),
@@ -227,6 +277,16 @@ void au_dpri_dentry(struct dentry *dentry)
 	hdp = dinfo->di_hdentry;
 	for (bindex = dinfo->di_bstart; bindex <= dinfo->di_bend; bindex++)
 		do_pri_dentry(bindex, hdp[0 + bindex].hd_dentry);
+=======
+	dpri("d-1: btop %d, bbot %d, bwh %d, bdiropq %d, gen %d, tmp %d\n",
+	     dinfo->di_btop, dinfo->di_bbot,
+	     dinfo->di_bwh, dinfo->di_bdiropq, au_digen(dentry),
+	     dinfo->di_tmpfile);
+	if (dinfo->di_btop < 0)
+		return;
+	for (bindex = dinfo->di_btop; bindex <= dinfo->di_bbot; bindex++)
+		do_pri_dentry(bindex, au_hdentry(dinfo, bindex)->hd_dentry);
+>>>>>>> temp
 }
 
 static int do_pri_file(aufs_bindex_t bindex, struct file *file)
@@ -297,10 +357,17 @@ static int do_pri_br(aufs_bindex_t bindex, struct au_branch *br)
 	if (!sb || IS_ERR(sb))
 		goto out;
 
+<<<<<<< HEAD
 	dpri("s%d: {perm 0x%x, id %d, cnt %d, wbr %p}, "
 	     "%s, dev 0x%02x%02x, flags 0x%lx, cnt %d, active %d, "
 	     "xino %d\n",
 	     bindex, br->br_perm, br->br_id, atomic_read(&br->br_count),
+=======
+	dpri("s%d: {perm 0x%x, id %d, cnt %lld, wbr %p}, "
+	     "%s, dev 0x%02x%02x, flags 0x%lx, cnt %d, active %d, "
+	     "xino %d\n",
+	     bindex, br->br_perm, br->br_id, au_br_count(br),
+>>>>>>> temp
 	     br->br_wbr, au_sbtype(sb), MAJOR(sb->s_dev), MINOR(sb->s_dev),
 	     sb->s_flags, sb->s_count,
 	     atomic_read(&sb->s_active), !!br->br_xino.xi_file);
@@ -331,9 +398,15 @@ void au_dpri_sb(struct super_block *sb)
 
 	a->mnt.mnt_sb = sb;
 	a->fake.br_path.mnt = &a->mnt;
+<<<<<<< HEAD
 	atomic_set(&a->fake.br_count, 0);
 	smp_mb(); /* atomic_set */
 	err = do_pri_br(-1, &a->fake);
+=======
+	au_br_count_init(&a->fake);
+	err = do_pri_br(-1, &a->fake);
+	au_br_count_fin(&a->fake);
+>>>>>>> temp
 	kfree(a);
 	dpri("dev 0x%x\n", sb->s_dev);
 	if (err || !au_test_aufs(sb))
@@ -344,8 +417,13 @@ void au_dpri_sb(struct super_block *sb)
 		return;
 	dpri("nw %d, gen %u, kobj %d\n",
 	     atomic_read(&sbinfo->si_nowait.nw_len), sbinfo->si_generation,
+<<<<<<< HEAD
 	     atomic_read(&sbinfo->si_kobj.kref.refcount));
 	for (bindex = 0; bindex <= sbinfo->si_bend; bindex++)
+=======
+	     kref_read(&sbinfo->si_kobj.kref));
+	for (bindex = 0; bindex <= sbinfo->si_bbot; bindex++)
+>>>>>>> temp
 		do_pri_br(bindex, sbinfo->si_branch[0 + bindex]);
 }
 
@@ -355,11 +433,16 @@ void __au_dbg_verify_dinode(struct dentry *dentry, const char *func, int line)
 {
 	struct inode *h_inode, *inode = d_inode(dentry);
 	struct dentry *h_dentry;
+<<<<<<< HEAD
 	aufs_bindex_t bindex, bend, bi;
+=======
+	aufs_bindex_t bindex, bbot, bi;
+>>>>>>> temp
 
 	if (!inode /* || au_di(dentry)->di_lsc == AuLsc_DI_TMP */)
 		return;
 
+<<<<<<< HEAD
 	bend = au_dbend(dentry);
 	bi = au_ibend(inode);
 	if (bi < bend)
@@ -370,6 +453,18 @@ void __au_dbg_verify_dinode(struct dentry *dentry, const char *func, int line)
 		bindex = bi;
 
 	for (; bindex <= bend; bindex++) {
+=======
+	bbot = au_dbbot(dentry);
+	bi = au_ibbot(inode);
+	if (bi < bbot)
+		bbot = bi;
+	bindex = au_dbtop(dentry);
+	bi = au_ibtop(inode);
+	if (bi > bindex)
+		bindex = bi;
+
+	for (; bindex <= bbot; bindex++) {
+>>>>>>> temp
 		h_dentry = au_h_dptr(dentry, bindex);
 		if (!h_dentry)
 			continue;

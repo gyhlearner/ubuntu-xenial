@@ -4,7 +4,11 @@
  */
 
 /*
+<<<<<<< HEAD
  * Copyright (C) 1999-2011 knut st. osmundsen (bird-src-spam@anduin.net)
+=======
+ * Copyright (C) 2006-2017 Oracle Corporation
+>>>>>>> temp
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;

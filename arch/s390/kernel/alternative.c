@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+// SPDX-License-Identifier: GPL-2.0
+>>>>>>> temp
 #include <linux/module.h>
 #include <asm/alternative.h>
 #include <asm/facility.h>
@@ -15,6 +19,7 @@ static int __init disable_alternative_instructions(char *str)
 
 early_param("noaltinstr", disable_alternative_instructions);
 
+<<<<<<< HEAD
 static int __init nogmb_setup_early(char *str)
 {
 	__clear_facility(81, S390_lowcore.alt_stfle_fac_list);
@@ -22,6 +27,8 @@ static int __init nogmb_setup_early(char *str)
 }
 early_param("nogmb", nogmb_setup_early);
 
+=======
+>>>>>>> temp
 struct brcl_insn {
 	u16 opc;
 	s32 disp;
@@ -115,11 +122,14 @@ void __init_or_module apply_alternatives(struct alt_instr *start,
 extern struct alt_instr __alt_instructions[], __alt_instructions_end[];
 void __init apply_alternative_instructions(void)
 {
+<<<<<<< HEAD
 	pr_info("gmb %s",
 		(__test_facility(81, S390_lowcore.alt_stfle_fac_list)) ?
 		"enabled" : "disabled");
 	pr_info("nobp %s",
 		(__test_facility(82, S390_lowcore.alt_stfle_fac_list)) ?
 		"enabled" : "disabled");
+=======
+>>>>>>> temp
 	apply_alternatives(__alt_instructions, __alt_instructions_end);
 }

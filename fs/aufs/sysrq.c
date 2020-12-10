@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright (C) 2005-2015 Junjiro R. Okajima
+=======
+ * Copyright (C) 2005-2017 Junjiro R. Okajima
+>>>>>>> temp
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,7 +34,12 @@ static void sysrq_sb(struct super_block *sb)
 	char *plevel;
 	struct au_sbinfo *sbinfo;
 	struct file *file;
+<<<<<<< HEAD
 	struct au_sphlhead *files;
+=======
+	struct hlist_bl_head *files;
+	struct hlist_bl_node *pos;
+>>>>>>> temp
 	struct au_finfo *finfo;
 
 	plevel = au_plevel;
@@ -89,8 +98,13 @@ static void sysrq_sb(struct super_block *sb)
 #endif
 	pr("files\n");
 	files = &au_sbi(sb)->si_files;
+<<<<<<< HEAD
 	spin_lock(&files->spin);
 	hlist_for_each_entry(finfo, &files->head, fi_hlist) {
+=======
+	hlist_bl_lock(files);
+	hlist_bl_for_each_entry(finfo, pos, files, fi_hlist) {
+>>>>>>> temp
 		umode_t mode;
 
 		file = finfo->fi_file;
@@ -98,7 +112,11 @@ static void sysrq_sb(struct super_block *sb)
 		if (!special_file(mode))
 			au_dpri_file(file);
 	}
+<<<<<<< HEAD
 	spin_unlock(&files->spin);
+=======
+	hlist_bl_unlock(files);
+>>>>>>> temp
 	pr("done\n");
 
 #undef pr
@@ -115,10 +133,18 @@ MODULE_PARM_DESC(sysrq, "MagicSysRq key for " AUFS_NAME);
 static void au_sysrq(int key __maybe_unused)
 {
 	struct au_sbinfo *sbinfo;
+<<<<<<< HEAD
 
 	lockdep_off();
 	au_sbilist_lock();
 	list_for_each_entry(sbinfo, &au_sbilist.head, si_list)
+=======
+	struct hlist_bl_node *pos;
+
+	lockdep_off();
+	au_sbilist_lock();
+	hlist_bl_for_each_entry(sbinfo, pos, &au_sbilist, si_list)
+>>>>>>> temp
 		sysrq_sb(sbinfo->si_sb);
 	au_sbilist_unlock();
 	lockdep_on();

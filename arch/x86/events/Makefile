@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 obj-y			+= core.o
 
 obj-$(CONFIG_CPU_SUP_AMD)               += amd/core.o amd/uncore.o
@@ -11,3 +12,9 @@ obj-$(CONFIG_CPU_SUP_INTEL)		+= intel/lbr.o intel/p4.o intel/p6.o intel/pt.o
 obj-$(CONFIG_CPU_SUP_INTEL)		+= intel/rapl.o msr.o
 obj-$(CONFIG_PERF_EVENTS_INTEL_UNCORE)	+= intel/uncore.o intel/uncore_nhmex.o
 obj-$(CONFIG_PERF_EVENTS_INTEL_UNCORE)	+= intel/uncore_snb.o intel/uncore_snbep.o
+=======
+obj-y					+= core.o
+obj-y					+= amd/
+obj-$(CONFIG_X86_LOCAL_APIC)            += msr.o
+obj-$(CONFIG_CPU_SUP_INTEL)		+= intel/
+>>>>>>> temp

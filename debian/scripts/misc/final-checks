@@ -2,7 +2,10 @@
 
 debian="$1"
 abi="$2"
+<<<<<<< HEAD
 abi=${abi%~*}
+=======
+>>>>>>> temp
 
 . "$debian/etc/kernelconfig"
 

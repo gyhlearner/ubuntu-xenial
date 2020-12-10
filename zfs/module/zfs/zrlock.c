@@ -20,7 +20,12 @@
  */
 /*
  * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+<<<<<<< HEAD
  * Copyright (c) 2014 by Delphix. All rights reserved.
+=======
+ * Copyright (c) 2014, 2015 by Delphix. All rights reserved.
+ * Copyright 2016 The MathWorks, Inc. All rights reserved.
+>>>>>>> temp
  */
 
 /*
@@ -70,6 +75,7 @@ zrl_destroy(zrlock_t *zrl)
 }
 
 void
+<<<<<<< HEAD
 #ifdef	ZFS_DEBUG
 zrl_add_debug(zrlock_t *zrl, const char *zc)
 #else
@@ -107,6 +113,36 @@ zrl_add(zrlock_t *zrl)
 	zrl->zr_caller = zc;
 #endif
 	mutex_exit(&zrl->zr_mtx);
+=======
+zrl_add_impl(zrlock_t *zrl, const char *zc)
+{
+	for (;;) {
+		uint32_t n = (uint32_t)zrl->zr_refcount;
+		while (n != ZRL_LOCKED) {
+			uint32_t cas = atomic_cas_32(
+			    (uint32_t *)&zrl->zr_refcount, n, n + 1);
+			if (cas == n) {
+				ASSERT3S((int32_t)n, >=, 0);
+#ifdef	ZFS_DEBUG
+				if (zrl->zr_owner == curthread) {
+					DTRACE_PROBE2(zrlock__reentry,
+					    zrlock_t *, zrl, uint32_t, n);
+				}
+				zrl->zr_owner = curthread;
+				zrl->zr_caller = zc;
+#endif
+				return;
+			}
+			n = cas;
+		}
+
+		mutex_enter(&zrl->zr_mtx);
+		while (zrl->zr_refcount == ZRL_LOCKED) {
+			cv_wait(&zrl->zr_cv, &zrl->zr_mtx);
+		}
+		mutex_exit(&zrl->zr_mtx);
+	}
+>>>>>>> temp
 }
 
 void
@@ -199,11 +235,15 @@ zrl_owner(zrlock_t *zrl)
 
 #if defined(_KERNEL) && defined(HAVE_SPL)
 
+<<<<<<< HEAD
 #ifdef ZFS_DEBUG
 EXPORT_SYMBOL(zrl_add_debug);
 #else
 EXPORT_SYMBOL(zrl_add);
 #endif
+=======
+EXPORT_SYMBOL(zrl_add_impl);
+>>>>>>> temp
 EXPORT_SYMBOL(zrl_remove);
 
 #endif

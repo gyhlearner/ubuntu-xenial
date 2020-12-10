@@ -32,13 +32,29 @@
 
 struct ixgbe_mat_field {
 	unsigned int off;
+<<<<<<< HEAD
 	unsigned int mask;
+=======
+>>>>>>> temp
 	int (*val)(struct ixgbe_fdir_filter *input,
 		   union ixgbe_atr_input *mask,
 		   u32 val, u32 m);
 	unsigned int type;
 };
 
+<<<<<<< HEAD
+=======
+struct ixgbe_jump_table {
+	struct ixgbe_mat_field *mat;
+	struct ixgbe_fdir_filter *input;
+	union ixgbe_atr_input *mask;
+	u32 link_hdl;
+	unsigned long child_loc_map[32];
+};
+
+#define IXGBE_MAX_HW_ENTRIES 2045
+
+>>>>>>> temp
 static inline int ixgbe_mat_prgm_sip(struct ixgbe_fdir_filter *input,
 				     union ixgbe_atr_input *mask,
 				     u32 val, u32 m)
@@ -58,19 +74,30 @@ static inline int ixgbe_mat_prgm_dip(struct ixgbe_fdir_filter *input,
 }
 
 static struct ixgbe_mat_field ixgbe_ipv4_fields[] = {
+<<<<<<< HEAD
 	{ .off = 12, .mask = -1, .val = ixgbe_mat_prgm_sip,
 	  .type = IXGBE_ATR_FLOW_TYPE_IPV4},
 	{ .off = 16, .mask = -1, .val = ixgbe_mat_prgm_dip,
+=======
+	{ .off = 12, .val = ixgbe_mat_prgm_sip,
+	  .type = IXGBE_ATR_FLOW_TYPE_IPV4},
+	{ .off = 16, .val = ixgbe_mat_prgm_dip,
+>>>>>>> temp
 	  .type = IXGBE_ATR_FLOW_TYPE_IPV4},
 	{ .val = NULL } /* terminal node */
 };
 
+<<<<<<< HEAD
 static inline int ixgbe_mat_prgm_sport(struct ixgbe_fdir_filter *input,
+=======
+static inline int ixgbe_mat_prgm_ports(struct ixgbe_fdir_filter *input,
+>>>>>>> temp
 				       union ixgbe_atr_input *mask,
 				       u32 val, u32 m)
 {
 	input->filter.formatted.src_port = val & 0xffff;
 	mask->formatted.src_port = m & 0xffff;
+<<<<<<< HEAD
 	return 0;
 };
 
@@ -80,17 +107,35 @@ static inline int ixgbe_mat_prgm_dport(struct ixgbe_fdir_filter *input,
 {
 	input->filter.formatted.dst_port = val & 0xffff;
 	mask->formatted.dst_port = m & 0xffff;
+=======
+	input->filter.formatted.dst_port = val >> 16;
+	mask->formatted.dst_port = m >> 16;
+
+>>>>>>> temp
 	return 0;
 };
 
 static struct ixgbe_mat_field ixgbe_tcp_fields[] = {
+<<<<<<< HEAD
 	{.off = 0, .mask = 0xffff, .val = ixgbe_mat_prgm_sport,
 	 .type = IXGBE_ATR_FLOW_TYPE_TCPV4},
 	{.off = 2, .mask = 0xffff, .val = ixgbe_mat_prgm_dport,
+=======
+	{.off = 0, .val = ixgbe_mat_prgm_ports,
+>>>>>>> temp
 	 .type = IXGBE_ATR_FLOW_TYPE_TCPV4},
 	{ .val = NULL } /* terminal node */
 };
 
+<<<<<<< HEAD
+=======
+static struct ixgbe_mat_field ixgbe_udp_fields[] = {
+	{.off = 0, .val = ixgbe_mat_prgm_ports,
+	 .type = IXGBE_ATR_FLOW_TYPE_UDPV4},
+	{ .val = NULL } /* terminal node */
+};
+
+>>>>>>> temp
 struct ixgbe_nexthdr {
 	/* offset, shift, and mask of position to next header */
 	unsigned int o;
@@ -107,6 +152,11 @@ struct ixgbe_nexthdr {
 static struct ixgbe_nexthdr ixgbe_ipv4_jumps[] = {
 	{ .o = 0, .s = 6, .m = 0xf,
 	  .off = 8, .val = 0x600, .mask = 0xff00, .jump = ixgbe_tcp_fields},
+<<<<<<< HEAD
+=======
+	{ .o = 0, .s = 6, .m = 0xf,
+	  .off = 8, .val = 0x1100, .mask = 0xff00, .jump = ixgbe_udp_fields},
+>>>>>>> temp
 	{ .jump = NULL } /* terminal node */
 };
 #endif /* _IXGBE_MODEL_H_ */

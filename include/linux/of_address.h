@@ -1,8 +1,10 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 #ifndef __OF_ADDRESS_H
 #define __OF_ADDRESS_H
 #include <linux/ioport.h>
 #include <linux/errno.h>
 #include <linux/of.h>
+#include <linux/io.h>
 
 struct of_pci_range_parser {
 	struct device_node *node;
@@ -36,6 +38,8 @@ extern struct device_node *of_find_matching_node_by_address(
 					const struct of_device_id *matches,
 					u64 base_address);
 extern void __iomem *of_iomap(struct device_node *device, int index);
+void __iomem *of_io_request_and_map(struct device_node *device,
+				    int index, const char *name);
 
 /* Extract an address from a device, returns the region size and
  * the address space flags too. The PCI version uses a BAR number
@@ -46,6 +50,8 @@ extern const __be32 *of_get_address(struct device_node *dev, int index,
 
 extern int of_pci_range_parser_init(struct of_pci_range_parser *parser,
 			struct device_node *node);
+extern int of_pci_dma_range_parser_init(struct of_pci_range_parser *parser,
+			struct device_node *node);
 extern struct of_pci_range *of_pci_range_parser_one(
 					struct of_pci_range_parser *parser,
 					struct of_pci_range *range);
@@ -53,6 +59,11 @@ extern int of_dma_get_range(struct device_node *np, u64 *dma_addr,
 				u64 *paddr, u64 *size);
 extern bool of_dma_is_coherent(struct device_node *np);
 #else /* CONFIG_OF_ADDRESS */
+static inline void __iomem *of_io_request_and_map(struct device_node *device,
+						  int index, const char *name)
+{
+	return IOMEM_ERR_PTR(-EINVAL);
+}
 
 static inline u64 of_translate_address(struct device_node *np,
 				       const __be32 *addr)
@@ -75,9 +86,18 @@ static inline const __be32 *of_get_address(struct device_node *dev, int index,
 }
 
 static inline int of_pci_range_parser_init(struct of_pci_range_parser *parser,
+<<<<<<< HEAD
+=======
 			struct device_node *node)
 {
-	return -1;
+	return -ENOSYS;
+}
+
+static inline int of_pci_dma_range_parser_init(struct of_pci_range_parser *parser,
+>>>>>>> temp
+			struct device_node *node)
+{
+	return -ENOSYS;
 }
 
 static inline struct of_pci_range *of_pci_range_parser_one(
@@ -103,12 +123,7 @@ static inline bool of_dma_is_coherent(struct device_node *np)
 extern int of_address_to_resource(struct device_node *dev, int index,
 				  struct resource *r);
 void __iomem *of_iomap(struct device_node *node, int index);
-void __iomem *of_io_request_and_map(struct device_node *device,
-					int index, const char *name);
 #else
-
-#include <linux/io.h>
-
 static inline int of_address_to_resource(struct device_node *dev, int index,
 					 struct resource *r)
 {
@@ -118,12 +133,6 @@ static inline int of_address_to_resource(struct device_node *dev, int index,
 static inline void __iomem *of_iomap(struct device_node *device, int index)
 {
 	return NULL;
-}
-
-static inline void __iomem *of_io_request_and_map(struct device_node *device,
-					int index, const char *name)
-{
-	return IOMEM_ERR_PTR(-EINVAL);
 }
 #endif
 

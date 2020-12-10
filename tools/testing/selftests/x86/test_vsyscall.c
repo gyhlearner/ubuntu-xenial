@@ -33,6 +33,12 @@
 # endif
 #endif
 
+<<<<<<< HEAD
+=======
+/* max length of lines in /proc/self/maps - anything longer is skipped here */
+#define MAPS_LINE_LEN 128
+
+>>>>>>> temp
 static void sethandler(int sig, void (*handler)(int, siginfo_t *, void *),
 		       int flags)
 {
@@ -98,7 +104,11 @@ static int init_vsys(void)
 #ifdef __x86_64__
 	int nerrs = 0;
 	FILE *maps;
+<<<<<<< HEAD
 	char line[128];
+=======
+	char line[MAPS_LINE_LEN];
+>>>>>>> temp
 	bool found = false;
 
 	maps = fopen("/proc/self/maps", "r");
@@ -108,10 +118,19 @@ static int init_vsys(void)
 		return 0;
 	}
 
+<<<<<<< HEAD
 	while (fgets(line, sizeof(line), maps)) {
 		char r, x;
 		void *start, *end;
 		char name[128];
+=======
+	while (fgets(line, MAPS_LINE_LEN, maps)) {
+		char r, x;
+		void *start, *end;
+		char name[MAPS_LINE_LEN];
+
+		/* sscanf() is safe here as strlen(name) >= strlen(line) */
+>>>>>>> temp
 		if (sscanf(line, "%p-%p %c-%cp %*x %*x:%*x %*u %s",
 			   &start, &end, &r, &x, name) != 5)
 			continue;
@@ -206,7 +225,11 @@ static int check_gtod(const struct timeval *tv_sys1,
 	}
 
 	d1 = tv_diff(tv_other, tv_sys1);
+<<<<<<< HEAD
 	d2 = tv_diff(tv_sys2, tv_other);
+=======
+	d2 = tv_diff(tv_sys2, tv_other); 
+>>>>>>> temp
 	printf("\t%s time offsets: %lf %lf\n", which, d1, d2);
 
 	if (d1 < 0 || d2 < 0) {

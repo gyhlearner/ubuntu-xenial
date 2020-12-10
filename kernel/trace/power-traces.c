@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Power trace points
  *
@@ -15,5 +16,9 @@
 
 EXPORT_TRACEPOINT_SYMBOL_GPL(suspend_resume);
 EXPORT_TRACEPOINT_SYMBOL_GPL(cpu_idle);
+<<<<<<< HEAD
+=======
+EXPORT_TRACEPOINT_SYMBOL_GPL(cpu_frequency);
+>>>>>>> temp
 EXPORT_TRACEPOINT_SYMBOL_GPL(powernv_throttle);
 

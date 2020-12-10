@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright (C) 2005-2015 Junjiro R. Okajima
+=======
+ * Copyright (C) 2005-2017 Junjiro R. Okajima
+>>>>>>> temp
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,7 +34,11 @@
 static int au_wbr_fd(struct path *path, struct aufs_wbr_fd __user *arg)
 {
 	int err, fd;
+<<<<<<< HEAD
 	aufs_bindex_t wbi, bindex, bend;
+=======
+	aufs_bindex_t wbi, bindex, bbot;
+>>>>>>> temp
 	struct file *h_file;
 	struct super_block *sb;
 	struct dentry *root;
@@ -70,10 +78,17 @@ static int au_wbr_fd(struct path *path, struct aufs_wbr_fd __user *arg)
 	sb = path->dentry->d_sb;
 	root = sb->s_root;
 	aufs_read_lock(root, AuLock_IR);
+<<<<<<< HEAD
 	bend = au_sbend(sb);
 	if (wbrfd.brid >= 0) {
 		wbi = au_br_index(sb, wbrfd.brid);
 		if (unlikely(wbi < 0 || wbi > bend))
+=======
+	bbot = au_sbbot(sb);
+	if (wbrfd.brid >= 0) {
+		wbi = au_br_index(sb, wbrfd.brid);
+		if (unlikely(wbi < 0 || wbi > bbot))
+>>>>>>> temp
 			goto out_unlock;
 	}
 
@@ -85,7 +100,11 @@ static int au_wbr_fd(struct path *path, struct aufs_wbr_fd __user *arg)
 
 		bindex = wbi + 1;
 		wbi = -1;
+<<<<<<< HEAD
 		for (; bindex <= bend; bindex++) {
+=======
+		for (; bindex <= bbot; bindex++) {
+>>>>>>> temp
 			br = au_sbr(sb, bindex);
 			if (au_br_writable(br->br_perm)) {
 				wbi = bindex;
@@ -105,7 +124,11 @@ out_unlock:
 	if (IS_ERR(h_file))
 		goto out_fd;
 
+<<<<<<< HEAD
 	atomic_dec(&br->br_count); /* cf. au_h_open() */
+=======
+	au_br_put(br); /* cf. au_h_open() */
+>>>>>>> temp
 	fd_install(fd, h_file);
 	err = fd;
 	goto out; /* success */

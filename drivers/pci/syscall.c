@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  *	pci_syscall.c
  *
@@ -10,8 +11,12 @@
 #include <linux/errno.h>
 #include <linux/pci.h>
 #include <linux/syscalls.h>
+<<<<<<< HEAD
 #include <linux/module.h>
 #include <asm/uaccess.h>
+=======
+#include <linux/uaccess.h>
+>>>>>>> temp
 #include "pci.h"
 
 SYSCALL_DEFINE5(pciconfig_read, unsigned long, bus, unsigned long, dfn,
@@ -93,7 +98,12 @@ SYSCALL_DEFINE5(pciconfig_write, unsigned long, bus, unsigned long, dfn,
 	u32 dword;
 	int err = 0;
 
+<<<<<<< HEAD
 	if (!capable(CAP_SYS_ADMIN) || secure_modules())
+=======
+	if (!capable(CAP_SYS_ADMIN) ||
+	    kernel_is_locked_down("Direct PCI access"))
+>>>>>>> temp
 		return -EPERM;
 
 	dev = pci_get_bus_and_slot(bus, dfn);

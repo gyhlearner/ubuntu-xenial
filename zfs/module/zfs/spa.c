@@ -21,10 +21,23 @@
 
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+<<<<<<< HEAD
  * Copyright (c) 2013 by Delphix. All rights reserved.
  * Copyright (c) 2013, 2014, Nexenta Systems, Inc.  All rights reserved.
  * Copyright (c) 2014 Spectra Logic Corporation, All rights reserved.
  * Copyright (c) 2016 Actifio, Inc. All rights reserved.
+=======
+ * Copyright (c) 2011, 2017 by Delphix. All rights reserved.
+ * Copyright (c) 2015, Nexenta Systems, Inc.  All rights reserved.
+ * Copyright (c) 2013, 2014, Nexenta Systems, Inc.  All rights reserved.
+ * Copyright (c) 2014 Spectra Logic Corporation, All rights reserved.
+ * Copyright 2013 Saso Kiselkov. All rights reserved.
+ * Copyright (c) 2014 Integros [integros.com]
+ * Copyright 2016 Toomas Soome <tsoome@me.com>
+ * Copyright (c) 2016 Actifio, Inc. All rights reserved.
+ * Copyright (c) 2017 Datto Inc.
+ * Copyright 2017 Joyent, Inc.
+>>>>>>> temp
  */
 
 /*
@@ -49,6 +62,10 @@
 #include <sys/vdev_disk.h>
 #include <sys/metaslab.h>
 #include <sys/metaslab_impl.h>
+<<<<<<< HEAD
+=======
+#include <sys/mmp.h>
+>>>>>>> temp
 #include <sys/uberblock_impl.h>
 #include <sys/txg.h>
 #include <sys/avl.h>
@@ -72,6 +89,11 @@
 #include <sys/zvol.h>
 
 #ifdef	_KERNEL
+<<<<<<< HEAD
+=======
+#include <sys/fm/protocol.h>
+#include <sys/fm/util.h>
+>>>>>>> temp
 #include <sys/bootprops.h>
 #include <sys/callb.h>
 #include <sys/cpupart.h>
@@ -83,6 +105,15 @@
 #include "zfs_prop.h"
 #include "zfs_comutil.h"
 
+<<<<<<< HEAD
+=======
+/*
+ * The interval, in seconds, at which failed configuration cache file writes
+ * should be retried.
+ */
+static int zfs_ccw_retry_interval = 300;
+
+>>>>>>> temp
 typedef enum zti_modes {
 	ZTI_MODE_FIXED,			/* value is # of threads (min 1) */
 	ZTI_MODE_BATCH,			/* cpu-intensive; value is ignored */
@@ -135,6 +166,12 @@ const zio_taskq_info_t zio_taskqs[ZIO_TYPES][ZIO_TASKQ_TYPES] = {
 	{ ZTI_ONE,	ZTI_NULL,	ZTI_ONE,	ZTI_NULL }, /* IOCTL */
 };
 
+<<<<<<< HEAD
+=======
+static sysevent_t *spa_event_create(spa_t *spa, vdev_t *vd, nvlist_t *hist_nvl,
+    const char *name);
+static void spa_event_post(sysevent_t *ev);
+>>>>>>> temp
 static void spa_sync_version(void *arg, dmu_tx_t *tx);
 static void spa_sync_props(void *arg, dmu_tx_t *tx);
 static boolean_t spa_has_active_shared_spare(spa_t *spa);
@@ -193,7 +230,11 @@ spa_prop_get_config(spa_t *spa, nvlist_t **nvp)
 	vdev_t *rvd = spa->spa_root_vdev;
 	dsl_pool_t *pool = spa->spa_dsl_pool;
 	uint64_t size, alloc, cap, version;
+<<<<<<< HEAD
 	zprop_source_t src = ZPROP_SRC_NONE;
+=======
+	const zprop_source_t src = ZPROP_SRC_NONE;
+>>>>>>> temp
 	spa_config_dirent_t *dp;
 	metaslab_class_t *mc = spa_normal_class(spa);
 
@@ -225,11 +266,21 @@ spa_prop_get_config(spa_t *spa, nvlist_t **nvp)
 		    rvd->vdev_state, src);
 
 		version = spa_version(spa);
+<<<<<<< HEAD
 		if (version == zpool_prop_default_numeric(ZPOOL_PROP_VERSION))
 			src = ZPROP_SRC_DEFAULT;
 		else
 			src = ZPROP_SRC_LOCAL;
 		spa_prop_add_list(*nvp, ZPOOL_PROP_VERSION, NULL, version, src);
+=======
+		if (version == zpool_prop_default_numeric(ZPOOL_PROP_VERSION)) {
+			spa_prop_add_list(*nvp, ZPOOL_PROP_VERSION, NULL,
+			    version, ZPROP_SRC_DEFAULT);
+		} else {
+			spa_prop_add_list(*nvp, ZPOOL_PROP_VERSION, NULL,
+			    version, ZPROP_SRC_LOCAL);
+		}
+>>>>>>> temp
 	}
 
 	if (pool != NULL) {
@@ -275,6 +326,17 @@ spa_prop_get_config(spa_t *spa, nvlist_t **nvp)
 		    SPA_OLD_MAXBLOCKSIZE, ZPROP_SRC_NONE);
 	}
 
+<<<<<<< HEAD
+=======
+	if (spa_feature_is_enabled(spa, SPA_FEATURE_LARGE_DNODE)) {
+		spa_prop_add_list(*nvp, ZPOOL_PROP_MAXDNODESIZE, NULL,
+		    DNODE_MAX_SIZE, ZPROP_SRC_NONE);
+	} else {
+		spa_prop_add_list(*nvp, ZPOOL_PROP_MAXDNODESIZE, NULL,
+		    DNODE_MIN_SIZE, ZPROP_SRC_NONE);
+	}
+
+>>>>>>> temp
 	if ((dp = list_head(&spa->spa_config_list)) != NULL) {
 		if (dp->scd_path == NULL) {
 			spa_prop_add_list(*nvp, ZPOOL_PROP_CACHEFILE,
@@ -347,8 +409,12 @@ spa_prop_get(spa_t *spa, nvlist_t **nvp)
 					break;
 				}
 
+<<<<<<< HEAD
 				strval = kmem_alloc(
 				    MAXNAMELEN + strlen(MOS_DIR_NAME) + 1,
+=======
+				strval = kmem_alloc(ZFS_MAX_DATASET_NAME_LEN,
+>>>>>>> temp
 				    KM_SLEEP);
 				dsl_dataset_name(ds, strval);
 				dsl_dataset_rele(ds, FTAG);
@@ -361,8 +427,12 @@ spa_prop_get(spa_t *spa, nvlist_t **nvp)
 			spa_prop_add_list(*nvp, prop, strval, intval, src);
 
 			if (strval != NULL)
+<<<<<<< HEAD
 				kmem_free(strval,
 				    MAXNAMELEN + strlen(MOS_DIR_NAME) + 1);
+=======
+				kmem_free(strval, ZFS_MAX_DATASET_NAME_LEN);
+>>>>>>> temp
 
 			break;
 
@@ -466,6 +536,19 @@ spa_prop_validate(spa_t *spa, nvlist_t *props)
 				error = SET_ERROR(EINVAL);
 			break;
 
+<<<<<<< HEAD
+=======
+		case ZPOOL_PROP_MULTIHOST:
+			error = nvpair_value_uint64(elem, &intval);
+			if (!error && intval > 1)
+				error = SET_ERROR(EINVAL);
+
+			if (!error && !spa_get_hostid())
+				error = SET_ERROR(ENOTSUP);
+
+			break;
+
+>>>>>>> temp
 		case ZPOOL_PROP_BOOTFS:
 			/*
 			 * If the pool version is less than SPA_VERSION_BOOTFS,
@@ -506,7 +589,12 @@ spa_prop_validate(spa_t *spa, nvlist_t *props)
 				/*
 				 * Must be ZPL, and its property settings
 				 * must be supported by GRUB (compression
+<<<<<<< HEAD
 				 * is not gzip, and large blocks are not used).
+=======
+				 * is not gzip, and large blocks or large
+				 * dnodes are not used).
+>>>>>>> temp
 				 */
 
 				if (dmu_objset_type(os) != DMU_OST_ZFS) {
@@ -519,9 +607,15 @@ spa_prop_validate(spa_t *spa, nvlist_t *props)
 					error = SET_ERROR(ENOTSUP);
 				} else if ((error =
 				    dsl_prop_get_int_ds(dmu_objset_ds(os),
+<<<<<<< HEAD
 				    zfs_prop_to_name(ZFS_PROP_RECORDSIZE),
 				    &propval)) == 0 &&
 				    propval > SPA_OLD_MAXBLOCKSIZE) {
+=======
+				    zfs_prop_to_name(ZFS_PROP_DNODESIZE),
+				    &propval)) == 0 &&
+				    propval != ZFS_DNSIZE_LEGACY) {
+>>>>>>> temp
 					error = SET_ERROR(ENOTSUP);
 				} else {
 					objnum = dmu_objset_id(os);
@@ -532,8 +626,12 @@ spa_prop_validate(spa_t *spa, nvlist_t *props)
 
 		case ZPOOL_PROP_FAILUREMODE:
 			error = nvpair_value_uint64(elem, &intval);
+<<<<<<< HEAD
 			if (!error && (intval < ZIO_FAILURE_MODE_WAIT ||
 			    intval > ZIO_FAILURE_MODE_PANIC))
+=======
+			if (!error && intval > ZIO_FAILURE_MODE_PANIC)
+>>>>>>> temp
 				error = SET_ERROR(EINVAL);
 
 			/*
@@ -583,7 +681,10 @@ spa_prop_validate(spa_t *spa, nvlist_t *props)
 					error = SET_ERROR(EINVAL);
 					break;
 				}
+<<<<<<< HEAD
 				check++;
+=======
+>>>>>>> temp
 			}
 			if (strlen(strval) > ZPROP_MAX_COMMENT)
 				error = SET_ERROR(E2BIG);
@@ -783,7 +884,11 @@ spa_change_guid(spa_t *spa)
 
 	if (error == 0) {
 		spa_config_sync(spa, B_FALSE, B_TRUE);
+<<<<<<< HEAD
 		spa_event_notify(spa, NULL, FM_EREPORT_ZFS_POOL_REGUID);
+=======
+		spa_event_notify(spa, NULL, NULL, ESC_ZFS_POOL_REGUID);
+>>>>>>> temp
 	}
 
 	mutex_exit(&spa_namespace_lock);
@@ -801,6 +906,7 @@ spa_change_guid(spa_t *spa)
 static int
 spa_error_entry_compare(const void *a, const void *b)
 {
+<<<<<<< HEAD
 	spa_error_entry_t *sa = (spa_error_entry_t *)a;
 	spa_error_entry_t *sb = (spa_error_entry_t *)b;
 	int ret;
@@ -814,6 +920,16 @@ spa_error_entry_compare(const void *a, const void *b)
 		return (1);
 	else
 		return (0);
+=======
+	const spa_error_entry_t *sa = (const spa_error_entry_t *)a;
+	const spa_error_entry_t *sb = (const spa_error_entry_t *)b;
+	int ret;
+
+	ret = memcmp(&sa->se_bookmark, &sb->se_bookmark,
+	    sizeof (zbookmark_phys_t));
+
+	return (AVL_ISIGN(ret));
+>>>>>>> temp
 }
 
 /*
@@ -845,7 +961,11 @@ spa_taskqs_init(spa_t *spa, zio_type_t t, zio_taskq_type_t q)
 	uint_t count = ztip->zti_count;
 	spa_taskqs_t *tqs = &spa->spa_zio_taskq[t][q];
 	char name[32];
+<<<<<<< HEAD
 	uint_t i, flags = TASKQ_DYNAMIC;
+=======
+	uint_t i, flags = 0;
+>>>>>>> temp
 	boolean_t batch = B_FALSE;
 
 	if (mode == ZTI_MODE_NULL) {
@@ -863,6 +983,10 @@ spa_taskqs_init(spa_t *spa, zio_type_t t, zio_taskq_type_t q)
 	case ZTI_MODE_FIXED:
 		ASSERT3U(value, >=, 1);
 		value = MAX(value, 1);
+<<<<<<< HEAD
+=======
+		flags |= TASKQ_DYNAMIC;
+>>>>>>> temp
 		break;
 
 	case ZTI_MODE_BATCH:
@@ -1123,7 +1247,11 @@ spa_activate(spa_t *spa, int mode)
 	list_create(&spa->spa_state_dirty_list, sizeof (vdev_t),
 	    offsetof(vdev_t, vdev_state_dirty_node));
 
+<<<<<<< HEAD
 	txg_list_create(&spa->spa_vdev_txg_list,
+=======
+	txg_list_create(&spa->spa_vdev_txg_list, spa,
+>>>>>>> temp
 	    offsetof(struct vdev, vdev_txg_node));
 
 	avl_create(&spa->spa_errlist_scrub,
@@ -1150,6 +1278,16 @@ spa_activate(spa_t *spa, int mode)
 	 */
 	spa->spa_zvol_taskq = taskq_create("z_zvol", 1, defclsyspri,
 	    1, INT_MAX, 0);
+<<<<<<< HEAD
+=======
+
+	/*
+	 * The taskq to upgrade datasets in this pool. Currently used by
+	 * feature SPA_FEATURE_USEROBJ_ACCOUNTING.
+	 */
+	spa->spa_upgrade_taskq = taskq_create("z_upgrade", boot_ncpus,
+	    defclsyspri, 1, INT_MAX, TASKQ_DYNAMIC);
+>>>>>>> temp
 }
 
 /*
@@ -1173,13 +1311,25 @@ spa_deactivate(spa_t *spa)
 		spa->spa_zvol_taskq = NULL;
 	}
 
+<<<<<<< HEAD
+=======
+	if (spa->spa_upgrade_taskq) {
+		taskq_destroy(spa->spa_upgrade_taskq);
+		spa->spa_upgrade_taskq = NULL;
+	}
+
+>>>>>>> temp
 	txg_list_destroy(&spa->spa_vdev_txg_list);
 
 	list_destroy(&spa->spa_config_dirty_list);
 	list_destroy(&spa->spa_evicting_os_list);
 	list_destroy(&spa->spa_state_dirty_list);
 
+<<<<<<< HEAD
 	taskq_cancel_id(system_taskq, spa->spa_deadman_tqid);
+=======
+	taskq_cancel_id(system_delay_taskq, spa->spa_deadman_tqid);
+>>>>>>> temp
 
 	for (t = 0; t < ZIO_TYPES; t++) {
 		for (q = 0; q < ZIO_TASKQ_TYPES; q++) {
@@ -1284,7 +1434,11 @@ spa_config_parse(spa_t *spa, vdev_t **vdp, nvlist_t *nv, vdev_t *parent,
 static void
 spa_unload(spa_t *spa)
 {
+<<<<<<< HEAD
 	int i;
+=======
+	int i, c;
+>>>>>>> temp
 
 	ASSERT(MUTEX_HELD(&spa_namespace_lock));
 
@@ -1302,6 +1456,25 @@ spa_unload(spa_t *spa)
 	}
 
 	/*
+<<<<<<< HEAD
+=======
+	 * Even though vdev_free() also calls vdev_metaslab_fini, we need
+	 * to call it earlier, before we wait for async i/o to complete.
+	 * This ensures that there is no async metaslab prefetching, by
+	 * calling taskq_wait(mg_taskq).
+	 */
+	if (spa->spa_root_vdev != NULL) {
+		spa_config_enter(spa, SCL_ALL, FTAG, RW_WRITER);
+		for (c = 0; c < spa->spa_root_vdev->vdev_children; c++)
+			vdev_metaslab_fini(spa->spa_root_vdev->vdev_child[c]);
+		spa_config_exit(spa, SCL_ALL, FTAG);
+	}
+
+	if (spa->spa_mmp.mmp_thread)
+		mmp_thread_stop(spa);
+
+	/*
+>>>>>>> temp
 	 * Wait for any outstanding async I/O to complete.
 	 */
 	if (spa->spa_async_zio_root != NULL) {
@@ -1333,7 +1506,10 @@ spa_unload(spa_t *spa)
 
 	ddt_unload(spa);
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> temp
 	/*
 	 * Drop and purge level 2 cache
 	 */
@@ -1503,7 +1679,11 @@ spa_load_spares(spa_t *spa)
 static void
 spa_load_l2cache(spa_t *spa)
 {
+<<<<<<< HEAD
 	nvlist_t **l2cache;
+=======
+	nvlist_t **l2cache = NULL;
+>>>>>>> temp
 	uint_t nl2cache;
 	int i, j, oldnvdevs;
 	uint64_t guid;
@@ -1512,6 +1692,7 @@ spa_load_l2cache(spa_t *spa)
 
 	ASSERT(spa_config_held(spa, SCL_ALL, RW_WRITER) == SCL_ALL);
 
+<<<<<<< HEAD
 	if (sav->sav_config != NULL) {
 		VERIFY(nvlist_lookup_nvlist_array(sav->sav_config,
 		    ZPOOL_CONFIG_L2CACHE, &l2cache, &nl2cache) == 0);
@@ -1521,11 +1702,26 @@ spa_load_l2cache(spa_t *spa)
 		newvdevs = NULL;
 	}
 
+=======
+>>>>>>> temp
 	oldvdevs = sav->sav_vdevs;
 	oldnvdevs = sav->sav_count;
 	sav->sav_vdevs = NULL;
 	sav->sav_count = 0;
 
+<<<<<<< HEAD
+=======
+	if (sav->sav_config == NULL) {
+		nl2cache = 0;
+		newvdevs = NULL;
+		goto out;
+	}
+
+	VERIFY(nvlist_lookup_nvlist_array(sav->sav_config,
+	    ZPOOL_CONFIG_L2CACHE, &l2cache, &nl2cache) == 0);
+	newvdevs = kmem_alloc(nl2cache * sizeof (void *), KM_SLEEP);
+
+>>>>>>> temp
 	/*
 	 * Process new nvlist of vdevs.
 	 */
@@ -1576,6 +1772,29 @@ spa_load_l2cache(spa_t *spa)
 		}
 	}
 
+<<<<<<< HEAD
+=======
+	sav->sav_vdevs = newvdevs;
+	sav->sav_count = (int)nl2cache;
+
+	/*
+	 * Recompute the stashed list of l2cache devices, with status
+	 * information this time.
+	 */
+	VERIFY(nvlist_remove(sav->sav_config, ZPOOL_CONFIG_L2CACHE,
+	    DATA_TYPE_NVLIST_ARRAY) == 0);
+
+	if (sav->sav_count > 0)
+		l2cache = kmem_alloc(sav->sav_count * sizeof (void *),
+		    KM_SLEEP);
+	for (i = 0; i < sav->sav_count; i++)
+		l2cache[i] = vdev_config_generate(spa,
+		    sav->sav_vdevs[i], B_TRUE, VDEV_CONFIG_L2CACHE);
+	VERIFY(nvlist_add_nvlist_array(sav->sav_config,
+	    ZPOOL_CONFIG_L2CACHE, l2cache, sav->sav_count) == 0);
+
+out:
+>>>>>>> temp
 	/*
 	 * Purge vdevs that were dropped
 	 */
@@ -1597,6 +1816,7 @@ spa_load_l2cache(spa_t *spa)
 	if (oldvdevs)
 		kmem_free(oldvdevs, oldnvdevs * sizeof (void *));
 
+<<<<<<< HEAD
 	if (sav->sav_config == NULL)
 		goto out;
 
@@ -1617,6 +1837,8 @@ spa_load_l2cache(spa_t *spa)
 	VERIFY(nvlist_add_nvlist_array(sav->sav_config,
 	    ZPOOL_CONFIG_L2CACHE, l2cache, sav->sav_count) == 0);
 out:
+=======
+>>>>>>> temp
 	for (i = 0; i < sav->sav_count; i++)
 		nvlist_free(l2cache[i]);
 	if (sav->sav_count)
@@ -1663,9 +1885,29 @@ spa_check_removed(vdev_t *vd)
 
 	if (vd->vdev_ops->vdev_op_leaf && vdev_is_dead(vd) &&
 	    !vd->vdev_ishole) {
+<<<<<<< HEAD
 		zfs_ereport_post(FM_EREPORT_RESOURCE_AUTOREPLACE,
 		    vd->vdev_spa, vd, NULL, 0, 0);
 		spa_event_notify(vd->vdev_spa, vd, FM_EREPORT_ZFS_DEVICE_CHECK);
+=======
+		zfs_post_autoreplace(vd->vdev_spa, vd);
+		spa_event_notify(vd->vdev_spa, vd, NULL, ESC_ZFS_VDEV_CHECK);
+	}
+}
+
+static void
+spa_config_valid_zaps(vdev_t *vd, vdev_t *mvd)
+{
+	uint64_t i;
+
+	ASSERT3U(vd->vdev_children, ==, mvd->vdev_children);
+
+	vd->vdev_top_zap = mvd->vdev_top_zap;
+	vd->vdev_leaf_zap = mvd->vdev_leaf_zap;
+
+	for (i = 0; i < vd->vdev_children; i++) {
+		spa_config_valid_zaps(vd->vdev_child[i], mvd->vdev_child[i]);
+>>>>>>> temp
 	}
 }
 
@@ -1695,7 +1937,11 @@ spa_config_valid(spa_t *spa, nvlist_t *config)
 		nvlist_t **child, *nv;
 		uint64_t idx = 0;
 
+<<<<<<< HEAD
 		child = kmem_alloc(rvd->vdev_children * sizeof (nvlist_t **),
+=======
+		child = kmem_alloc(rvd->vdev_children * sizeof (nvlist_t *),
+>>>>>>> temp
 		    KM_SLEEP);
 		VERIFY(nvlist_alloc(&nv, NV_UNIQUE_NAME, KM_SLEEP) == 0);
 
@@ -1773,6 +2019,7 @@ spa_config_valid(spa_t *spa, nvlist_t *config)
 			spa_config_enter(spa, SCL_ALL, FTAG, RW_WRITER);
 
 			vdev_reopen(rvd);
+<<<<<<< HEAD
 		} else if (mtvd->vdev_islog) {
 			/*
 			 * Load the slog device's state from the MOS config
@@ -1783,6 +2030,27 @@ spa_config_valid(spa_t *spa, nvlist_t *config)
 			vdev_reopen(tvd);
 		}
 	}
+=======
+		} else {
+			if (mtvd->vdev_islog) {
+				/*
+				 * Load the slog device's state from the MOS
+				 * config since it's possible that the label
+				 * does not contain the most up-to-date
+				 * information.
+				 */
+				vdev_load_log_state(tvd, mtvd);
+				vdev_reopen(tvd);
+			}
+
+			/*
+			 * Per-vdev ZAP info is stored exclusively in the MOS.
+			 */
+			spa_config_valid_zaps(tvd, mtvd);
+		}
+	}
+
+>>>>>>> temp
 	vdev_free(mrvd);
 	spa_config_exit(spa, SCL_ALL, FTAG);
 
@@ -1913,6 +2181,7 @@ spa_load_verify_done(zio_t *zio)
 	int error = zio->io_error;
 	spa_t *spa = zio->io_spa;
 
+<<<<<<< HEAD
 	if (error) {
 		if ((BP_GET_LEVEL(bp) != 0 || DMU_OT_IS_METADATA(type)) &&
 		    type != DMU_OT_INTENT_LOG)
@@ -1921,6 +2190,16 @@ spa_load_verify_done(zio_t *zio)
 			atomic_add_64(&sle->sle_data_count, 1);
 	}
 	zio_data_buf_free(zio->io_data, zio->io_size);
+=======
+	abd_free(zio->io_abd);
+	if (error) {
+		if ((BP_GET_LEVEL(bp) != 0 || DMU_OT_IS_METADATA(type)) &&
+		    type != DMU_OT_INTENT_LOG)
+			atomic_inc_64(&sle->sle_meta_count);
+		else
+			atomic_inc_64(&sle->sle_data_count);
+	}
+>>>>>>> temp
 
 	mutex_enter(&spa->spa_scrub_lock);
 	spa->spa_scrub_inflight--;
@@ -1943,9 +2222,14 @@ spa_load_verify_cb(spa_t *spa, zilog_t *zilog, const blkptr_t *bp,
 {
 	zio_t *rio;
 	size_t size;
+<<<<<<< HEAD
 	void *data;
 
 	if (BP_IS_HOLE(bp) || BP_IS_EMBEDDED(bp))
+=======
+
+	if (bp == NULL || BP_IS_HOLE(bp) || BP_IS_EMBEDDED(bp))
+>>>>>>> temp
 		return (0);
 	/*
 	 * Note: normally this routine will not be called if
@@ -1954,12 +2238,19 @@ spa_load_verify_cb(spa_t *spa, zilog_t *zilog, const blkptr_t *bp,
 	 */
 	if (!spa_load_verify_metadata)
 		return (0);
+<<<<<<< HEAD
 	if (BP_GET_BUFC_TYPE(bp) == ARC_BUFC_DATA && !spa_load_verify_data)
+=======
+	if (!BP_IS_METADATA(bp) && !spa_load_verify_data)
+>>>>>>> temp
 		return (0);
 
 	rio = arg;
 	size = BP_GET_PSIZE(bp);
+<<<<<<< HEAD
 	data = zio_data_buf_alloc(size);
+=======
+>>>>>>> temp
 
 	mutex_enter(&spa->spa_scrub_lock);
 	while (spa->spa_scrub_inflight >= spa_load_verify_maxinflight)
@@ -1967,13 +2258,30 @@ spa_load_verify_cb(spa_t *spa, zilog_t *zilog, const blkptr_t *bp,
 	spa->spa_scrub_inflight++;
 	mutex_exit(&spa->spa_scrub_lock);
 
+<<<<<<< HEAD
 	zio_nowait(zio_read(rio, spa, bp, data, size,
+=======
+	zio_nowait(zio_read(rio, spa, bp, abd_alloc_for_io(size, B_FALSE), size,
+>>>>>>> temp
 	    spa_load_verify_done, rio->io_private, ZIO_PRIORITY_SCRUB,
 	    ZIO_FLAG_SPECULATIVE | ZIO_FLAG_CANFAIL |
 	    ZIO_FLAG_SCRUB | ZIO_FLAG_RAW, zb));
 	return (0);
 }
 
+<<<<<<< HEAD
+=======
+/* ARGSUSED */
+int
+verify_dataset_name_len(dsl_pool_t *dp, dsl_dataset_t *ds, void *arg)
+{
+	if (dsl_dataset_namelen(ds) >= ZFS_MAX_DATASET_NAME_LEN)
+		return (SET_ERROR(ENAMETOOLONG));
+
+	return (0);
+}
+
+>>>>>>> temp
 static int
 spa_load_verify(spa_t *spa)
 {
@@ -1988,6 +2296,17 @@ spa_load_verify(spa_t *spa)
 	if (policy.zrp_request & ZPOOL_NEVER_REWIND)
 		return (0);
 
+<<<<<<< HEAD
+=======
+	dsl_pool_config_enter(spa->spa_dsl_pool, FTAG);
+	error = dmu_objset_find_dp(spa->spa_dsl_pool,
+	    spa->spa_dsl_pool->dp_root_dir_obj, verify_dataset_name_len, NULL,
+	    DS_FIND_CHILDREN);
+	dsl_pool_config_exit(spa->spa_dsl_pool, FTAG);
+	if (error != 0)
+		return (error);
+
+>>>>>>> temp
 	rio = zio_root(spa, NULL, &sle,
 	    ZIO_FLAG_CANFAIL | ZIO_FLAG_SPECULATIVE);
 
@@ -2209,6 +2528,236 @@ spa_load(spa_t *spa, spa_load_state_t state, spa_import_type_t type,
 	return (error);
 }
 
+<<<<<<< HEAD
+=======
+#ifdef ZFS_DEBUG
+/*
+ * Count the number of per-vdev ZAPs associated with all of the vdevs in the
+ * vdev tree rooted in the given vd, and ensure that each ZAP is present in the
+ * spa's per-vdev ZAP list.
+ */
+static uint64_t
+vdev_count_verify_zaps(vdev_t *vd)
+{
+	spa_t *spa = vd->vdev_spa;
+	uint64_t total = 0;
+	uint64_t i;
+
+	if (vd->vdev_top_zap != 0) {
+		total++;
+		ASSERT0(zap_lookup_int(spa->spa_meta_objset,
+		    spa->spa_all_vdev_zaps, vd->vdev_top_zap));
+	}
+	if (vd->vdev_leaf_zap != 0) {
+		total++;
+		ASSERT0(zap_lookup_int(spa->spa_meta_objset,
+		    spa->spa_all_vdev_zaps, vd->vdev_leaf_zap));
+	}
+
+	for (i = 0; i < vd->vdev_children; i++) {
+		total += vdev_count_verify_zaps(vd->vdev_child[i]);
+	}
+
+	return (total);
+}
+#endif
+
+/*
+ * Determine whether the activity check is required.
+ */
+static boolean_t
+spa_activity_check_required(spa_t *spa, uberblock_t *ub, nvlist_t *label,
+    nvlist_t *config)
+{
+	uint64_t state = 0;
+	uint64_t hostid = 0;
+	uint64_t tryconfig_txg = 0;
+	uint64_t tryconfig_timestamp = 0;
+	nvlist_t *nvinfo;
+
+	if (nvlist_exists(config, ZPOOL_CONFIG_LOAD_INFO)) {
+		nvinfo = fnvlist_lookup_nvlist(config, ZPOOL_CONFIG_LOAD_INFO);
+		(void) nvlist_lookup_uint64(nvinfo, ZPOOL_CONFIG_MMP_TXG,
+		    &tryconfig_txg);
+		(void) nvlist_lookup_uint64(config, ZPOOL_CONFIG_TIMESTAMP,
+		    &tryconfig_timestamp);
+	}
+
+	(void) nvlist_lookup_uint64(config, ZPOOL_CONFIG_POOL_STATE, &state);
+
+	/*
+	 * Disable the MMP activity check - This is used by zdb which
+	 * is intended to be used on potentially active pools.
+	 */
+	if (spa->spa_import_flags & ZFS_IMPORT_SKIP_MMP)
+		return (B_FALSE);
+
+	/*
+	 * Skip the activity check when the MMP feature is disabled.
+	 */
+	if (ub->ub_mmp_magic == MMP_MAGIC && ub->ub_mmp_delay == 0)
+		return (B_FALSE);
+	/*
+	 * If the tryconfig_* values are nonzero, they are the results of an
+	 * earlier tryimport.  If they match the uberblock we just found, then
+	 * the pool has not changed and we return false so we do not test a
+	 * second time.
+	 */
+	if (tryconfig_txg && tryconfig_txg == ub->ub_txg &&
+	    tryconfig_timestamp && tryconfig_timestamp == ub->ub_timestamp)
+		return (B_FALSE);
+
+	/*
+	 * Allow the activity check to be skipped when importing the pool
+	 * on the same host which last imported it.  Since the hostid from
+	 * configuration may be stale use the one read from the label.
+	 */
+	if (nvlist_exists(label, ZPOOL_CONFIG_HOSTID))
+		hostid = fnvlist_lookup_uint64(label, ZPOOL_CONFIG_HOSTID);
+
+	if (hostid == spa_get_hostid())
+		return (B_FALSE);
+
+	/*
+	 * Skip the activity test when the pool was cleanly exported.
+	 */
+	if (state != POOL_STATE_ACTIVE)
+		return (B_FALSE);
+
+	return (B_TRUE);
+}
+
+/*
+ * Perform the import activity check.  If the user canceled the import or
+ * we detected activity then fail.
+ */
+static int
+spa_activity_check(spa_t *spa, uberblock_t *ub, nvlist_t *config)
+{
+	uint64_t import_intervals = MAX(zfs_multihost_import_intervals, 1);
+	uint64_t txg = ub->ub_txg;
+	uint64_t timestamp = ub->ub_timestamp;
+	uint64_t import_delay = NANOSEC;
+	hrtime_t import_expire;
+	nvlist_t *mmp_label = NULL;
+	vdev_t *rvd = spa->spa_root_vdev;
+	kcondvar_t cv;
+	kmutex_t mtx;
+	int error = 0;
+
+	cv_init(&cv, NULL, CV_DEFAULT, NULL);
+	mutex_init(&mtx, NULL, MUTEX_DEFAULT, NULL);
+	mutex_enter(&mtx);
+
+	/*
+	 * If ZPOOL_CONFIG_MMP_TXG is present an activity check was performed
+	 * during the earlier tryimport.  If the txg recorded there is 0 then
+	 * the pool is known to be active on another host.
+	 *
+	 * Otherwise, the pool might be in use on another node.  Check for
+	 * changes in the uberblocks on disk if necessary.
+	 */
+	if (nvlist_exists(config, ZPOOL_CONFIG_LOAD_INFO)) {
+		nvlist_t *nvinfo = fnvlist_lookup_nvlist(config,
+		    ZPOOL_CONFIG_LOAD_INFO);
+
+		if (nvlist_exists(nvinfo, ZPOOL_CONFIG_MMP_TXG) &&
+		    fnvlist_lookup_uint64(nvinfo, ZPOOL_CONFIG_MMP_TXG) == 0) {
+			vdev_uberblock_load(rvd, ub, &mmp_label);
+			error = SET_ERROR(EREMOTEIO);
+			goto out;
+		}
+	}
+
+	/*
+	 * Preferentially use the zfs_multihost_interval from the node which
+	 * last imported the pool.  This value is stored in an MMP uberblock as.
+	 *
+	 * ub_mmp_delay * vdev_count_leaves() == zfs_multihost_interval
+	 */
+	if (ub->ub_mmp_magic == MMP_MAGIC && ub->ub_mmp_delay)
+		import_delay = MAX(import_delay, import_intervals *
+		    ub->ub_mmp_delay * MAX(vdev_count_leaves(spa), 1));
+
+	/* Apply a floor using the local default values. */
+	import_delay = MAX(import_delay, import_intervals *
+	    MSEC2NSEC(MAX(zfs_multihost_interval, MMP_MIN_INTERVAL)));
+
+	/* Add a small random factor in case of simultaneous imports (0-25%) */
+	import_expire = gethrtime() + import_delay +
+	    (import_delay * spa_get_random(250) / 1000);
+
+	while (gethrtime() < import_expire) {
+		vdev_uberblock_load(rvd, ub, &mmp_label);
+
+		if (txg != ub->ub_txg || timestamp != ub->ub_timestamp) {
+			error = SET_ERROR(EREMOTEIO);
+			break;
+		}
+
+		if (mmp_label) {
+			nvlist_free(mmp_label);
+			mmp_label = NULL;
+		}
+
+		error = cv_timedwait_sig(&cv, &mtx, ddi_get_lbolt() + hz);
+		if (error != -1) {
+			error = SET_ERROR(EINTR);
+			break;
+		}
+		error = 0;
+	}
+
+out:
+	mutex_exit(&mtx);
+	mutex_destroy(&mtx);
+	cv_destroy(&cv);
+
+	/*
+	 * If the pool is determined to be active store the status in the
+	 * spa->spa_load_info nvlist.  If the remote hostname or hostid are
+	 * available from configuration read from disk store them as well.
+	 * This allows 'zpool import' to generate a more useful message.
+	 *
+	 * ZPOOL_CONFIG_MMP_STATE    - observed pool status (mandatory)
+	 * ZPOOL_CONFIG_MMP_HOSTNAME - hostname from the active pool
+	 * ZPOOL_CONFIG_MMP_HOSTID   - hostid from the active pool
+	 */
+	if (error == EREMOTEIO) {
+		char *hostname = "<unknown>";
+		uint64_t hostid = 0;
+
+		if (mmp_label) {
+			if (nvlist_exists(mmp_label, ZPOOL_CONFIG_HOSTNAME)) {
+				hostname = fnvlist_lookup_string(mmp_label,
+				    ZPOOL_CONFIG_HOSTNAME);
+				fnvlist_add_string(spa->spa_load_info,
+				    ZPOOL_CONFIG_MMP_HOSTNAME, hostname);
+			}
+
+			if (nvlist_exists(mmp_label, ZPOOL_CONFIG_HOSTID)) {
+				hostid = fnvlist_lookup_uint64(mmp_label,
+				    ZPOOL_CONFIG_HOSTID);
+				fnvlist_add_uint64(spa->spa_load_info,
+				    ZPOOL_CONFIG_MMP_HOSTID, hostid);
+			}
+		}
+
+		fnvlist_add_uint64(spa->spa_load_info,
+		    ZPOOL_CONFIG_MMP_STATE, MMP_STATE_ACTIVE);
+		fnvlist_add_uint64(spa->spa_load_info,
+		    ZPOOL_CONFIG_MMP_TXG, 0);
+
+		error = spa_vdev_err(rvd, VDEV_AUX_ACTIVE, EREMOTEIO);
+	}
+
+	if (mmp_label)
+		nvlist_free(mmp_label);
+
+	return (error);
+}
+
+>>>>>>> temp
 /*
  * Load an existing storage pool, using the pool's builtin spa_config as a
  * source of configuration information.
@@ -2229,6 +2778,11 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 	int parse, i;
 	uint64_t obj;
 	boolean_t missing_feat_write = B_FALSE;
+<<<<<<< HEAD
+=======
+	boolean_t activity_check = B_FALSE;
+	nvlist_t *mos_config;
+>>>>>>> temp
 
 	/*
 	 * If this is an untrusted config, access the pool in read-only mode.
@@ -2326,6 +2880,36 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 	}
 
 	/*
+<<<<<<< HEAD
+=======
+	 * For pools which have the multihost property on determine if the
+	 * pool is truly inactive and can be safely imported.  Prevent
+	 * hosts which don't have a hostid set from importing the pool.
+	 */
+	activity_check = spa_activity_check_required(spa, ub, label, config);
+	if (activity_check) {
+		if (ub->ub_mmp_magic == MMP_MAGIC && ub->ub_mmp_delay &&
+		    spa_get_hostid() == 0) {
+			nvlist_free(label);
+			fnvlist_add_uint64(spa->spa_load_info,
+			    ZPOOL_CONFIG_MMP_STATE, MMP_STATE_NO_HOSTID);
+			return (spa_vdev_err(rvd, VDEV_AUX_ACTIVE, EREMOTEIO));
+		}
+
+		error = spa_activity_check(spa, ub, config);
+		if (error) {
+			nvlist_free(label);
+			return (error);
+		}
+
+		fnvlist_add_uint64(spa->spa_load_info,
+		    ZPOOL_CONFIG_MMP_STATE, MMP_STATE_INACTIVE);
+		fnvlist_add_uint64(spa->spa_load_info,
+		    ZPOOL_CONFIG_MMP_TXG, ub->ub_txg);
+	}
+
+	/*
+>>>>>>> temp
 	 * If the pool has an unsupported version we can't open it.
 	 */
 	if (!SPA_VERSION_IS_SUPPORTED(ub->ub_version)) {
@@ -2552,6 +3136,7 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 			VERIFY(nvlist_lookup_string(nvconfig,
 			    ZPOOL_CONFIG_HOSTNAME, &hostname) == 0);
 
+<<<<<<< HEAD
 #ifdef	_KERNEL
 			myhostid = zone_get_hostid(NULL);
 #else	/* _KERNEL */
@@ -2570,6 +3155,11 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 				    "http://zfsonlinux.org/msg/ZFS-8000-EY",
 				    spa_name(spa), hostname,
 				    (unsigned long)hostid);
+=======
+			myhostid = spa_get_hostid();
+			if (hostid && myhostid && hostid != myhostid) {
+				nvlist_free(nvconfig);
+>>>>>>> temp
 				return (SET_ERROR(EBADF));
 			}
 		}
@@ -2586,6 +3176,22 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 		return (spa_load(spa, state, SPA_IMPORT_EXISTING, B_TRUE));
 	}
 
+<<<<<<< HEAD
+=======
+	/* Grab the checksum salt from the MOS. */
+	error = zap_lookup(spa->spa_meta_objset, DMU_POOL_DIRECTORY_OBJECT,
+	    DMU_POOL_CHECKSUM_SALT, 1,
+	    sizeof (spa->spa_cksum_salt.zcs_bytes),
+	    spa->spa_cksum_salt.zcs_bytes);
+	if (error == ENOENT) {
+		/* Generate a new salt for subsequent use */
+		(void) random_get_pseudo_bytes(spa->spa_cksum_salt.zcs_bytes,
+		    sizeof (spa->spa_cksum_salt.zcs_bytes));
+	} else if (error != 0) {
+		return (spa_vdev_err(rvd, VDEV_AUX_CORRUPT_DATA, EIO));
+	}
+
+>>>>>>> temp
 	if (spa_dir_prop(spa, DMU_POOL_SYNC_BPOBJ, &obj) != 0)
 		return (spa_vdev_err(rvd, VDEV_AUX_CORRUPT_DATA, EIO));
 	error = bpobj_open(&spa->spa_deferred_bpobj, spa->spa_meta_objset, obj);
@@ -2628,6 +3234,45 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 		return (spa_vdev_err(rvd, VDEV_AUX_CORRUPT_DATA, EIO));
 
 	/*
+<<<<<<< HEAD
+=======
+	 * Load the per-vdev ZAP map. If we have an older pool, this will not
+	 * be present; in this case, defer its creation to a later time to
+	 * avoid dirtying the MOS this early / out of sync context. See
+	 * spa_sync_config_object.
+	 */
+
+	/* The sentinel is only available in the MOS config. */
+	if (load_nvlist(spa, spa->spa_config_object, &mos_config) != 0)
+		return (spa_vdev_err(rvd, VDEV_AUX_CORRUPT_DATA, EIO));
+
+	error = spa_dir_prop(spa, DMU_POOL_VDEV_ZAP_MAP,
+	    &spa->spa_all_vdev_zaps);
+
+	if (error == ENOENT) {
+		VERIFY(!nvlist_exists(mos_config,
+		    ZPOOL_CONFIG_HAS_PER_VDEV_ZAPS));
+		spa->spa_avz_action = AVZ_ACTION_INITIALIZE;
+		ASSERT0(vdev_count_verify_zaps(spa->spa_root_vdev));
+	} else if (error != 0) {
+		return (spa_vdev_err(rvd, VDEV_AUX_CORRUPT_DATA, EIO));
+	} else if (!nvlist_exists(mos_config, ZPOOL_CONFIG_HAS_PER_VDEV_ZAPS)) {
+		/*
+		 * An older version of ZFS overwrote the sentinel value, so
+		 * we have orphaned per-vdev ZAPs in the MOS. Defer their
+		 * destruction to later; see spa_sync_config_object.
+		 */
+		spa->spa_avz_action = AVZ_ACTION_DESTROY;
+		/*
+		 * We're assuming that no vdevs have had their ZAPs created
+		 * before this. Better be sure of it.
+		 */
+		ASSERT0(vdev_count_verify_zaps(spa->spa_root_vdev));
+	}
+	nvlist_free(mos_config);
+
+	/*
+>>>>>>> temp
 	 * If we're assembling the pool from the split-off vdevs of
 	 * an existing pool, we don't want to attach the spares & cache
 	 * devices.
@@ -2686,6 +3331,10 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 		spa_prop_find(spa, ZPOOL_PROP_DELEGATION, &spa->spa_delegation);
 		spa_prop_find(spa, ZPOOL_PROP_FAILUREMODE, &spa->spa_failmode);
 		spa_prop_find(spa, ZPOOL_PROP_AUTOEXPAND, &spa->spa_autoexpand);
+<<<<<<< HEAD
+=======
+		spa_prop_find(spa, ZPOOL_PROP_MULTIHOST, &spa->spa_multihost);
+>>>>>>> temp
 		spa_prop_find(spa, ZPOOL_PROP_DEDUPDITTO,
 		    &spa->spa_dedup_ditto);
 
@@ -2693,6 +3342,21 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 	}
 
 	/*
+<<<<<<< HEAD
+=======
+	 * If the 'multihost' property is set, then never allow a pool to
+	 * be imported when the system hostid is zero.  The exception to
+	 * this rule is zdb which is always allowed to access pools.
+	 */
+	if (spa_multihost(spa) && spa_get_hostid() == 0 &&
+	    (spa->spa_import_flags & ZFS_IMPORT_SKIP_MMP) == 0) {
+		fnvlist_add_uint64(spa->spa_load_info,
+		    ZPOOL_CONFIG_MMP_STATE, MMP_STATE_NO_HOSTID);
+		return (spa_vdev_err(rvd, VDEV_AUX_ACTIVE, EREMOTEIO));
+	}
+
+	/*
+>>>>>>> temp
 	 * If the 'autoreplace' property is set, then post a resource notifying
 	 * the ZFS DE that it should not issue any faults for unopenable
 	 * devices.  We also iterate over the vdevs, and post a sysevent for any
@@ -2816,6 +3480,10 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 		spa_set_log_state(spa, SPA_LOG_GOOD);
 		spa->spa_sync_on = B_TRUE;
 		txg_sync_start(spa->spa_dsl_pool);
+<<<<<<< HEAD
+=======
+		mmp_thread_start(spa);
+>>>>>>> temp
 
 		/*
 		 * Wait for all claims to sync.  We sync up to the highest
@@ -2861,7 +3529,11 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 		 * Log the fact that we booted up (so that we can detect if
 		 * we rebooted in the middle of an operation).
 		 */
+<<<<<<< HEAD
 		spa_history_log_version(spa, "open");
+=======
+		spa_history_log_version(spa, "open", NULL);
+>>>>>>> temp
 
 		/*
 		 * Delete any inconsistent datasets.
@@ -2970,6 +3642,11 @@ spa_load_best(spa_t *spa, spa_load_state_t state, int mosconfig,
 
 	if (config && (rewind_error || state != SPA_LOAD_RECOVER))
 		spa_config_set(spa, config);
+<<<<<<< HEAD
+=======
+	else
+		nvlist_free(config);
+>>>>>>> temp
 
 	if (state == SPA_LOAD_RECOVER) {
 		ASSERT3P(loadinfo, ==, NULL);
@@ -3256,6 +3933,11 @@ spa_add_l2cache(spa_t *spa, nvlist_t *config)
 			    ZPOOL_CONFIG_VDEV_STATS, (uint64_t **)&vs, &vsc)
 			    == 0);
 			vdev_get_stats(vd, vs);
+<<<<<<< HEAD
+=======
+			vdev_config_generate_stats(vd, l2cache[i]);
+
+>>>>>>> temp
 		}
 	}
 }
@@ -3464,6 +4146,7 @@ spa_validate_aux_devs(spa_t *spa, nvlist_t *nvroot, uint64_t crtxg, int mode,
 			goto out;
 		}
 
+<<<<<<< HEAD
 		/*
 		 * The L2ARC currently only supports disk devices in
 		 * kernel context.  For user-level testing, we allow it.
@@ -3476,6 +4159,8 @@ spa_validate_aux_devs(spa_t *spa, nvlist_t *nvroot, uint64_t crtxg, int mode,
 			goto out;
 		}
 #endif
+=======
+>>>>>>> temp
 		vd->vdev_top = vd;
 
 		if ((error = vdev_open(vd)) == 0 &&
@@ -3529,7 +4214,11 @@ spa_set_aux_vdevs(spa_aux_vdev_t *sav, nvlist_t **devs, int ndevs,
 		nvlist_t **newdevs;
 
 		/*
+<<<<<<< HEAD
 		 * Generate new dev list by concatentating with the
+=======
+		 * Generate new dev list by concatenating with the
+>>>>>>> temp
 		 * current dev list.
 		 */
 		VERIFY(nvlist_lookup_nvlist_array(sav->sav_config, config,
@@ -3661,6 +4350,10 @@ spa_create(const char *pool, nvlist_t *nvroot, nvlist_t *props,
 	spa->spa_uberblock.ub_txg = txg - 1;
 	spa->spa_uberblock.ub_version = version;
 	spa->spa_ubsync = spa->spa_uberblock;
+<<<<<<< HEAD
+=======
+	spa->spa_load_state = SPA_LOAD_CREATE;
+>>>>>>> temp
 
 	/*
 	 * Create "The Godfather" zio to hold all async IOs
@@ -3751,6 +4444,18 @@ spa_create(const char *pool, nvlist_t *nvroot, nvlist_t *props,
 	tx = dmu_tx_create_assigned(dp, txg);
 
 	/*
+<<<<<<< HEAD
+=======
+	 * Create the pool's history object.
+	 */
+	if (version >= SPA_VERSION_ZPOOL_HISTORY && !spa->spa_history)
+		spa_history_create_obj(spa, tx);
+
+	spa_event_notify(spa, NULL, NULL, ESC_ZFS_POOL_CREATE);
+	spa_history_log_version(spa, "create", tx);
+
+	/*
+>>>>>>> temp
 	 * Create the pool config object.
 	 */
 	spa->spa_config_object = dmu_object_alloc(spa->spa_meta_objset,
@@ -3799,10 +4504,17 @@ spa_create(const char *pool, nvlist_t *nvroot, nvlist_t *props,
 	    spa->spa_meta_objset, obj));
 
 	/*
+<<<<<<< HEAD
 	 * Create the pool's history object.
 	 */
 	if (version >= SPA_VERSION_ZPOOL_HISTORY)
 		spa_history_create_obj(spa, tx);
+=======
+	 * Generate some random noise for salted checksums to operate on.
+	 */
+	(void) random_get_pseudo_bytes(spa->spa_cksum_salt.zcs_bytes,
+	    sizeof (spa->spa_cksum_salt.zcs_bytes));
+>>>>>>> temp
 
 	/*
 	 * Set pool properties.
@@ -3811,6 +4523,10 @@ spa_create(const char *pool, nvlist_t *nvroot, nvlist_t *props,
 	spa->spa_delegation = zpool_prop_default_numeric(ZPOOL_PROP_DELEGATION);
 	spa->spa_failmode = zpool_prop_default_numeric(ZPOOL_PROP_FAILUREMODE);
 	spa->spa_autoexpand = zpool_prop_default_numeric(ZPOOL_PROP_AUTOEXPAND);
+<<<<<<< HEAD
+=======
+	spa->spa_multihost = zpool_prop_default_numeric(ZPOOL_PROP_MULTIHOST);
+>>>>>>> temp
 
 	if (props != NULL) {
 		spa_configfile_set(spa, props, B_FALSE);
@@ -3821,6 +4537,10 @@ spa_create(const char *pool, nvlist_t *nvroot, nvlist_t *props,
 
 	spa->spa_sync_on = B_TRUE;
 	txg_sync_start(spa->spa_dsl_pool);
+<<<<<<< HEAD
+=======
+	mmp_thread_start(spa);
+>>>>>>> temp
 
 	/*
 	 * We explicitly wait for the first transaction to complete so that our
@@ -3830,20 +4550,28 @@ spa_create(const char *pool, nvlist_t *nvroot, nvlist_t *props,
 
 	spa_config_sync(spa, B_FALSE, B_TRUE);
 
+<<<<<<< HEAD
 	spa_history_log_version(spa, "create");
 
+=======
+>>>>>>> temp
 	/*
 	 * Don't count references from objsets that are already closed
 	 * and are making their way through the eviction process.
 	 */
 	spa_evicting_os_wait(spa);
 	spa->spa_minref = refcount_count(&spa->spa_refcount);
+<<<<<<< HEAD
+=======
+	spa->spa_load_state = SPA_LOAD_NONE;
+>>>>>>> temp
 
 	mutex_exit(&spa_namespace_lock);
 
 	return (0);
 }
 
+<<<<<<< HEAD
 #ifdef _KERNEL
 /*
  * Get the root pool information from the root disk, then import the root pool
@@ -4049,6 +4777,8 @@ out:
 
 #endif
 
+=======
+>>>>>>> temp
 /*
  * Import a non-root pool into the system.
  */
@@ -4096,6 +4826,10 @@ spa_import(char *pool, nvlist_t *config, nvlist_t *props, uint64_t flags)
 			spa_configfile_set(spa, props, B_FALSE);
 
 		spa_config_sync(spa, B_FALSE, B_TRUE);
+<<<<<<< HEAD
+=======
+		spa_event_notify(spa, NULL, NULL, ESC_ZFS_POOL_IMPORT);
+>>>>>>> temp
 
 		mutex_exit(&spa_namespace_lock);
 		return (0);
@@ -4148,12 +4882,15 @@ spa_import(char *pool, nvlist_t *config, nvlist_t *props, uint64_t flags)
 
 	VERIFY(nvlist_lookup_nvlist(config, ZPOOL_CONFIG_VDEV_TREE,
 	    &nvroot) == 0);
+<<<<<<< HEAD
 	if (error == 0)
 		error = spa_validate_aux(spa, nvroot, -1ULL,
 		    VDEV_ALLOC_SPARE);
 	if (error == 0)
 		error = spa_validate_aux(spa, nvroot, -1ULL,
 		    VDEV_ALLOC_L2CACHE);
+=======
+>>>>>>> temp
 	spa_config_exit(spa, SCL_ALL, FTAG);
 
 	if (props != NULL)
@@ -4226,10 +4963,21 @@ spa_import(char *pool, nvlist_t *config, nvlist_t *props, uint64_t flags)
 	 */
 	spa_async_request(spa, SPA_ASYNC_AUTOEXPAND);
 
+<<<<<<< HEAD
 	mutex_exit(&spa_namespace_lock);
 	spa_history_log_version(spa, "import");
 	zvol_create_minors(spa, pool, B_TRUE);
 
+=======
+	spa_history_log_version(spa, "import", NULL);
+
+	spa_event_notify(spa, NULL, NULL, ESC_ZFS_POOL_IMPORT);
+
+	zvol_create_minors(spa, pool, B_TRUE);
+
+	mutex_exit(&spa_namespace_lock);
+
+>>>>>>> temp
 	return (0);
 }
 
@@ -4425,7 +5173,14 @@ spa_export_common(char *pool, int new_state, nvlist_t **oldconfig,
 	}
 
 export_spa:
+<<<<<<< HEAD
 	spa_event_notify(spa, NULL, FM_EREPORT_ZFS_POOL_DESTROY);
+=======
+	if (new_state == POOL_STATE_DESTROYED)
+		spa_event_notify(spa, NULL, NULL, ESC_ZFS_POOL_DESTROY);
+	else if (new_state == POOL_STATE_EXPORTED)
+		spa_event_notify(spa, NULL, NULL, ESC_ZFS_POOL_EXPORT);
+>>>>>>> temp
 
 	if (spa->spa_state != POOL_STATE_UNINITIALIZED) {
 		spa_unload(spa);
@@ -4581,6 +5336,10 @@ spa_vdev_add(spa_t *spa, nvlist_t *nvroot)
 
 	mutex_enter(&spa_namespace_lock);
 	spa_config_update(spa, SPA_CONFIG_UPDATE_POOL);
+<<<<<<< HEAD
+=======
+	spa_event_notify(spa, NULL, NULL, ESC_ZFS_VDEV_ADD);
+>>>>>>> temp
 	mutex_exit(&spa_namespace_lock);
 
 	return (0);
@@ -4738,6 +5497,14 @@ spa_vdev_attach(spa_t *spa, uint64_t guid, nvlist_t *nvroot, int replacing)
 	newvd->vdev_crtxg = oldvd->vdev_crtxg;
 	vdev_add_child(pvd, newvd);
 
+<<<<<<< HEAD
+=======
+	/*
+	 * Reevaluate the parent vdev state.
+	 */
+	vdev_propagate_state(pvd);
+
+>>>>>>> temp
 	tvd = newvd->vdev_top;
 	ASSERT(pvd->vdev_top == tvd);
 	ASSERT(tvd->vdev_parent == rvd);
@@ -4756,7 +5523,11 @@ spa_vdev_attach(spa_t *spa, uint64_t guid, nvlist_t *nvroot, int replacing)
 
 	if (newvd->vdev_isspare) {
 		spa_spare_activate(newvd);
+<<<<<<< HEAD
 		spa_event_notify(spa, newvd, FM_EREPORT_ZFS_DEVICE_SPARE);
+=======
+		spa_event_notify(spa, newvd, NULL, ESC_ZFS_VDEV_SPARE);
+>>>>>>> temp
 	}
 
 	oldvdpath = spa_strdup(oldvd->vdev_path);
@@ -4775,6 +5546,14 @@ spa_vdev_attach(spa_t *spa, uint64_t guid, nvlist_t *nvroot, int replacing)
 	 */
 	dsl_resilver_restart(spa->spa_dsl_pool, dtl_max_txg);
 
+<<<<<<< HEAD
+=======
+	if (spa->spa_bootfs)
+		spa_event_notify(spa, newvd, NULL, ESC_ZFS_BOOTFS_VDEV_ATTACH);
+
+	spa_event_notify(spa, newvd, NULL, ESC_ZFS_VDEV_ATTACH);
+
+>>>>>>> temp
 	/*
 	 * Commit the config
 	 */
@@ -4789,9 +5568,12 @@ spa_vdev_attach(spa_t *spa, uint64_t guid, nvlist_t *nvroot, int replacing)
 	spa_strfree(oldvdpath);
 	spa_strfree(newvdpath);
 
+<<<<<<< HEAD
 	if (spa->spa_bootfs)
 		spa_event_notify(spa, newvd, FM_EREPORT_ZFS_BOOTFS_VDEV_ATTACH);
 
+=======
+>>>>>>> temp
 	return (0);
 }
 
@@ -4984,13 +5766,21 @@ spa_vdev_detach(spa_t *spa, uint64_t guid, uint64_t pguid, int replace_done)
 	 * But first make sure we're not on any *other* txg's DTL list, to
 	 * prevent vd from being accessed after it's freed.
 	 */
+<<<<<<< HEAD
 	vdpath = spa_strdup(vd->vdev_path);
+=======
+	vdpath = spa_strdup(vd->vdev_path ? vd->vdev_path : "none");
+>>>>>>> temp
 	for (t = 0; t < TXG_SIZE; t++)
 		(void) txg_list_remove_this(&tvd->vdev_dtl_list, vd, t);
 	vd->vdev_detached = B_TRUE;
 	vdev_dirty(tvd, VDD_DTL, vd, txg);
 
+<<<<<<< HEAD
 	spa_event_notify(spa, vd, FM_EREPORT_ZFS_DEVICE_REMOVE);
+=======
+	spa_event_notify(spa, vd, NULL, ESC_ZFS_VDEV_REMOVE);
+>>>>>>> temp
 
 	/* hang on to the spa before we release the lock */
 	spa_open_ref(spa, FTAG);
@@ -5165,6 +5955,19 @@ spa_vdev_split_mirror(spa_t *spa, char *newname, nvlist_t *config,
 		    vml[c]->vdev_top->vdev_asize) == 0);
 		VERIFY(nvlist_add_uint64(child[c], ZPOOL_CONFIG_ASHIFT,
 		    vml[c]->vdev_top->vdev_ashift) == 0);
+<<<<<<< HEAD
+=======
+
+		/* transfer per-vdev ZAPs */
+		ASSERT3U(vml[c]->vdev_leaf_zap, !=, 0);
+		VERIFY0(nvlist_add_uint64(child[c],
+		    ZPOOL_CONFIG_VDEV_LEAF_ZAP, vml[c]->vdev_leaf_zap));
+
+		ASSERT3U(vml[c]->vdev_top->vdev_top_zap, !=, 0);
+		VERIFY0(nvlist_add_uint64(child[c],
+		    ZPOOL_CONFIG_VDEV_TOP_ZAP,
+		    vml[c]->vdev_parent->vdev_top_zap));
+>>>>>>> temp
 	}
 
 	if (error != 0) {
@@ -5206,11 +6009,19 @@ spa_vdev_split_mirror(spa_t *spa, char *newname, nvlist_t *config,
 	    spa->spa_config_txg) == 0);
 	VERIFY(nvlist_add_uint64(config, ZPOOL_CONFIG_POOL_GUID,
 	    spa_generate_guid(NULL)) == 0);
+<<<<<<< HEAD
+=======
+	VERIFY0(nvlist_add_boolean(config, ZPOOL_CONFIG_HAS_PER_VDEV_ZAPS));
+>>>>>>> temp
 	(void) nvlist_lookup_string(props,
 	    zpool_prop_to_name(ZPOOL_PROP_ALTROOT), &altroot);
 
 	/* add the new pool to the namespace */
 	newspa = spa_add(newname, config, altroot);
+<<<<<<< HEAD
+=======
+	newspa->spa_avz_action = AVZ_ACTION_REBUILD;
+>>>>>>> temp
 	newspa->spa_config_txg = spa->spa_config_txg;
 	spa_set_log_state(newspa, SPA_LOG_CLEAR);
 
@@ -5268,9 +6079,17 @@ spa_vdev_split_mirror(spa_t *spa, char *newname, nvlist_t *config,
 			if (error == 0)
 				spa_history_log_internal(spa, "detach", tx,
 				    "vdev=%s", vml[c]->vdev_path);
+<<<<<<< HEAD
 			vdev_free(vml[c]);
 		}
 	}
+=======
+
+			vdev_free(vml[c]);
+		}
+	}
+	spa->spa_avz_action = AVZ_ACTION_REBUILD;
+>>>>>>> temp
 	vdev_config_dirty(spa->spa_root_vdev);
 	spa->spa_config_splitting = NULL;
 	nvlist_free(nvl);
@@ -5336,7 +6155,11 @@ spa_nvlist_lookup_by_guid(nvlist_t **nvpp, int count, uint64_t target_guid)
 
 static void
 spa_vdev_remove_aux(nvlist_t *config, char *name, nvlist_t **dev, int count,
+<<<<<<< HEAD
 	nvlist_t *dev_to_remove)
+=======
+    nvlist_t *dev_to_remove)
+>>>>>>> temp
 {
 	nvlist_t **newdev = NULL;
 	int i, j;
@@ -5462,6 +6285,10 @@ int
 spa_vdev_remove(spa_t *spa, uint64_t guid, boolean_t unspare)
 {
 	vdev_t *vd;
+<<<<<<< HEAD
+=======
+	sysevent_t *ev = NULL;
+>>>>>>> temp
 	metaslab_group_t *mg;
 	nvlist_t **spares, **l2cache, *nv;
 	uint64_t txg = 0;
@@ -5485,6 +6312,13 @@ spa_vdev_remove(spa_t *spa, uint64_t guid, boolean_t unspare)
 		 * in this pool.
 		 */
 		if (vd == NULL || unspare) {
+<<<<<<< HEAD
+=======
+			if (vd == NULL)
+				vd = spa_lookup_by_guid(spa, guid, B_TRUE);
+			ev = spa_event_create(spa, vd, NULL,
+			    ESC_ZFS_VDEV_REMOVE_AUX);
+>>>>>>> temp
 			spa_vdev_remove_aux(spa->spa_spares.sav_config,
 			    ZPOOL_CONFIG_SPARES, spares, nspares, nv);
 			spa_load_spares(spa);
@@ -5499,6 +6333,11 @@ spa_vdev_remove(spa_t *spa, uint64_t guid, boolean_t unspare)
 		/*
 		 * Cache devices can always be removed.
 		 */
+<<<<<<< HEAD
+=======
+		vd = spa_lookup_by_guid(spa, guid, B_TRUE);
+		ev = spa_event_create(spa, vd, NULL, ESC_ZFS_VDEV_REMOVE_AUX);
+>>>>>>> temp
 		spa_vdev_remove_aux(spa->spa_l2cache.sav_config,
 		    ZPOOL_CONFIG_L2CACHE, l2cache, nl2cache, nv);
 		spa_load_l2cache(spa);
@@ -5539,6 +6378,10 @@ spa_vdev_remove(spa_t *spa, uint64_t guid, boolean_t unspare)
 		/*
 		 * Clean up the vdev namespace.
 		 */
+<<<<<<< HEAD
+=======
+		ev = spa_event_create(spa, vd, NULL, ESC_ZFS_VDEV_REMOVE_DEV);
+>>>>>>> temp
 		spa_vdev_remove_from_namespace(spa, vd);
 
 	} else if (vd != NULL) {
@@ -5554,7 +6397,14 @@ spa_vdev_remove(spa_t *spa, uint64_t guid, boolean_t unspare)
 	}
 
 	if (!locked)
+<<<<<<< HEAD
 		return (spa_vdev_exit(spa, NULL, txg, error));
+=======
+		error = spa_vdev_exit(spa, NULL, txg, error);
+
+	if (ev)
+		spa_event_post(ev);
+>>>>>>> temp
 
 	return (error);
 }
@@ -5734,6 +6584,19 @@ spa_vdev_setfru(spa_t *spa, uint64_t guid, const char *newfru)
  * SPA Scanning
  * ==========================================================================
  */
+<<<<<<< HEAD
+=======
+int
+spa_scrub_pause_resume(spa_t *spa, pool_scrub_cmd_t cmd)
+{
+	ASSERT(spa_config_held(spa, SCL_ALL, RW_WRITER) == 0);
+
+	if (dsl_scan_resilvering(spa->spa_dsl_pool))
+		return (SET_ERROR(EBUSY));
+
+	return (dsl_scrub_set_pause_resume(spa->spa_dsl_pool, cmd));
+}
+>>>>>>> temp
 
 int
 spa_scan_stop(spa_t *spa)
@@ -5828,7 +6691,11 @@ spa_async_autoexpand(spa_t *spa, vdev_t *vd)
 	if (!vd->vdev_ops->vdev_op_leaf || vd->vdev_physpath == NULL)
 		return;
 
+<<<<<<< HEAD
 	spa_event_notify(vd->vdev_spa, vd, FM_EREPORT_ZFS_DEVICE_AUTOEXPAND);
+=======
+	spa_event_notify(vd->vdev_spa, vd, NULL, ESC_ZFS_VDEV_AUTOEXPAND);
+>>>>>>> temp
 }
 
 static void
@@ -5935,13 +6802,43 @@ spa_async_resume(spa_t *spa)
 	mutex_exit(&spa->spa_async_lock);
 }
 
+<<<<<<< HEAD
+=======
+static boolean_t
+spa_async_tasks_pending(spa_t *spa)
+{
+	uint_t non_config_tasks;
+	uint_t config_task;
+	boolean_t config_task_suspended;
+
+	non_config_tasks = spa->spa_async_tasks & ~SPA_ASYNC_CONFIG_UPDATE;
+	config_task = spa->spa_async_tasks & SPA_ASYNC_CONFIG_UPDATE;
+	if (spa->spa_ccw_fail_time == 0) {
+		config_task_suspended = B_FALSE;
+	} else {
+		config_task_suspended =
+		    (gethrtime() - spa->spa_ccw_fail_time) <
+		    ((hrtime_t)zfs_ccw_retry_interval * NANOSEC);
+	}
+
+	return (non_config_tasks || (config_task && !config_task_suspended));
+}
+
+>>>>>>> temp
 static void
 spa_async_dispatch(spa_t *spa)
 {
 	mutex_enter(&spa->spa_async_lock);
+<<<<<<< HEAD
 	if (spa->spa_async_tasks && !spa->spa_async_suspended &&
 	    spa->spa_async_thread == NULL &&
 	    rootdir != NULL && !vn_is_readonly(rootdir))
+=======
+	if (spa_async_tasks_pending(spa) &&
+	    !spa->spa_async_suspended &&
+	    spa->spa_async_thread == NULL &&
+	    rootdir != NULL)
+>>>>>>> temp
 		spa->spa_async_thread = thread_create(NULL, 0,
 		    spa_async_thread, spa, 0, &p0, TS_RUN, maxclsyspri);
 	mutex_exit(&spa->spa_async_lock);
@@ -6083,16 +6980,131 @@ spa_sync_aux_dev(spa_t *spa, spa_aux_vdev_t *sav, dmu_tx_t *tx,
 	sav->sav_sync = B_FALSE;
 }
 
+<<<<<<< HEAD
+=======
+/*
+ * Rebuild spa's all-vdev ZAP from the vdev ZAPs indicated in each vdev_t.
+ * The all-vdev ZAP must be empty.
+ */
+static void
+spa_avz_build(vdev_t *vd, uint64_t avz, dmu_tx_t *tx)
+{
+	spa_t *spa = vd->vdev_spa;
+	uint64_t i;
+
+	if (vd->vdev_top_zap != 0) {
+		VERIFY0(zap_add_int(spa->spa_meta_objset, avz,
+		    vd->vdev_top_zap, tx));
+	}
+	if (vd->vdev_leaf_zap != 0) {
+		VERIFY0(zap_add_int(spa->spa_meta_objset, avz,
+		    vd->vdev_leaf_zap, tx));
+	}
+	for (i = 0; i < vd->vdev_children; i++) {
+		spa_avz_build(vd->vdev_child[i], avz, tx);
+	}
+}
+
+>>>>>>> temp
 static void
 spa_sync_config_object(spa_t *spa, dmu_tx_t *tx)
 {
 	nvlist_t *config;
 
+<<<<<<< HEAD
 	if (list_is_empty(&spa->spa_config_dirty_list))
+=======
+	/*
+	 * If the pool is being imported from a pre-per-vdev-ZAP version of ZFS,
+	 * its config may not be dirty but we still need to build per-vdev ZAPs.
+	 * Similarly, if the pool is being assembled (e.g. after a split), we
+	 * need to rebuild the AVZ although the config may not be dirty.
+	 */
+	if (list_is_empty(&spa->spa_config_dirty_list) &&
+	    spa->spa_avz_action == AVZ_ACTION_NONE)
+>>>>>>> temp
 		return;
 
 	spa_config_enter(spa, SCL_STATE, FTAG, RW_READER);
 
+<<<<<<< HEAD
+=======
+	ASSERT(spa->spa_avz_action == AVZ_ACTION_NONE ||
+	    spa->spa_avz_action == AVZ_ACTION_INITIALIZE ||
+	    spa->spa_all_vdev_zaps != 0);
+
+	if (spa->spa_avz_action == AVZ_ACTION_REBUILD) {
+		zap_cursor_t zc;
+		zap_attribute_t za;
+
+		/* Make and build the new AVZ */
+		uint64_t new_avz = zap_create(spa->spa_meta_objset,
+		    DMU_OTN_ZAP_METADATA, DMU_OT_NONE, 0, tx);
+		spa_avz_build(spa->spa_root_vdev, new_avz, tx);
+
+		/* Diff old AVZ with new one */
+		for (zap_cursor_init(&zc, spa->spa_meta_objset,
+		    spa->spa_all_vdev_zaps);
+		    zap_cursor_retrieve(&zc, &za) == 0;
+		    zap_cursor_advance(&zc)) {
+			uint64_t vdzap = za.za_first_integer;
+			if (zap_lookup_int(spa->spa_meta_objset, new_avz,
+			    vdzap) == ENOENT) {
+				/*
+				 * ZAP is listed in old AVZ but not in new one;
+				 * destroy it
+				 */
+				VERIFY0(zap_destroy(spa->spa_meta_objset, vdzap,
+				    tx));
+			}
+		}
+
+		zap_cursor_fini(&zc);
+
+		/* Destroy the old AVZ */
+		VERIFY0(zap_destroy(spa->spa_meta_objset,
+		    spa->spa_all_vdev_zaps, tx));
+
+		/* Replace the old AVZ in the dir obj with the new one */
+		VERIFY0(zap_update(spa->spa_meta_objset,
+		    DMU_POOL_DIRECTORY_OBJECT, DMU_POOL_VDEV_ZAP_MAP,
+		    sizeof (new_avz), 1, &new_avz, tx));
+
+		spa->spa_all_vdev_zaps = new_avz;
+	} else if (spa->spa_avz_action == AVZ_ACTION_DESTROY) {
+		zap_cursor_t zc;
+		zap_attribute_t za;
+
+		/* Walk through the AVZ and destroy all listed ZAPs */
+		for (zap_cursor_init(&zc, spa->spa_meta_objset,
+		    spa->spa_all_vdev_zaps);
+		    zap_cursor_retrieve(&zc, &za) == 0;
+		    zap_cursor_advance(&zc)) {
+			uint64_t zap = za.za_first_integer;
+			VERIFY0(zap_destroy(spa->spa_meta_objset, zap, tx));
+		}
+
+		zap_cursor_fini(&zc);
+
+		/* Destroy and unlink the AVZ itself */
+		VERIFY0(zap_destroy(spa->spa_meta_objset,
+		    spa->spa_all_vdev_zaps, tx));
+		VERIFY0(zap_remove(spa->spa_meta_objset,
+		    DMU_POOL_DIRECTORY_OBJECT, DMU_POOL_VDEV_ZAP_MAP, tx));
+		spa->spa_all_vdev_zaps = 0;
+	}
+
+	if (spa->spa_all_vdev_zaps == 0) {
+		spa->spa_all_vdev_zaps = zap_create_link(spa->spa_meta_objset,
+		    DMU_OTN_ZAP_METADATA, DMU_POOL_DIRECTORY_OBJECT,
+		    DMU_POOL_VDEV_ZAP_MAP, tx);
+	}
+	spa->spa_avz_action = AVZ_ACTION_NONE;
+
+	/* Create ZAPs for vdevs that don't have them. */
+	vdev_construct_zaps(spa->spa_root_vdev, tx);
+
+>>>>>>> temp
 	config = spa_config_generate(spa, spa->spa_root_vdev,
 	    dmu_tx_get_txg(tx), B_FALSE);
 
@@ -6106,8 +7118,12 @@ spa_sync_config_object(spa_t *spa, dmu_tx_t *tx)
 
 	spa_config_exit(spa, SCL_STATE, FTAG);
 
+<<<<<<< HEAD
 	if (spa->spa_config_syncing)
 		nvlist_free(spa->spa_config_syncing);
+=======
+	nvlist_free(spa->spa_config_syncing);
+>>>>>>> temp
 	spa->spa_config_syncing = config;
 
 	spa_sync_nvlist(spa, spa->spa_config_object, config, tx);
@@ -6173,7 +7189,11 @@ spa_sync_props(void *arg, dmu_tx_t *tx)
 		case ZPOOL_PROP_VERSION:
 			intval = fnvpair_value_uint64(elem);
 			/*
+<<<<<<< HEAD
 			 * The version is synced seperatly before other
+=======
+			 * The version is synced separately before other
+>>>>>>> temp
 			 * properties and should be correct by now.
 			 */
 			ASSERT3U(spa_version(spa), >=, intval);
@@ -6203,7 +7223,11 @@ spa_sync_props(void *arg, dmu_tx_t *tx)
 			 * We need to dirty the configuration on all the vdevs
 			 * so that their labels get updated.  It's unnecessary
 			 * to do this for pool creation since the vdev's
+<<<<<<< HEAD
 			 * configuratoin has already been dirtied.
+=======
+			 * configuration has already been dirtied.
+>>>>>>> temp
 			 */
 			if (tx->tx_txg != TXG_INITIAL)
 				vdev_config_dirty(spa->spa_root_vdev);
@@ -6266,6 +7290,12 @@ spa_sync_props(void *arg, dmu_tx_t *tx)
 					spa_async_request(spa,
 					    SPA_ASYNC_AUTOEXPAND);
 				break;
+<<<<<<< HEAD
+=======
+			case ZPOOL_PROP_MULTIHOST:
+				spa->spa_multihost = intval;
+				break;
+>>>>>>> temp
 			case ZPOOL_PROP_DEDUPDITTO:
 				spa->spa_dedup_ditto = intval;
 				break;
@@ -6336,6 +7366,23 @@ spa_sync_upgrades(spa_t *spa, dmu_tx_t *tx)
 		if (lz4_en && !lz4_ac)
 			spa_feature_incr(spa, SPA_FEATURE_LZ4_COMPRESS, tx);
 	}
+<<<<<<< HEAD
+=======
+
+	/*
+	 * If we haven't written the salt, do so now.  Note that the
+	 * feature may not be activated yet, but that's fine since
+	 * the presence of this ZAP entry is backwards compatible.
+	 */
+	if (zap_contains(spa->spa_meta_objset, DMU_POOL_DIRECTORY_OBJECT,
+	    DMU_POOL_CHECKSUM_SALT) == ENOENT) {
+		VERIFY0(zap_add(spa->spa_meta_objset,
+		    DMU_POOL_DIRECTORY_OBJECT, DMU_POOL_CHECKSUM_SALT, 1,
+		    sizeof (spa->spa_cksum_salt.zcs_bytes),
+		    spa->spa_cksum_salt.zcs_bytes, tx));
+	}
+
+>>>>>>> temp
 	rrw_exit(&dp->dp_config_rwlock, FTAG);
 }
 
@@ -6349,10 +7396,20 @@ spa_sync(spa_t *spa, uint64_t txg)
 	dsl_pool_t *dp = spa->spa_dsl_pool;
 	objset_t *mos = spa->spa_meta_objset;
 	bplist_t *free_bpl = &spa->spa_free_bplist[txg & TXG_MASK];
+<<<<<<< HEAD
+=======
+	metaslab_class_t *mc;
+>>>>>>> temp
 	vdev_t *rvd = spa->spa_root_vdev;
 	vdev_t *vd;
 	dmu_tx_t *tx;
 	int error;
+<<<<<<< HEAD
+=======
+	uint32_t max_queue_depth = zfs_vdev_async_write_max_active *
+	    zfs_vdev_queue_depth_pct / 100;
+	uint64_t queue_depth_total;
+>>>>>>> temp
 	int c;
 
 	VERIFY(spa_writeable(spa));
@@ -6365,6 +7422,13 @@ spa_sync(spa_t *spa, uint64_t txg)
 	spa->spa_syncing_txg = txg;
 	spa->spa_sync_pass = 0;
 
+<<<<<<< HEAD
+=======
+	mutex_enter(&spa->spa_alloc_lock);
+	VERIFY0(avl_numnodes(&spa->spa_alloc_tree));
+	mutex_exit(&spa->spa_alloc_lock);
+
+>>>>>>> temp
 	/*
 	 * If there are any pending vdev state changes, convert them
 	 * into config changes that go out with this transaction group.
@@ -6392,8 +7456,13 @@ spa_sync(spa_t *spa, uint64_t txg)
 	tx = dmu_tx_create_assigned(dp, txg);
 
 	spa->spa_sync_starttime = gethrtime();
+<<<<<<< HEAD
 	taskq_cancel_id(system_taskq, spa->spa_deadman_tqid);
 	spa->spa_deadman_tqid = taskq_dispatch_delay(system_taskq,
+=======
+	taskq_cancel_id(system_delay_taskq, spa->spa_deadman_tqid);
+	spa->spa_deadman_tqid = taskq_dispatch_delay(system_delay_taskq,
+>>>>>>> temp
 	    spa_deadman, spa, TQ_SLEEP, ddi_get_lbolt() +
 	    NSEC_TO_TICK(spa->spa_deadman_synctime));
 
@@ -6419,6 +7488,41 @@ spa_sync(spa_t *spa, uint64_t txg)
 	}
 
 	/*
+<<<<<<< HEAD
+=======
+	 * Set the top-level vdev's max queue depth. Evaluate each
+	 * top-level's async write queue depth in case it changed.
+	 * The max queue depth will not change in the middle of syncing
+	 * out this txg.
+	 */
+	queue_depth_total = 0;
+	for (c = 0; c < rvd->vdev_children; c++) {
+		vdev_t *tvd = rvd->vdev_child[c];
+		metaslab_group_t *mg = tvd->vdev_mg;
+
+		if (mg == NULL || mg->mg_class != spa_normal_class(spa) ||
+		    !metaslab_group_initialized(mg))
+			continue;
+
+		/*
+		 * It is safe to do a lock-free check here because only async
+		 * allocations look at mg_max_alloc_queue_depth, and async
+		 * allocations all happen from spa_sync().
+		 */
+		ASSERT0(refcount_count(&mg->mg_alloc_queue_depth));
+		mg->mg_max_alloc_queue_depth = max_queue_depth;
+		queue_depth_total += mg->mg_max_alloc_queue_depth;
+	}
+	mc = spa_normal_class(spa);
+	ASSERT0(refcount_count(&mc->mc_alloc_slots));
+	mc->mc_alloc_max_slots = queue_depth_total;
+	mc->mc_alloc_throttle_enabled = zio_dva_throttle_enabled;
+
+	ASSERT3U(mc->mc_alloc_max_slots, <=,
+	    max_queue_depth * rvd->vdev_children);
+
+	/*
+>>>>>>> temp
 	 * Iterate to convergence.
 	 */
 	do {
@@ -6484,6 +7588,26 @@ spa_sync(spa_t *spa, uint64_t txg)
 
 	} while (dmu_objset_is_dirty(mos, txg));
 
+<<<<<<< HEAD
+=======
+#ifdef ZFS_DEBUG
+	if (!list_is_empty(&spa->spa_config_dirty_list)) {
+		/*
+		 * Make sure that the number of ZAPs for all the vdevs matches
+		 * the number of ZAPs in the per-vdev ZAP list. This only gets
+		 * called if the config is dirty; otherwise there may be
+		 * outstanding AVZ operations that weren't completed in
+		 * spa_sync_config_object.
+		 */
+		uint64_t all_vdev_zap_entry_count;
+		ASSERT0(zap_count(spa->spa_meta_objset,
+		    spa->spa_all_vdev_zaps, &all_vdev_zap_entry_count));
+		ASSERT3U(vdev_count_verify_zaps(spa->spa_root_vdev), ==,
+		    all_vdev_zap_entry_count);
+	}
+#endif
+
+>>>>>>> temp
 	/*
 	 * Rewrite the vdev configuration (which includes the uberblock)
 	 * to commit the transaction group.
@@ -6514,6 +7638,7 @@ spa_sync(spa_t *spa, uint64_t txg)
 				if (svdcount == SPA_DVAS_PER_BP)
 					break;
 			}
+<<<<<<< HEAD
 			error = vdev_config_sync(svd, svdcount, txg, B_FALSE);
 			if (error != 0)
 				error = vdev_config_sync(svd, svdcount, txg,
@@ -6524,6 +7649,12 @@ spa_sync(spa_t *spa, uint64_t txg)
 			if (error != 0)
 				error = vdev_config_sync(rvd->vdev_child,
 				    rvd->vdev_children, txg, B_TRUE);
+=======
+			error = vdev_config_sync(svd, svdcount, txg);
+		} else {
+			error = vdev_config_sync(rvd->vdev_child,
+			    rvd->vdev_children, txg);
+>>>>>>> temp
 		}
 
 		if (error == 0)
@@ -6538,7 +7669,11 @@ spa_sync(spa_t *spa, uint64_t txg)
 	}
 	dmu_tx_commit(tx);
 
+<<<<<<< HEAD
 	taskq_cancel_id(system_taskq, spa->spa_deadman_tqid);
+=======
+	taskq_cancel_id(system_delay_taskq, spa->spa_deadman_tqid);
+>>>>>>> temp
 	spa->spa_deadman_tqid = 0;
 
 	/*
@@ -6557,10 +7692,19 @@ spa_sync(spa_t *spa, uint64_t txg)
 		spa->spa_config_syncing = NULL;
 	}
 
+<<<<<<< HEAD
 	spa->spa_ubsync = spa->spa_uberblock;
 
 	dsl_pool_sync_done(dp, txg);
 
+=======
+	dsl_pool_sync_done(dp, txg);
+
+	mutex_enter(&spa->spa_alloc_lock);
+	VERIFY0(avl_numnodes(&spa->spa_alloc_tree));
+	mutex_exit(&spa->spa_alloc_lock);
+
+>>>>>>> temp
 	/*
 	 * Update usable space statistics.
 	 */
@@ -6579,6 +7723,16 @@ spa_sync(spa_t *spa, uint64_t txg)
 
 	spa->spa_sync_pass = 0;
 
+<<<<<<< HEAD
+=======
+	/*
+	 * Update the last synced uberblock here. We want to do this at
+	 * the end of spa_sync() so that consumers of spa_last_synced_txg()
+	 * will be guaranteed that all the processing associated with
+	 * that txg has been completed.
+	 */
+	spa->spa_ubsync = spa->spa_uberblock;
+>>>>>>> temp
 	spa_config_exit(spa, SCL_CONFIG, FTAG);
 
 	spa_handle_ignored_writes(spa);
@@ -6742,18 +7896,57 @@ spa_has_active_shared_spare(spa_t *spa)
 	return (B_FALSE);
 }
 
+<<<<<<< HEAD
 /*
  * Post a FM_EREPORT_ZFS_* event from sys/fm/fs/zfs.h.  The payload will be
+=======
+static sysevent_t *
+spa_event_create(spa_t *spa, vdev_t *vd, nvlist_t *hist_nvl, const char *name)
+{
+	sysevent_t *ev = NULL;
+#ifdef _KERNEL
+	nvlist_t *resource;
+
+	resource = zfs_event_create(spa, vd, FM_SYSEVENT_CLASS, name, hist_nvl);
+	if (resource) {
+		ev = kmem_alloc(sizeof (sysevent_t), KM_SLEEP);
+		ev->resource = resource;
+	}
+#endif
+	return (ev);
+}
+
+static void
+spa_event_post(sysevent_t *ev)
+{
+#ifdef _KERNEL
+	if (ev) {
+		zfs_zevent_post(ev->resource, NULL, zfs_zevent_post_cb);
+		kmem_free(ev, sizeof (*ev));
+	}
+#endif
+}
+
+/*
+ * Post a zevent corresponding to the given sysevent.   The 'name' must be one
+ * of the event definitions in sys/sysevent/eventdefs.h.  The payload will be
+>>>>>>> temp
  * filled in from the spa and (optionally) the vdev.  This doesn't do anything
  * in the userland libzpool, as we don't want consumers to misinterpret ztest
  * or zdb as real changes.
  */
 void
+<<<<<<< HEAD
 spa_event_notify(spa_t *spa, vdev_t *vd, const char *name)
 {
 #ifdef _KERNEL
 	zfs_ereport_post(name, spa, vd, NULL, 0, 0);
 #endif
+=======
+spa_event_notify(spa_t *spa, vdev_t *vd, nvlist_t *hist_nvl, const char *name)
+{
+	spa_event_post(spa_event_create(spa, vd, hist_nvl, name));
+>>>>>>> temp
 }
 
 #if defined(_KERNEL) && defined(HAVE_SPL)
@@ -6762,7 +7955,10 @@ EXPORT_SYMBOL(spa_open);
 EXPORT_SYMBOL(spa_open_rewind);
 EXPORT_SYMBOL(spa_get_stats);
 EXPORT_SYMBOL(spa_create);
+<<<<<<< HEAD
 EXPORT_SYMBOL(spa_import_rootpool);
+=======
+>>>>>>> temp
 EXPORT_SYMBOL(spa_import);
 EXPORT_SYMBOL(spa_tryimport);
 EXPORT_SYMBOL(spa_destroy);
@@ -6828,6 +8024,10 @@ module_param(spa_load_verify_data, int, 0644);
 MODULE_PARM_DESC(spa_load_verify_data,
 	"Set to traverse data on pool import");
 
+<<<<<<< HEAD
+=======
+/* CSTYLED */
+>>>>>>> temp
 module_param(zio_taskq_batch_pct, uint, 0444);
 MODULE_PARM_DESC(zio_taskq_batch_pct,
 	"Percentage of CPUs to run an IO worker thread");

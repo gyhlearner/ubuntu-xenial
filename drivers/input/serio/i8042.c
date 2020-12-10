@@ -312,8 +312,10 @@ static int __i8042_command(unsigned char *param, int command)
 
 	for (i = 0; i < ((command >> 12) & 0xf); i++) {
 		error = i8042_wait_write();
-		if (error)
+		if (error) {
+			dbg("     -- i8042 (wait write timeout)\n");
 			return error;
+		}
 		dbg("%02x -> i8042 (parameter)\n", param[i]);
 		i8042_write_data(param[i]);
 	}
@@ -321,7 +323,7 @@ static int __i8042_command(unsigned char *param, int command)
 	for (i = 0; i < ((command >> 8) & 0xf); i++) {
 		error = i8042_wait_read();
 		if (error) {
-			dbg("     -- i8042 (timeout)\n");
+			dbg("     -- i8042 (wait read timeout)\n");
 			return error;
 		}
 
@@ -387,7 +389,7 @@ static int i8042_aux_write(struct serio *serio, unsigned char c)
 
 
 /*
- * i8042_aux_close attempts to clear AUX or KBD port state by disabling
+ * i8042_port_close attempts to clear AUX or KBD port state by disabling
  * and then re-enabling it.
  */
 
@@ -599,7 +601,7 @@ static int i8042_enable_kbd_port(void)
 	if (i8042_command(&i8042_ctr, I8042_CMD_CTL_WCTR)) {
 		i8042_ctr &= ~I8042_CTR_KBDINT;
 		i8042_ctr |= I8042_CTR_KBDDIS;
-		pr_err("Failed to enable KBD port\n");
+		pr_info("Failed to enable KBD port\n");
 		return -EIO;
 	}
 
@@ -618,7 +620,7 @@ static int i8042_enable_aux_port(void)
 	if (i8042_command(&i8042_ctr, I8042_CMD_CTL_WCTR)) {
 		i8042_ctr &= ~I8042_CTR_AUXINT;
 		i8042_ctr |= I8042_CTR_AUXDIS;
-		pr_err("Failed to enable AUX port\n");
+		pr_info("Failed to enable AUX port\n");
 		return -EIO;
 	}
 
@@ -710,7 +712,7 @@ static int __init i8042_check_mux(void)
 	i8042_ctr &= ~I8042_CTR_AUXINT;
 
 	if (i8042_command(&i8042_ctr, I8042_CMD_CTL_WCTR)) {
-		pr_err("Failed to disable AUX port, can't use MUX\n");
+		pr_info("Failed to disable AUX port, can't use MUX\n");
 		return -EIO;
 	}
 
@@ -933,7 +935,7 @@ static int i8042_controller_selftest(void)
 	do {
 
 		if (i8042_command(&param, I8042_CMD_CTL_TEST)) {
-			pr_err("i8042 controller selftest timeout\n");
+			pr_info("i8042 controller selftest timeout\n");
 			return -ENODEV;
 		}
 
@@ -955,7 +957,7 @@ static int i8042_controller_selftest(void)
 	pr_info("giving up on controller selftest, continuing anyway...\n");
 	return 0;
 #else
-	pr_err("i8042 controller selftest failed\n");
+	pr_info("i8042 controller selftest failed\n");
 	return -EIO;
 #endif
 }
@@ -1390,15 +1392,26 @@ static void __init i8042_register_ports(void)
 	for (i = 0; i < I8042_NUM_PORTS; i++) {
 		struct serio *serio = i8042_ports[i].serio;
 
-		if (serio) {
-			printk(KERN_INFO "serio: %s at %#lx,%#lx irq %d\n",
-				serio->name,
-				(unsigned long) I8042_DATA_REG,
-				(unsigned long) I8042_COMMAND_REG,
-				i8042_ports[i].irq);
-			serio_register_port(serio);
-			device_set_wakeup_capable(&serio->dev, true);
-		}
+		if (!serio)
+			continue;
+
+		printk(KERN_INFO "serio: %s at %#lx,%#lx irq %d\n",
+			serio->name,
+			(unsigned long) I8042_DATA_REG,
+			(unsigned long) I8042_COMMAND_REG,
+			i8042_ports[i].irq);
+		serio_register_port(serio);
+		device_set_wakeup_capable(&serio->dev, true);
+
+		/*
+		 * On platforms using suspend-to-idle, allow the keyboard to
+		 * wake up the system from sleep by enabling keyboard wakeups
+		 * by default.  This is consistent with keyboard wakeup
+		 * behavior on many platforms using suspend-to-RAM (ACPI S3)
+		 * by default.
+		 */
+		if (pm_suspend_via_s2idle() && i == I8042_KBD_PORT_NO)
+			device_set_wakeup_enable(&serio->dev, true);
 	}
 }
 

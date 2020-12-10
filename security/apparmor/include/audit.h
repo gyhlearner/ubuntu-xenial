@@ -123,8 +123,13 @@ struct apparmor_audit_data {
 			struct aa_label *peer;
 			union {
 				struct {
+<<<<<<< HEAD
 					kuid_t ouid;
 					const char *target;
+=======
+					const char *target;
+					kuid_t ouid;
+>>>>>>> temp
 				} fs;
 				struct {
 					int type, protocol;
@@ -132,7 +137,18 @@ struct apparmor_audit_data {
 					void *addr;
 					int addrlen;
 				} net;
+<<<<<<< HEAD
 				int signal;
+=======
+				struct {
+					int rlim;
+					unsigned long max;
+				} rlim;
+				struct {
+					int signal;
+					int unmappedsig;
+				};
+>>>>>>> temp
 			};
 		};
 		struct {
@@ -141,10 +157,13 @@ struct apparmor_audit_data {
 			long pos;
 		} iface;
 		struct {
+<<<<<<< HEAD
 			int rlim;
 			unsigned long max;
 		} rlim;
 		struct {
+=======
+>>>>>>> temp
 			const char *src_name;
 			const char *type;
 			const char *trans;
@@ -155,7 +174,11 @@ struct apparmor_audit_data {
 };
 
 /* macros for dealing with  apparmor_audit_data structure */
+<<<<<<< HEAD
 #define aad(SA) (SA)->apparmor_audit_data
+=======
+#define aad(SA) ((SA)->apparmor_audit_data)
+>>>>>>> temp
 #define DEFINE_AUDIT_DATA(NAME, T, X)					\
 	/* TODO: cleanup audit init so we don't need _aad = {0,} */	\
 	struct apparmor_audit_data NAME ## _aad = { .op = (X), };	\

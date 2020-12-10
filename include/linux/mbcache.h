@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+/* SPDX-License-Identifier: GPL-2.0 */
+>>>>>>> temp
 #ifndef _LINUX_MBCACHE_H
 #define _LINUX_MBCACHE_H
 
@@ -19,15 +23,24 @@ struct mb_cache_entry {
 	u32			e_key;
 	u32			e_referenced:1;
 	u32			e_reusable:1;
+<<<<<<< HEAD
 	/* Block number of hashed block - stable during lifetime of the entry */
 	sector_t		e_block;
+=======
+	/* User provided value - stable during lifetime of the entry */
+	u64			e_value;
+>>>>>>> temp
 };
 
 struct mb_cache *mb_cache_create(int bucket_bits);
 void mb_cache_destroy(struct mb_cache *cache);
 
 int mb_cache_entry_create(struct mb_cache *cache, gfp_t mask, u32 key,
+<<<<<<< HEAD
 			  sector_t block, bool reusable);
+=======
+			  u64 value, bool reusable);
+>>>>>>> temp
 void __mb_cache_entry_free(struct mb_cache_entry *entry);
 static inline int mb_cache_entry_put(struct mb_cache *cache,
 				     struct mb_cache_entry *entry)
@@ -38,10 +51,16 @@ static inline int mb_cache_entry_put(struct mb_cache *cache,
 	return 1;
 }
 
+<<<<<<< HEAD
 void mb_cache_entry_delete_block(struct mb_cache *cache, u32 key,
 				  sector_t block);
 struct mb_cache_entry *mb_cache_entry_get(struct mb_cache *cache, u32 key,
 					  sector_t block);
+=======
+void mb_cache_entry_delete(struct mb_cache *cache, u32 key, u64 value);
+struct mb_cache_entry *mb_cache_entry_get(struct mb_cache *cache, u32 key,
+					  u64 value);
+>>>>>>> temp
 struct mb_cache_entry *mb_cache_entry_find_first(struct mb_cache *cache,
 						 u32 key);
 struct mb_cache_entry *mb_cache_entry_find_next(struct mb_cache *cache,

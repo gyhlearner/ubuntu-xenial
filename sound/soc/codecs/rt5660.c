@@ -527,10 +527,17 @@ static const char * const rt5660_data_select[] = {
 	"L/R", "R/L", "L/L", "R/R"
 };
 
+<<<<<<< HEAD
 static const SOC_ENUM_SINGLE_DECL(rt5660_if1_dac_enum,
 	RT5660_DIG_INF1_DATA, RT5660_IF1_DAC_IN_SFT, rt5660_data_select);
 
 static const SOC_ENUM_SINGLE_DECL(rt5660_if1_adc_enum,
+=======
+static SOC_ENUM_SINGLE_DECL(rt5660_if1_dac_enum,
+	RT5660_DIG_INF1_DATA, RT5660_IF1_DAC_IN_SFT, rt5660_data_select);
+
+static SOC_ENUM_SINGLE_DECL(rt5660_if1_adc_enum,
+>>>>>>> temp
 	RT5660_DIG_INF1_DATA, RT5660_IF1_ADC_IN_SFT, rt5660_data_select);
 
 static const struct snd_kcontrol_new rt5660_if1_dac_swap_mux =
@@ -1153,7 +1160,11 @@ static int rt5660_resume(struct snd_soc_codec *codec)
 	struct rt5660_priv *rt5660 = snd_soc_codec_get_drvdata(codec);
 
 	if (rt5660->pdata.poweroff_codec_in_suspend)
+<<<<<<< HEAD
 		usleep_range(350000, 400000);
+=======
+		msleep(350);
+>>>>>>> temp
 
 	regcache_cache_only(rt5660->regmap, false);
 	regcache_sync(rt5660->regmap);
@@ -1198,7 +1209,11 @@ static struct snd_soc_dai_driver rt5660_dai[] = {
 	},
 };
 
+<<<<<<< HEAD
 static struct snd_soc_codec_driver soc_codec_dev_rt5660 = {
+=======
+static const struct snd_soc_codec_driver soc_codec_dev_rt5660 = {
+>>>>>>> temp
 	.probe = rt5660_probe,
 	.remove = rt5660_remove,
 	.suspend = rt5660_suspend,

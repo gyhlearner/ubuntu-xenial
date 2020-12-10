@@ -2,12 +2,22 @@
 
 #define SIGUNKNOWN 0
 #define MAXMAPPED_SIG 35
+<<<<<<< HEAD
+=======
+#define MAXMAPPED_SIGNAME (MAXMAPPED_SIG + 1)
+#define SIGRT_BASE 128
+
+>>>>>>> temp
 /* provide a mapping of arch signal to internal signal # for mediation
  * those that are always an alias SIGCLD for SIGCLHD and SIGPOLL for SIGIO
  * map to the same entry those that may/or may not get a separate entry
  */
 static const int sig_map[MAXMAPPED_SIG] = {
+<<<<<<< HEAD
 	[0] = MAXMAPPED_SIG,	/* existance test */
+=======
+	[0] = MAXMAPPED_SIG,	/* existence test */
+>>>>>>> temp
 	[SIGHUP] = 1,
 	[SIGINT] = 2,
 	[SIGQUIT] = 3,
@@ -23,7 +33,13 @@ static const int sig_map[MAXMAPPED_SIG] = {
 	[SIGPIPE] = 13,
 	[SIGALRM] = 14,
 	[SIGTERM] = 15,
+<<<<<<< HEAD
 	[SIGSTKFLT] = 16,	/* -, 16, - */
+=======
+#ifdef SIGSTKFLT
+	[SIGSTKFLT] = 16,	/* -, 16, - */
+#endif
+>>>>>>> temp
 	[SIGCHLD] = 17,		/* 20, 17, 18.  SIGCHLD -, -, 18 */
 	[SIGCONT] = 18,		/* 19, 18, 25 */
 	[SIGSTOP] = 19,		/* 17, 19, 23 */
@@ -47,13 +63,22 @@ static const int sig_map[MAXMAPPED_SIG] = {
 #if defined(SIGLOST) && SIGPWR != SIGLOST		/* sparc */
 	[SIGLOST] = 33,		/* unused on Linux */
 #endif
+<<<<<<< HEAD
 #if defined(SIGLOST) && defined(SIGSYS) && SIGLOST != SIGSYS
+=======
+#if defined(SIGUNUSED) && \
+    defined(SIGLOST) && defined(SIGSYS) && SIGLOST != SIGSYS
+>>>>>>> temp
 	[SIGUNUSED] = 34,	/* -, 31, - */
 #endif
 };
 
 /* this table is ordered post sig_map[sig] mapping */
+<<<<<<< HEAD
 static const char *const sig_names[MAXMAPPED_SIG + 1] = {
+=======
+static const char *const sig_names[MAXMAPPED_SIGNAME] = {
+>>>>>>> temp
 	"unknown",
 	"hup",
 	"int",
@@ -90,6 +115,10 @@ static const char *const sig_names[MAXMAPPED_SIG + 1] = {
 	"lost",
 	"unused",
 
+<<<<<<< HEAD
 	"exists",	/* always last existance test mapped to MAXMAPPED_SIG */
+=======
+	"exists",	/* always last existence test mapped to MAXMAPPED_SIG */
+>>>>>>> temp
 };
 

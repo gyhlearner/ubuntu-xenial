@@ -25,6 +25,8 @@
 #include <linux/syscalls.h>
 #include <linux/uaccess.h>
 
+#include "posix-timers.h"
+
 static void delete_clock(struct kref *kref);
 
 /*
@@ -80,38 +82,6 @@ static unsigned int posix_clock_poll(struct file *fp, poll_table *wait)
 	put_posix_clock(clk);
 
 	return result;
-}
-
-static int posix_clock_fasync(int fd, struct file *fp, int on)
-{
-	struct posix_clock *clk = get_posix_clock(fp);
-	int err = 0;
-
-	if (!clk)
-		return -ENODEV;
-
-	if (clk->ops.fasync)
-		err = clk->ops.fasync(clk, fd, fp, on);
-
-	put_posix_clock(clk);
-
-	return err;
-}
-
-static int posix_clock_mmap(struct file *fp, struct vm_area_struct *vma)
-{
-	struct posix_clock *clk = get_posix_clock(fp);
-	int err = -ENODEV;
-
-	if (!clk)
-		return -ENODEV;
-
-	if (clk->ops.mmap)
-		err = clk->ops.mmap(clk, vma);
-
-	put_posix_clock(clk);
-
-	return err;
 }
 
 static long posix_clock_ioctl(struct file *fp,
@@ -199,8 +169,6 @@ static const struct file_operations posix_clock_file_operations = {
 	.unlocked_ioctl	= posix_clock_ioctl,
 	.open		= posix_clock_open,
 	.release	= posix_clock_release,
-	.fasync		= posix_clock_fasync,
-	.mmap		= posix_clock_mmap,
 #ifdef CONFIG_COMPAT
 	.compat_ioctl	= posix_clock_compat_ioctl,
 #endif
@@ -297,7 +265,7 @@ out:
 	return err;
 }
 
-static int pc_clock_gettime(clockid_t id, struct timespec *ts)
+static int pc_clock_gettime(clockid_t id, struct timespec64 *ts)
 {
 	struct posix_clock_desc cd;
 	struct timespec64 ts64;
@@ -319,7 +287,7 @@ static int pc_clock_gettime(clockid_t id, struct timespec *ts)
 	return err;
 }
 
-static int pc_clock_getres(clockid_t id, struct timespec *ts)
+static int pc_clock_getres(clockid_t id, struct timespec64 *ts)
 {
 	struct posix_clock_desc cd;
 	struct timespec64 ts64;
@@ -341,7 +309,7 @@ static int pc_clock_getres(clockid_t id, struct timespec *ts)
 	return err;
 }
 
-static int pc_clock_settime(clockid_t id, const struct timespec *ts)
+static int pc_clock_settime(clockid_t id, const struct timespec64 *ts)
 {
 	struct timespec64 ts64 = timespec_to_timespec64(*ts);
 	struct posix_clock_desc cd;
@@ -366,6 +334,7 @@ out:
 	return err;
 }
 
+<<<<<<< HEAD
 static int pc_timer_create(struct k_itimer *kit)
 {
 	clockid_t id = kit->it_clock;
@@ -449,12 +418,11 @@ static int pc_timer_settime(struct k_itimer *kit, int flags,
 }
 
 struct k_clock clock_posix_dynamic = {
+=======
+const struct k_clock clock_posix_dynamic = {
+>>>>>>> temp
 	.clock_getres	= pc_clock_getres,
 	.clock_set	= pc_clock_settime,
 	.clock_get	= pc_clock_gettime,
 	.clock_adj	= pc_clock_adjtime,
-	.timer_create	= pc_timer_create,
-	.timer_set	= pc_timer_settime,
-	.timer_del	= pc_timer_delete,
-	.timer_get	= pc_timer_gettime,
 };

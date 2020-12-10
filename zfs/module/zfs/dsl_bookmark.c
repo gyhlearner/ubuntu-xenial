@@ -12,8 +12,15 @@
  *
  * CDDL HEADER END
  */
+<<<<<<< HEAD
 /*
  * Copyright (c) 2013, 2014 by Delphix. All rights reserved.
+=======
+
+/*
+ * Copyright (c) 2013, 2014 by Delphix. All rights reserved.
+ * Copyright 2017 Nexenta Systems, Inc.
+>>>>>>> temp
  */
 
 #include <sys/zfs_context.h>
@@ -34,10 +41,17 @@ static int
 dsl_bookmark_hold_ds(dsl_pool_t *dp, const char *fullname,
     dsl_dataset_t **dsp, void *tag, char **shortnamep)
 {
+<<<<<<< HEAD
 	char buf[MAXNAMELEN];
 	char *hashp;
 
 	if (strlen(fullname) >= MAXNAMELEN)
+=======
+	char buf[ZFS_MAX_DATASET_NAME_LEN];
+	char *hashp;
+
+	if (strlen(fullname) >= ZFS_MAX_DATASET_NAME_LEN)
+>>>>>>> temp
 		return (SET_ERROR(ENAMETOOLONG));
 	hashp = strchr(fullname, '#');
 	if (hashp == NULL)
@@ -59,16 +73,24 @@ dsl_dataset_bmark_lookup(dsl_dataset_t *ds, const char *shortname,
 {
 	objset_t *mos = ds->ds_dir->dd_pool->dp_meta_objset;
 	uint64_t bmark_zapobj = ds->ds_bookmarks;
+<<<<<<< HEAD
 	matchtype_t mt;
+=======
+	matchtype_t mt = 0;
+>>>>>>> temp
 	int err;
 
 	if (bmark_zapobj == 0)
 		return (SET_ERROR(ESRCH));
 
 	if (dsl_dataset_phys(ds)->ds_flags & DS_FLAG_CI_DATASET)
+<<<<<<< HEAD
 		mt = MT_FIRST;
 	else
 		mt = MT_EXACT;
+=======
+		mt = MT_NORMALIZE;
+>>>>>>> temp
 
 	err = zap_lookup_norm(mos, bmark_zapobj, shortname, sizeof (uint64_t),
 	    sizeof (*bmark_phys) / sizeof (uint64_t), bmark_phys, mt,
@@ -342,12 +364,19 @@ dsl_dataset_bookmark_remove(dsl_dataset_t *ds, const char *name, dmu_tx_t *tx)
 {
 	objset_t *mos = ds->ds_dir->dd_pool->dp_meta_objset;
 	uint64_t bmark_zapobj = ds->ds_bookmarks;
+<<<<<<< HEAD
 	matchtype_t mt;
 
 	if (dsl_dataset_phys(ds)->ds_flags & DS_FLAG_CI_DATASET)
 		mt = MT_FIRST;
 	else
 		mt = MT_EXACT;
+=======
+	matchtype_t mt = 0;
+
+	if (dsl_dataset_phys(ds)->ds_flags & DS_FLAG_CI_DATASET)
+		mt = MT_NORMALIZE;
+>>>>>>> temp
 
 	return (zap_remove_norm(mos, bmark_zapobj, name, mt, tx));
 }
@@ -360,6 +389,12 @@ dsl_bookmark_destroy_check(void *arg, dmu_tx_t *tx)
 	int rv = 0;
 	nvpair_t *pair;
 
+<<<<<<< HEAD
+=======
+	ASSERT(nvlist_empty(dbda->dbda_success));
+	ASSERT(nvlist_empty(dbda->dbda_errors));
+
+>>>>>>> temp
 	if (!spa_feature_is_enabled(dp->dp_spa, SPA_FEATURE_BOOKMARKS))
 		return (0);
 
@@ -389,7 +424,14 @@ dsl_bookmark_destroy_check(void *arg, dmu_tx_t *tx)
 			}
 		}
 		if (error == 0) {
+<<<<<<< HEAD
 			fnvlist_add_boolean(dbda->dbda_success, fullname);
+=======
+			if (dmu_tx_is_syncing(tx)) {
+				fnvlist_add_boolean(dbda->dbda_success,
+				    fullname);
+			}
+>>>>>>> temp
 		} else {
 			fnvlist_add_int32(dbda->dbda_errors, fullname, error);
 			rv = error;

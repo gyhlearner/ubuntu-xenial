@@ -63,30 +63,82 @@ static const struct i40evf_stats i40evf_gstrings_stats[] = {
 #define I40EVF_STATS_LEN(_dev) \
 	(I40EVF_GLOBAL_STATS_LEN + I40EVF_QUEUE_STATS_LEN(_dev))
 
+<<<<<<< HEAD
 static const char i40evf_priv_flags_strings[][ETH_GSTRING_LEN] = {
 	"packet-split",
 };
 
 #define I40EVF_PRIV_FLAGS_STR_LEN ARRAY_SIZE(i40evf_priv_flags_strings)
+=======
+/* For now we have one and only one private flag and it is only defined
+ * when we have support for the SKIP_CPU_SYNC DMA attribute.  Instead
+ * of leaving all this code sitting around empty we will strip it unless
+ * our one private flag is actually available.
+ */
+struct i40evf_priv_flags {
+	char flag_string[ETH_GSTRING_LEN];
+	u32 flag;
+	bool read_only;
+};
+
+#define I40EVF_PRIV_FLAG(_name, _flag, _read_only) { \
+	.flag_string = _name, \
+	.flag = _flag, \
+	.read_only = _read_only, \
+}
+
+static const struct i40evf_priv_flags i40evf_gstrings_priv_flags[] = {
+	I40EVF_PRIV_FLAG("legacy-rx", I40EVF_FLAG_LEGACY_RX, 0),
+};
+
+#define I40EVF_PRIV_FLAGS_STR_LEN ARRAY_SIZE(i40evf_gstrings_priv_flags)
+>>>>>>> temp
 
 /**
- * i40evf_get_settings - Get Link Speed and Duplex settings
+ * i40evf_get_link_ksettings - Get Link Speed and Duplex settings
  * @netdev: network interface device structure
- * @ecmd: ethtool command
+ * @cmd: ethtool command
  *
  * Reports speed/duplex settings. Because this is a VF, we don't know what
  * kind of link we really have, so we fake it.
  **/
-static int i40evf_get_settings(struct net_device *netdev,
-			       struct ethtool_cmd *ecmd)
+static int i40evf_get_link_ksettings(struct net_device *netdev,
+				     struct ethtool_link_ksettings *cmd)
 {
-	/* In the future the VF will be able to query the PF for
-	 * some information - for now use a dummy value
-	 */
-	ecmd->supported = 0;
-	ecmd->autoneg = AUTONEG_DISABLE;
-	ecmd->transceiver = XCVR_DUMMY1;
-	ecmd->port = PORT_NONE;
+	struct i40evf_adapter *adapter = netdev_priv(netdev);
+
+	ethtool_link_ksettings_zero_link_mode(cmd, supported);
+	cmd->base.autoneg = AUTONEG_DISABLE;
+	cmd->base.port = PORT_NONE;
+	/* Set speed and duplex */
+	switch (adapter->link_speed) {
+	case I40E_LINK_SPEED_40GB:
+		cmd->base.speed = SPEED_40000;
+		break;
+	case I40E_LINK_SPEED_25GB:
+#ifdef SPEED_25000
+		cmd->base.speed = SPEED_25000;
+#else
+		netdev_info(netdev,
+			    "Speed is 25G, display not supported by this version of ethtool.\n");
+#endif
+		break;
+	case I40E_LINK_SPEED_20GB:
+		cmd->base.speed = SPEED_20000;
+		break;
+	case I40E_LINK_SPEED_10GB:
+		cmd->base.speed = SPEED_10000;
+		break;
+	case I40E_LINK_SPEED_1GB:
+		cmd->base.speed = SPEED_1000;
+		break;
+	case I40E_LINK_SPEED_100MB:
+		cmd->base.speed = SPEED_100;
+		break;
+	default:
+		break;
+	}
+	cmd->base.duplex = DUPLEX_FULL;
 
 	return 0;
 }
@@ -121,7 +173,7 @@ static void i40evf_get_ethtool_stats(struct net_device *netdev,
 				     struct ethtool_stats *stats, u64 *data)
 {
 	struct i40evf_adapter *adapter = netdev_priv(netdev);
-	int i, j;
+	unsigned int i, j;
 	char *p;
 
 	for (i = 0; i < I40EVF_GLOBAL_STATS_LEN; i++) {
@@ -153,7 +205,7 @@ static void i40evf_get_strings(struct net_device *netdev, u32 sset, u8 *data)
 	int i;
 
 	if (sset == ETH_SS_STATS) {
-		for (i = 0; i < I40EVF_GLOBAL_STATS_LEN; i++) {
+		for (i = 0; i < (int)I40EVF_GLOBAL_STATS_LEN; i++) {
 			memcpy(p, i40evf_gstrings_stats[i].stat_string,
 			       ETH_GSTRING_LEN);
 			p += ETH_GSTRING_LEN;
@@ -172,11 +224,108 @@ static void i40evf_get_strings(struct net_device *netdev, u32 sset, u8 *data)
 		}
 	} else if (sset == ETH_SS_PRIV_FLAGS) {
 		for (i = 0; i < I40EVF_PRIV_FLAGS_STR_LEN; i++) {
+<<<<<<< HEAD
 			memcpy(data, i40evf_priv_flags_strings[i],
 			       ETH_GSTRING_LEN);
 			data += ETH_GSTRING_LEN;
+=======
+			snprintf(p, ETH_GSTRING_LEN, "%s",
+				 i40evf_gstrings_priv_flags[i].flag_string);
+			p += ETH_GSTRING_LEN;
 		}
 	}
+}
+
+/**
+ * i40evf_get_priv_flags - report device private flags
+ * @dev: network interface device structure
+ *
+ * The get string set count and the string set should be matched for each
+ * flag returned.  Add new strings for each flag to the i40e_gstrings_priv_flags
+ * array.
+ *
+ * Returns a u32 bitmap of flags.
+ **/
+static u32 i40evf_get_priv_flags(struct net_device *netdev)
+{
+	struct i40evf_adapter *adapter = netdev_priv(netdev);
+	u32 i, ret_flags = 0;
+
+	for (i = 0; i < I40EVF_PRIV_FLAGS_STR_LEN; i++) {
+		const struct i40evf_priv_flags *priv_flags;
+
+		priv_flags = &i40evf_gstrings_priv_flags[i];
+
+		if (priv_flags->flag & adapter->flags)
+			ret_flags |= BIT(i);
+	}
+
+	return ret_flags;
+}
+
+/**
+ * i40evf_set_priv_flags - set private flags
+ * @dev: network interface device structure
+ * @flags: bit flags to be set
+ **/
+static int i40evf_set_priv_flags(struct net_device *netdev, u32 flags)
+{
+	struct i40evf_adapter *adapter = netdev_priv(netdev);
+	u32 orig_flags, new_flags, changed_flags;
+	u32 i;
+
+	orig_flags = READ_ONCE(adapter->flags);
+	new_flags = orig_flags;
+
+	for (i = 0; i < I40EVF_PRIV_FLAGS_STR_LEN; i++) {
+		const struct i40evf_priv_flags *priv_flags;
+
+		priv_flags = &i40evf_gstrings_priv_flags[i];
+
+		if (flags & BIT(i))
+			new_flags |= priv_flags->flag;
+		else
+			new_flags &= ~(priv_flags->flag);
+
+		if (priv_flags->read_only &&
+		    ((orig_flags ^ new_flags) & ~BIT(i)))
+			return -EOPNOTSUPP;
+	}
+
+	/* Before we finalize any flag changes, any checks which we need to
+	 * perform to determine if the new flags will be supported should go
+	 * here...
+	 */
+
+	/* Compare and exchange the new flags into place. If we failed, that
+	 * is if cmpxchg returns anything but the old value, this means
+	 * something else must have modified the flags variable since we
+	 * copied it. We'll just punt with an error and log something in the
+	 * message buffer.
+	 */
+	if (cmpxchg(&adapter->flags, orig_flags, new_flags) != orig_flags) {
+		dev_warn(&adapter->pdev->dev,
+			 "Unable to update adapter->flags as it was modified by another thread...\n");
+		return -EAGAIN;
+	}
+
+	changed_flags = orig_flags ^ new_flags;
+
+	/* Process any additional changes needed as a result of flag changes.
+	 * The changed_flags value reflects the list of bits that were changed
+	 * in the code above.
+	 */
+
+	/* issue a reset to force legacy-rx change to take effect */
+	if (changed_flags & I40EVF_FLAG_LEGACY_RX) {
+		if (netif_running(netdev)) {
+			adapter->flags |= I40EVF_FLAG_RESET_NEEDED;
+			schedule_work(&adapter->reset_task);
+>>>>>>> temp
+		}
+	}
+
+	return 0;
 }
 
 /**
@@ -291,78 +440,109 @@ static int i40evf_set_ringparam(struct net_device *netdev,
 }
 
 /**
+ * __i40evf_get_coalesce - get per-queue coalesce settings
+ * @netdev: the netdev to check
+ * @ec: ethtool coalesce data structure
+ * @queue: which queue to pick
+ *
+ * Gets the per-queue settings for coalescence. Specifically Rx and Tx usecs
+ * are per queue. If queue is <0 then we default to queue 0 as the
+ * representative value.
+ **/
+static int __i40evf_get_coalesce(struct net_device *netdev,
+				 struct ethtool_coalesce *ec,
+				 int queue)
+{
+	struct i40evf_adapter *adapter = netdev_priv(netdev);
+	struct i40e_vsi *vsi = &adapter->vsi;
+	struct i40e_ring *rx_ring, *tx_ring;
+
+	ec->tx_max_coalesced_frames = vsi->work_limit;
+	ec->rx_max_coalesced_frames = vsi->work_limit;
+
+	/* Rx and Tx usecs per queue value. If user doesn't specify the
+	 * queue, return queue 0's value to represent.
+	 */
+	if (queue < 0)
+		queue = 0;
+	else if (queue >= adapter->num_active_queues)
+		return -EINVAL;
+
+	rx_ring = &adapter->rx_rings[queue];
+	tx_ring = &adapter->tx_rings[queue];
+
+	if (ITR_IS_DYNAMIC(rx_ring->rx_itr_setting))
+		ec->use_adaptive_rx_coalesce = 1;
+
+	if (ITR_IS_DYNAMIC(tx_ring->tx_itr_setting))
+		ec->use_adaptive_tx_coalesce = 1;
+
+	ec->rx_coalesce_usecs = rx_ring->rx_itr_setting & ~I40E_ITR_DYNAMIC;
+	ec->tx_coalesce_usecs = tx_ring->tx_itr_setting & ~I40E_ITR_DYNAMIC;
+
+	return 0;
+}
+
+/**
  * i40evf_get_coalesce - Get interrupt coalescing settings
  * @netdev: network interface device structure
  * @ec: ethtool coalesce structure
  *
  * Returns current coalescing settings. This is referred to elsewhere in the
  * driver as Interrupt Throttle Rate, as this is how the hardware describes
- * this functionality.
+ * this functionality. Note that if per-queue settings have been modified this
+ * only represents the settings of queue 0.
  **/
 static int i40evf_get_coalesce(struct net_device *netdev,
 			       struct ethtool_coalesce *ec)
 {
-	struct i40evf_adapter *adapter = netdev_priv(netdev);
-	struct i40e_vsi *vsi = &adapter->vsi;
-
-	ec->tx_max_coalesced_frames = vsi->work_limit;
-	ec->rx_max_coalesced_frames = vsi->work_limit;
-
-	if (ITR_IS_DYNAMIC(vsi->rx_itr_setting))
-		ec->use_adaptive_rx_coalesce = 1;
-
-	if (ITR_IS_DYNAMIC(vsi->tx_itr_setting))
-		ec->use_adaptive_tx_coalesce = 1;
-
-	ec->rx_coalesce_usecs = vsi->rx_itr_setting & ~I40E_ITR_DYNAMIC;
-	ec->tx_coalesce_usecs = vsi->tx_itr_setting & ~I40E_ITR_DYNAMIC;
-
-	return 0;
+	return __i40evf_get_coalesce(netdev, ec, -1);
 }
 
 /**
- * i40evf_set_coalesce - Set interrupt coalescing settings
- * @netdev: network interface device structure
- * @ec: ethtool coalesce structure
+ * i40evf_get_per_queue_coalesce - get coalesce values for specific queue
+ * @netdev: netdev to read
+ * @ec: coalesce settings from ethtool
+ * @queue: the queue to read
  *
- * Change current coalescing settings.
+ * Read specific queue's coalesce settings.
  **/
-static int i40evf_set_coalesce(struct net_device *netdev,
-			       struct ethtool_coalesce *ec)
+static int i40evf_get_per_queue_coalesce(struct net_device *netdev,
+					 u32 queue,
+					 struct ethtool_coalesce *ec)
 {
-	struct i40evf_adapter *adapter = netdev_priv(netdev);
-	struct i40e_hw *hw = &adapter->hw;
+	return __i40evf_get_coalesce(netdev, ec, queue);
+}
+
+/**
+ * i40evf_set_itr_per_queue - set ITR values for specific queue
+ * @vsi: the VSI to set values for
+ * @ec: coalesce settings from ethtool
+ * @queue: the queue to modify
+ *
+ * Change the ITR settings for a specific queue.
+ **/
+static void i40evf_set_itr_per_queue(struct i40evf_adapter *adapter,
+				     struct ethtool_coalesce *ec,
+				     int queue)
+{
 	struct i40e_vsi *vsi = &adapter->vsi;
+	struct i40e_hw *hw = &adapter->hw;
 	struct i40e_q_vector *q_vector;
-	int i;
+	u16 vector;
 
-	if (ec->tx_max_coalesced_frames_irq || ec->rx_max_coalesced_frames_irq)
-		vsi->work_limit = ec->tx_max_coalesced_frames_irq;
-
-	if ((ec->rx_coalesce_usecs >= (I40E_MIN_ITR << 1)) &&
-	    (ec->rx_coalesce_usecs <= (I40E_MAX_ITR << 1)))
-		vsi->rx_itr_setting = ec->rx_coalesce_usecs;
-
-	else
-		return -EINVAL;
-
-	if ((ec->tx_coalesce_usecs >= (I40E_MIN_ITR << 1)) &&
-	    (ec->tx_coalesce_usecs <= (I40E_MAX_ITR << 1)))
-		vsi->tx_itr_setting = ec->tx_coalesce_usecs;
-	else if (ec->use_adaptive_tx_coalesce)
-		vsi->tx_itr_setting = (I40E_ITR_DYNAMIC |
-				       ITR_REG_TO_USEC(I40E_ITR_RX_DEF));
-	else
-		return -EINVAL;
+	adapter->rx_rings[queue].rx_itr_setting = ec->rx_coalesce_usecs;
+	adapter->tx_rings[queue].tx_itr_setting = ec->tx_coalesce_usecs;
 
 	if (ec->use_adaptive_rx_coalesce)
-		vsi->rx_itr_setting |= I40E_ITR_DYNAMIC;
+		adapter->rx_rings[queue].rx_itr_setting |= I40E_ITR_DYNAMIC;
 	else
-		vsi->rx_itr_setting &= ~I40E_ITR_DYNAMIC;
+		adapter->rx_rings[queue].rx_itr_setting &= ~I40E_ITR_DYNAMIC;
 
 	if (ec->use_adaptive_tx_coalesce)
-		vsi->tx_itr_setting |= I40E_ITR_DYNAMIC;
+		adapter->tx_rings[queue].tx_itr_setting |= I40E_ITR_DYNAMIC;
 	else
+<<<<<<< HEAD
 		vsi->tx_itr_setting &= ~I40E_ITR_DYNAMIC;
 
 	for (i = 0; i < adapter->num_msix_vectors - NONQ_VECS; i++) {
@@ -373,65 +553,104 @@ static int i40evf_set_coalesce(struct net_device *netdev,
 		wr32(hw, I40E_VFINT_ITRN1(1, i), q_vector->tx.itr);
 		i40e_flush(hw);
 	}
+=======
+		adapter->tx_rings[queue].tx_itr_setting &= ~I40E_ITR_DYNAMIC;
+>>>>>>> temp
+
+	q_vector = adapter->rx_rings[queue].q_vector;
+	q_vector->rx.itr = ITR_TO_REG(adapter->rx_rings[queue].rx_itr_setting);
+	vector = vsi->base_vector + q_vector->v_idx;
+	wr32(hw, I40E_VFINT_ITRN1(I40E_RX_ITR, vector - 1), q_vector->rx.itr);
+
+	q_vector = adapter->tx_rings[queue].q_vector;
+	q_vector->tx.itr = ITR_TO_REG(adapter->tx_rings[queue].tx_itr_setting);
+	vector = vsi->base_vector + q_vector->v_idx;
+	wr32(hw, I40E_VFINT_ITRN1(I40E_TX_ITR, vector - 1), q_vector->tx.itr);
+
+	i40e_flush(hw);
+}
+
+/**
+ * __i40evf_set_coalesce - set coalesce settings for particular queue
+ * @netdev: the netdev to change
+ * @ec: ethtool coalesce settings
+ * @queue: the queue to change
+ *
+ * Sets the coalesce settings for a particular queue.
+ **/
+static int __i40evf_set_coalesce(struct net_device *netdev,
+				 struct ethtool_coalesce *ec,
+				 int queue)
+{
+	struct i40evf_adapter *adapter = netdev_priv(netdev);
+	struct i40e_vsi *vsi = &adapter->vsi;
+	int i;
+
+	if (ec->tx_max_coalesced_frames_irq || ec->rx_max_coalesced_frames_irq)
+		vsi->work_limit = ec->tx_max_coalesced_frames_irq;
+
+	if (ec->rx_coalesce_usecs == 0) {
+		if (ec->use_adaptive_rx_coalesce)
+			netif_info(adapter, drv, netdev, "rx-usecs=0, need to disable adaptive-rx for a complete disable\n");
+	} else if ((ec->rx_coalesce_usecs < (I40E_MIN_ITR << 1)) ||
+		   (ec->rx_coalesce_usecs > (I40E_MAX_ITR << 1))) {
+		netif_info(adapter, drv, netdev, "Invalid value, rx-usecs range is 0-8160\n");
+		return -EINVAL;
+	}
+
+	else
+	if (ec->tx_coalesce_usecs == 0) {
+		if (ec->use_adaptive_tx_coalesce)
+			netif_info(adapter, drv, netdev, "tx-usecs=0, need to disable adaptive-tx for a complete disable\n");
+	} else if ((ec->tx_coalesce_usecs < (I40E_MIN_ITR << 1)) ||
+		   (ec->tx_coalesce_usecs > (I40E_MAX_ITR << 1))) {
+		netif_info(adapter, drv, netdev, "Invalid value, tx-usecs range is 0-8160\n");
+		return -EINVAL;
+	}
+
+	/* Rx and Tx usecs has per queue value. If user doesn't specify the
+	 * queue, apply to all queues.
+	 */
+	if (queue < 0) {
+		for (i = 0; i < adapter->num_active_queues; i++)
+			i40evf_set_itr_per_queue(adapter, ec, i);
+	} else if (queue < adapter->num_active_queues) {
+		i40evf_set_itr_per_queue(adapter, ec, queue);
+	} else {
+		netif_info(adapter, drv, netdev, "Invalid queue value, queue range is 0 - %d\n",
+			   adapter->num_active_queues - 1);
+		return -EINVAL;
+	}
 
 	return 0;
 }
 
 /**
- * i40e_get_rss_hash_opts - Get RSS hash Input Set for each flow type
- * @adapter: board private structure
- * @cmd: ethtool rxnfc command
+ * i40evf_set_coalesce - Set interrupt coalescing settings
+ * @netdev: network interface device structure
+ * @ec: ethtool coalesce structure
  *
- * Returns Success if the flow is supported, else Invalid Input.
+ * Change current coalescing settings for every queue.
  **/
-static int i40evf_get_rss_hash_opts(struct i40evf_adapter *adapter,
-				    struct ethtool_rxnfc *cmd)
+static int i40evf_set_coalesce(struct net_device *netdev,
+			       struct ethtool_coalesce *ec)
 {
-	struct i40e_hw *hw = &adapter->hw;
-	u64 hena = (u64)rd32(hw, I40E_VFQF_HENA(0)) |
-		   ((u64)rd32(hw, I40E_VFQF_HENA(1)) << 32);
+	return __i40evf_set_coalesce(netdev, ec, -1);
+}
 
-	/* We always hash on IP src and dest addresses */
-	cmd->data = RXH_IP_SRC | RXH_IP_DST;
-
-	switch (cmd->flow_type) {
-	case TCP_V4_FLOW:
-		if (hena & BIT_ULL(I40E_FILTER_PCTYPE_NONF_IPV4_TCP))
-			cmd->data |= RXH_L4_B_0_1 | RXH_L4_B_2_3;
-		break;
-	case UDP_V4_FLOW:
-		if (hena & BIT_ULL(I40E_FILTER_PCTYPE_NONF_IPV4_UDP))
-			cmd->data |= RXH_L4_B_0_1 | RXH_L4_B_2_3;
-		break;
-
-	case SCTP_V4_FLOW:
-	case AH_ESP_V4_FLOW:
-	case AH_V4_FLOW:
-	case ESP_V4_FLOW:
-	case IPV4_FLOW:
-		break;
-
-	case TCP_V6_FLOW:
-		if (hena & BIT_ULL(I40E_FILTER_PCTYPE_NONF_IPV6_TCP))
-			cmd->data |= RXH_L4_B_0_1 | RXH_L4_B_2_3;
-		break;
-	case UDP_V6_FLOW:
-		if (hena & BIT_ULL(I40E_FILTER_PCTYPE_NONF_IPV6_UDP))
-			cmd->data |= RXH_L4_B_0_1 | RXH_L4_B_2_3;
-		break;
-
-	case SCTP_V6_FLOW:
-	case AH_ESP_V6_FLOW:
-	case AH_V6_FLOW:
-	case ESP_V6_FLOW:
-	case IPV6_FLOW:
-		break;
-	default:
-		cmd->data = 0;
-		return -EINVAL;
-	}
-
-	return 0;
+/**
+ * i40evf_set_per_queue_coalesce - set specific queue's coalesce settings
+ * @netdev: the netdev to change
+ * @ec: ethtool's coalesce settings
+ * @queue: the queue to modify
+ *
+ * Modifies a specific queue's coalesce settings.
+ */
+static int i40evf_set_per_queue_coalesce(struct net_device *netdev,
+					 u32 queue,
+					 struct ethtool_coalesce *ec)
+{
+	return __i40evf_set_coalesce(netdev, ec, queue);
 }
 
 /**
@@ -454,7 +673,8 @@ static int i40evf_get_rxnfc(struct net_device *netdev,
 		ret = 0;
 		break;
 	case ETHTOOL_GRXFH:
-		ret = i40evf_get_rss_hash_opts(adapter, cmd);
+		netdev_info(netdev,
+			    "RSS hash info is not available to vf, use pf.\n");
 		break;
 	default:
 		break;
@@ -462,17 +682,18 @@ static int i40evf_get_rxnfc(struct net_device *netdev,
 
 	return ret;
 }
-
 /**
- * i40evf_set_rss_hash_opt - Enable/Disable flow types for RSS hash
- * @adapter: board private structure
- * @cmd: ethtool rxnfc command
+ * i40evf_get_channels: get the number of channels supported by the device
+ * @netdev: network interface device structure
+ * @ch: channel information structure
  *
- * Returns Success if the flow input set is supported.
+ * For the purposes of our device, we only use combined channels, i.e. a tx/rx
+ * queue pair. Report one extra channel to match our "other" MSI-X vector.
  **/
-static int i40evf_set_rss_hash_opt(struct i40evf_adapter *adapter,
-				   struct ethtool_rxnfc *nfc)
+static void i40evf_get_channels(struct net_device *netdev,
+				struct ethtool_channels *ch)
 {
+<<<<<<< HEAD
 	struct i40e_hw *hw = &adapter->hw;
 	u32 flags = adapter->vf_res->vf_offload_flags;
 
@@ -569,58 +790,65 @@ static int i40evf_set_rss_hash_opt(struct i40evf_adapter *adapter,
 	default:
 		return -EINVAL;
 	}
-
-	wr32(hw, I40E_VFQF_HENA(0), (u32)hena);
-	wr32(hw, I40E_VFQF_HENA(1), (u32)(hena >> 32));
-	i40e_flush(hw);
-
-	return 0;
-}
-
-/**
- * i40evf_set_rxnfc - command to set RX flow classification rules
- * @netdev: network interface device structure
- * @cmd: ethtool rxnfc command
- *
- * Returns Success if the command is supported.
- **/
-static int i40evf_set_rxnfc(struct net_device *netdev,
-			    struct ethtool_rxnfc *cmd)
-{
-	struct i40evf_adapter *adapter = netdev_priv(netdev);
-	int ret = -EOPNOTSUPP;
-
-	switch (cmd->cmd) {
-	case ETHTOOL_SRXFH:
-		ret = i40evf_set_rss_hash_opt(adapter, cmd);
-		break;
-	default:
-		break;
-	}
-
-	return ret;
-}
-
-/**
- * i40evf_get_channels: get the number of channels supported by the device
- * @netdev: network interface device structure
- * @ch: channel information structure
- *
- * For the purposes of our device, we only use combined channels, i.e. a tx/rx
- * queue pair. Report one extra channel to match our "other" MSI-X vector.
- **/
-static void i40evf_get_channels(struct net_device *netdev,
-				struct ethtool_channels *ch)
-{
+=======
 	struct i40evf_adapter *adapter = netdev_priv(netdev);
 
 	/* Report maximum channels */
-	ch->max_combined = adapter->num_active_queues;
+	ch->max_combined = I40EVF_MAX_REQ_QUEUES;
+>>>>>>> temp
 
 	ch->max_other = NONQ_VECS;
 	ch->other_count = NONQ_VECS;
 
 	ch->combined_count = adapter->num_active_queues;
+}
+
+/**
+ * i40evf_set_channels: set the new channel count
+ * @netdev: network interface device structure
+ * @ch: channel information structure
+ *
+ * Negotiate a new number of channels with the PF then do a reset.  During
+ * reset we'll realloc queues and fix the RSS table.  Returns 0 on success,
+ * negative on failure.
+ **/
+static int i40evf_set_channels(struct net_device *netdev,
+			       struct ethtool_channels *ch)
+{
+	struct i40evf_adapter *adapter = netdev_priv(netdev);
+	int num_req = ch->combined_count;
+
+	if (num_req != adapter->num_active_queues &&
+	    !(adapter->vf_res->vf_cap_flags &
+	      VIRTCHNL_VF_OFFLOAD_REQ_QUEUES)) {
+		dev_info(&adapter->pdev->dev, "PF is not capable of queue negotiation.\n");
+		return -EINVAL;
+	}
+
+	/* All of these should have already been checked by ethtool before this
+	 * even gets to us, but just to be sure.
+	 */
+	if (num_req <= 0 || num_req > I40EVF_MAX_REQ_QUEUES)
+		return -EINVAL;
+
+	if (ch->rx_count || ch->tx_count || ch->other_count != NONQ_VECS)
+		return -EINVAL;
+
+	adapter->num_req_queues = num_req;
+	return i40evf_request_queues(adapter, num_req);
+}
+
+/**
+ * i40evf_get_rxfh_key_size - get the RSS hash key size
+ * @netdev: network interface device structure
+ *
+ * Returns the table size.
+ **/
+static u32 i40evf_get_rxfh_key_size(struct net_device *netdev)
+{
+	struct i40evf_adapter *adapter = netdev_priv(netdev);
+
+	return adapter->rss_key_size;
 }
 
 /**
@@ -631,7 +859,9 @@ static void i40evf_get_channels(struct net_device *netdev,
  **/
 static u32 i40evf_get_rxfh_indir_size(struct net_device *netdev)
 {
-	return (I40E_VFQF_HLUT_MAX_INDEX + 1) * 4;
+	struct i40evf_adapter *adapter = netdev_priv(netdev);
+
+	return adapter->rss_lut_size;
 }
 
 /**
@@ -646,9 +876,12 @@ static int i40evf_get_rxfh(struct net_device *netdev, u32 *indir, u8 *key,
 			   u8 *hfunc)
 {
 	struct i40evf_adapter *adapter = netdev_priv(netdev);
+<<<<<<< HEAD
 	struct i40e_vsi *vsi = &adapter->vsi;
 	u8 *seed = NULL, *lut;
 	int ret;
+=======
+>>>>>>> temp
 	u16 i;
 
 	if (hfunc)
@@ -656,6 +889,7 @@ static int i40evf_get_rxfh(struct net_device *netdev, u32 *indir, u8 *key,
 	if (!indir)
 		return 0;
 
+<<<<<<< HEAD
 	seed = key;
 
 	lut = kzalloc(I40EVF_HLUT_ARRAY_SIZE, GFP_KERNEL);
@@ -674,6 +908,15 @@ out:
 	kfree(lut);
 
 	return ret;
+=======
+	memcpy(key, adapter->rss_key, adapter->rss_key_size);
+
+	/* Each 32 bits pointed by 'indir' is stored with a lut entry */
+	for (i = 0; i < adapter->rss_lut_size; i++)
+		indir[i] = (u32)adapter->rss_lut[i];
+
+	return 0;
+>>>>>>> temp
 }
 
 /**
@@ -689,8 +932,11 @@ static int i40evf_set_rxfh(struct net_device *netdev, const u32 *indir,
 			   const u8 *key, const u8 hfunc)
 {
 	struct i40evf_adapter *adapter = netdev_priv(netdev);
+<<<<<<< HEAD
 	struct i40e_vsi *vsi = &adapter->vsi;
 	u8 *seed = NULL;
+=======
+>>>>>>> temp
 	u16 i;
 
 	/* We do not allow change in unsupported parameters */
@@ -701,6 +947,7 @@ static int i40evf_set_rxfh(struct net_device *netdev, const u32 *indir,
 		return 0;
 
 	if (key) {
+<<<<<<< HEAD
 		if (!vsi->rss_hkey_user) {
 			vsi->rss_hkey_user = kzalloc(I40EVF_HKEY_ARRAY_SIZE,
 						     GFP_KERNEL);
@@ -771,10 +1018,19 @@ static int i40evf_set_priv_flags(struct net_device *dev, u32 flags)
 		i40evf_schedule_reset(adapter);
 
 	return 0;
+=======
+		memcpy(adapter->rss_key, key, adapter->rss_key_size);
+	}
+
+	/* Each 32 bits pointed by 'indir' is stored with a lut entry */
+	for (i = 0; i < adapter->rss_lut_size; i++)
+		adapter->rss_lut[i] = (u8)(indir[i]);
+
+	return i40evf_config_rss(adapter);
+>>>>>>> temp
 }
 
 static const struct ethtool_ops i40evf_ethtool_ops = {
-	.get_settings		= i40evf_get_settings,
 	.get_drvinfo		= i40evf_get_drvinfo,
 	.get_link		= ethtool_op_get_link,
 	.get_ringparam		= i40evf_get_ringparam,
@@ -788,12 +1044,16 @@ static const struct ethtool_ops i40evf_ethtool_ops = {
 	.set_msglevel		= i40evf_set_msglevel,
 	.get_coalesce		= i40evf_get_coalesce,
 	.set_coalesce		= i40evf_set_coalesce,
+	.get_per_queue_coalesce = i40evf_get_per_queue_coalesce,
+	.set_per_queue_coalesce = i40evf_set_per_queue_coalesce,
 	.get_rxnfc		= i40evf_get_rxnfc,
-	.set_rxnfc		= i40evf_set_rxnfc,
 	.get_rxfh_indir_size	= i40evf_get_rxfh_indir_size,
 	.get_rxfh		= i40evf_get_rxfh,
 	.set_rxfh		= i40evf_set_rxfh,
 	.get_channels		= i40evf_get_channels,
+	.set_channels		= i40evf_set_channels,
+	.get_rxfh_key_size	= i40evf_get_rxfh_key_size,
+	.get_link_ksettings	= i40evf_get_link_ksettings,
 };
 
 /**

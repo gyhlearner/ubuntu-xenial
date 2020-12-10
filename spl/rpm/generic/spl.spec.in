@@ -28,11 +28,16 @@ make install DESTDIR=%{?buildroot}
 
 %files
 %doc AUTHORS COPYING DISCLAIMER
+<<<<<<< HEAD
+=======
+%{_bindir}/*
+>>>>>>> temp
 %{_sbindir}/*
 %{_mandir}/man1/*
 %{_mandir}/man5/*
 
 %changelog
+<<<<<<< HEAD
 * Tue Mar 22 2016 Ned Bass <bass6@llnl.gov> - 0.6.5.6-1
 - Remove artificial architecture restrictions in packaging
 - Add support for s390[x] zfsonlinux/spl#537
@@ -69,3 +74,23 @@ make install DESTDIR=%{?buildroot}
 - Released 0.6.2-1
 * Fri Mar 22 2013 Brian Behlendorf <behlendorf1@llnl.gov> - 0.6.1-1
 - First official stable release.
+=======
+* Mon Dec 18 2017 Tony Hutter <hutter2@llnl.gov> - 0.7.5-1
+- Released 0.7.5-1, detailed release notes are available at:
+- https://github.com/zfsonlinux/zfs/releases/tag/zfs-0.7.5
+* Thu Dec 07 2017 Tony Hutter <hutter2@llnl.gov> - 0.7.4-1
+- Released 0.7.4-1, detailed release notes are available at:
+- https://github.com/zfsonlinux/zfs/releases/tag/zfs-0.7.4
+* Wed Oct 18 2017 Tony Hutter <hutter2@llnl.gov> - 0.7.3-1
+- Released 0.7.3-1, detailed release notes are available at:
+- https://github.com/zfsonlinux/zfs/releases/tag/zfs-0.7.3
+* Fri Sep 22 2017 Tony Hutter <hutter2@llnl.gov> - 0.7.2-1
+- Released 0.7.2-1, detailed release notes are available at:
+- https://github.com/zfsonlinux/zfs/releases/tag/zfs-0.7.2
+* Tue Aug 8 2017 Tony Hutter <hutter2@llnl.gov> - 0.7.1-1
+- Released 0.7.1-1, detailed release notes are available at:
+- https://github.com/zfsonlinux/zfs/releases/tag/zfs-0.7.1
+* Wed Jul 26 2017 Brian Behlendorf <behlendorf1@llnl.gov> - 0.7.0-1
+- Released 0.7.0-1, detailed release notes are available at:
+- https://github.com/zfsonlinux/zfs/releases/tag/zfs-0.7.0
+>>>>>>> temp

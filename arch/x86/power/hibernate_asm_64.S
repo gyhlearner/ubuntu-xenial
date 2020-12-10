@@ -21,6 +21,10 @@
 #include <asm/page_types.h>
 #include <asm/asm-offsets.h>
 #include <asm/processor-flags.h>
+<<<<<<< HEAD
+=======
+#include <asm/frame.h>
+>>>>>>> temp
 #include <asm/nospec-branch.h>
 
 ENTRY(swsusp_arch_suspend)
@@ -47,8 +51,11 @@ ENTRY(swsusp_arch_suspend)
 	movq	%cr3, %rax
 	movq	%rax, restore_cr3(%rip)
 
+	FRAME_BEGIN
 	call swsusp_save
+	FRAME_END
 	ret
+ENDPROC(swsusp_arch_suspend)
 
 ENTRY(restore_image)
 	/* prepare to jump to the image kernel */
@@ -70,8 +77,11 @@ ENTRY(restore_image)
 	/* code below has been relocated to a safe page */
 ENTRY(core_restore_code)
 	/* switch to temporary page tables */
+<<<<<<< HEAD
 	movq	$__PAGE_OFFSET, %rcx
 	subq	%rcx, %rax
+=======
+>>>>>>> temp
 	movq	%rax, %cr3
 	/* flush TLB */
 	movq	%rbx, %rcx
@@ -144,3 +154,4 @@ ENTRY(restore_registers)
 	movq	%rax, in_suspend(%rip)
 
 	ret
+ENDPROC(restore_registers)

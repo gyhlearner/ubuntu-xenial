@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 #include <linux/export.h>
 #include <linux/init.h>
 
@@ -19,6 +20,10 @@ __cert_list_end:
 VMLINUX_SYMBOL(system_extra_cert):
 	.fill CONFIG_SYSTEM_EXTRA_CERTIFICATE_SIZE, 1, 0
 
+<<<<<<< HEAD
+=======
+	.align 4
+>>>>>>> temp
 	.globl VMLINUX_SYMBOL(system_extra_cert_used)
 VMLINUX_SYMBOL(system_extra_cert_used):
 	.int 0

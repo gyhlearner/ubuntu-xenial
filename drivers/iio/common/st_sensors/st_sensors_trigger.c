@@ -18,17 +18,61 @@
 #include "st_sensors_core.h"
 
 /**
+<<<<<<< HEAD
+=======
+ * st_sensors_new_samples_available() - check if more samples came in
+ * returns:
+ * 0 - no new samples available
+ * 1 - new samples available
+ * negative - error or unknown
+ */
+static int st_sensors_new_samples_available(struct iio_dev *indio_dev,
+					    struct st_sensor_data *sdata)
+{
+	u8 status;
+	int ret;
+
+	/* How would I know if I can't check it? */
+	if (!sdata->sensor_settings->drdy_irq.stat_drdy.addr)
+		return -EINVAL;
+
+	/* No scan mask, no interrupt */
+	if (!indio_dev->active_scan_mask)
+		return 0;
+
+	ret = sdata->tf->read_byte(&sdata->tb, sdata->dev,
+			sdata->sensor_settings->drdy_irq.stat_drdy.addr,
+			&status);
+	if (ret < 0) {
+		dev_err(sdata->dev,
+			"error checking samples available\n");
+		return ret;
+	}
+
+	if (status & sdata->sensor_settings->drdy_irq.stat_drdy.mask)
+		return 1;
+
+	return 0;
+}
+
+/**
+>>>>>>> temp
  * st_sensors_irq_handler() - top half of the IRQ-based triggers
  * @irq: irq number
  * @p: private handler data
  */
+<<<<<<< HEAD
 irqreturn_t st_sensors_irq_handler(int irq, void *p)
+=======
+static irqreturn_t st_sensors_irq_handler(int irq, void *p)
+>>>>>>> temp
 {
 	struct iio_trigger *trig = p;
 	struct iio_dev *indio_dev = iio_trigger_get_drvdata(trig);
 	struct st_sensor_data *sdata = iio_priv(indio_dev);
 
 	/* Get the time stamp as close in time as possible */
+<<<<<<< HEAD
 	sdata->hw_timestamp = iio_get_time_ns();
 	return IRQ_WAKE_THREAD;
 }
@@ -81,6 +125,59 @@ irqreturn_t st_sensors_irq_thread(int irq, void *p)
 out_poll:
 	/* It's our IRQ: proceed to handle the register polling */
 	iio_trigger_poll_chained(p);
+=======
+	sdata->hw_timestamp = iio_get_time_ns(indio_dev);
+	return IRQ_WAKE_THREAD;
+}
+
+/**
+ * st_sensors_irq_thread() - bottom half of the IRQ-based triggers
+ * @irq: irq number
+ * @p: private handler data
+ */
+static irqreturn_t st_sensors_irq_thread(int irq, void *p)
+{
+	struct iio_trigger *trig = p;
+	struct iio_dev *indio_dev = iio_trigger_get_drvdata(trig);
+	struct st_sensor_data *sdata = iio_priv(indio_dev);
+
+	/*
+	 * If this trigger is backed by a hardware interrupt and we have a
+	 * status register, check if this IRQ came from us. Notice that
+	 * we will process also if st_sensors_new_samples_available()
+	 * returns negative: if we can't check status, then poll
+	 * unconditionally.
+	 */
+	if (sdata->hw_irq_trigger &&
+	    st_sensors_new_samples_available(indio_dev, sdata)) {
+		iio_trigger_poll_chained(p);
+	} else {
+		dev_dbg(sdata->dev, "spurious IRQ\n");
+		return IRQ_NONE;
+	}
+
+	/*
+	 * If we have proper level IRQs the handler will be re-entered if
+	 * the line is still active, so return here and come back in through
+	 * the top half if need be.
+	 */
+	if (!sdata->edge_irq)
+		return IRQ_HANDLED;
+
+	/*
+	 * If we are using egde IRQs, new samples arrived while processing
+	 * the IRQ and those may be missed unless we pick them here, so poll
+	 * again. If the sensor delivery frequency is very high, this thread
+	 * turns into a polled loop handler.
+	 */
+	while (sdata->hw_irq_trigger &&
+	       st_sensors_new_samples_available(indio_dev, sdata)) {
+		dev_dbg(sdata->dev, "more samples came in during polling\n");
+		sdata->hw_timestamp = iio_get_time_ns(indio_dev);
+		iio_trigger_poll_chained(p);
+	}
+
+>>>>>>> temp
 	return IRQ_HANDLED;
 }
 
@@ -95,6 +192,7 @@ int st_sensors_allocate_trigger(struct iio_dev *indio_dev,
 	if (sdata->trig == NULL) {
 		dev_err(&indio_dev->dev, "failed to allocate iio trigger.\n");
 		return -ENOMEM;
+<<<<<<< HEAD
 	}
 
 	irq = sdata->get_irq_data_ready(indio_dev);
@@ -131,6 +229,72 @@ int st_sensors_allocate_trigger(struct iio_dev *indio_dev,
 			"rising edge\n", irq_trig);
 		irq_trig = IRQF_TRIGGER_RISING;
 	}
+=======
+	}
+
+	iio_trigger_set_drvdata(sdata->trig, indio_dev);
+	sdata->trig->ops = trigger_ops;
+	sdata->trig->dev.parent = sdata->dev;
+
+	irq = sdata->get_irq_data_ready(indio_dev);
+	irq_trig = irqd_get_trigger_type(irq_get_irq_data(irq));
+	/*
+	 * If the IRQ is triggered on falling edge, we need to mark the
+	 * interrupt as active low, if the hardware supports this.
+	 */
+	switch(irq_trig) {
+	case IRQF_TRIGGER_FALLING:
+	case IRQF_TRIGGER_LOW:
+		if (!sdata->sensor_settings->drdy_irq.addr_ihl) {
+			dev_err(&indio_dev->dev,
+				"falling/low specified for IRQ "
+				"but hardware only support rising/high: "
+				"will request rising/high\n");
+			if (irq_trig == IRQF_TRIGGER_FALLING)
+				irq_trig = IRQF_TRIGGER_RISING;
+			if (irq_trig == IRQF_TRIGGER_LOW)
+				irq_trig = IRQF_TRIGGER_HIGH;
+		} else {
+			/* Set up INT active low i.e. falling edge */
+			err = st_sensors_write_data_with_mask(indio_dev,
+				sdata->sensor_settings->drdy_irq.addr_ihl,
+				sdata->sensor_settings->drdy_irq.mask_ihl, 1);
+			if (err < 0)
+				goto iio_trigger_free;
+			dev_info(&indio_dev->dev,
+				 "interrupts on the falling edge or "
+				 "active low level\n");
+		}
+		break;
+	case IRQF_TRIGGER_RISING:
+		dev_info(&indio_dev->dev,
+			 "interrupts on the rising edge\n");
+		break;
+	case IRQF_TRIGGER_HIGH:
+		dev_info(&indio_dev->dev,
+			 "interrupts active high level\n");
+		break;
+	default:
+		/* This is the most preferred mode, if possible */
+		dev_err(&indio_dev->dev,
+			"unsupported IRQ trigger specified (%lx), enforce "
+			"rising edge\n", irq_trig);
+		irq_trig = IRQF_TRIGGER_RISING;
+	}
+
+	/* Tell the interrupt handler that we're dealing with edges */
+	if (irq_trig == IRQF_TRIGGER_FALLING ||
+	    irq_trig == IRQF_TRIGGER_RISING)
+		sdata->edge_irq = true;
+	else
+		/*
+		 * If we're not using edges (i.e. level interrupts) we
+		 * just mask off the IRQ, handle one interrupt, then
+		 * if the line is still low, we return to the
+		 * interrupt handler top half again and start over.
+		 */
+		irq_trig |= IRQF_ONESHOT;
+>>>>>>> temp
 
 	/*
 	 * If the interrupt pin is Open Drain, by definition this
@@ -141,12 +305,18 @@ int st_sensors_allocate_trigger(struct iio_dev *indio_dev,
 	 * it was "our" interrupt.
 	 */
 	if (sdata->int_pin_open_drain &&
+<<<<<<< HEAD
 	    sdata->sensor_settings->drdy_irq.addr_stat_drdy)
 		irq_trig |= IRQF_SHARED;
 
 	/* Let's create an interrupt thread masking the hard IRQ here */
 	irq_trig |= IRQF_ONESHOT;
 
+=======
+	    sdata->sensor_settings->drdy_irq.stat_drdy.addr)
+		irq_trig |= IRQF_SHARED;
+
+>>>>>>> temp
 	err = request_threaded_irq(sdata->get_irq_data_ready(indio_dev),
 			st_sensors_irq_handler,
 			st_sensors_irq_thread,
@@ -157,10 +327,6 @@ int st_sensors_allocate_trigger(struct iio_dev *indio_dev,
 		dev_err(&indio_dev->dev, "failed to request trigger IRQ.\n");
 		goto iio_trigger_free;
 	}
-
-	iio_trigger_set_drvdata(sdata->trig, indio_dev);
-	sdata->trig->ops = trigger_ops;
-	sdata->trig->dev.parent = sdata->dev;
 
 	err = iio_trigger_register(sdata->trig);
 	if (err < 0) {

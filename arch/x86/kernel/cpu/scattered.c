@@ -17,11 +17,20 @@ struct cpuid_bit {
 	u32 sub_leaf;
 };
 
-enum cpuid_regs {
-	CR_EAX = 0,
-	CR_ECX,
-	CR_EDX,
-	CR_EBX
+/* Please keep the leaf sorted by cpuid_bit.level for faster search. */
+static const struct cpuid_bit cpuid_bits[] = {
+	{ X86_FEATURE_APERFMPERF,       CPUID_ECX,  0, 0x00000006, 0 },
+	{ X86_FEATURE_EPB,		CPUID_ECX,  3, 0x00000006, 0 },
+	{ X86_FEATURE_CAT_L3,		CPUID_EBX,  1, 0x00000010, 0 },
+	{ X86_FEATURE_CAT_L2,		CPUID_EBX,  2, 0x00000010, 0 },
+	{ X86_FEATURE_CDP_L3,		CPUID_ECX,  2, 0x00000010, 1 },
+	{ X86_FEATURE_CDP_L2,		CPUID_ECX,  2, 0x00000010, 2 },
+	{ X86_FEATURE_MBA,		CPUID_EBX,  3, 0x00000010, 0 },
+	{ X86_FEATURE_HW_PSTATE,	CPUID_EDX,  7, 0x80000007, 0 },
+	{ X86_FEATURE_CPB,		CPUID_EDX,  9, 0x80000007, 0 },
+	{ X86_FEATURE_PROC_FEEDBACK,    CPUID_EDX, 11, 0x80000007, 0 },
+	{ X86_FEATURE_SME,		CPUID_EAX,  0, 0x8000001f, 0 },
+	{ 0, 0, 0, 0, 0 }
 };
 
 /* Please keep the leaf sorted by cpuid_bit.level for faster search. */
@@ -49,15 +58,21 @@ void init_scattered_cpuid_features(struct cpuinfo_x86 *c)
 		    max_level > (cb->level | 0xffff))
 			continue;
 
-		cpuid_count(cb->level, cb->sub_leaf, &regs[CR_EAX],
-			    &regs[CR_EBX], &regs[CR_ECX], &regs[CR_EDX]);
+		cpuid_count(cb->level, cb->sub_leaf, &regs[CPUID_EAX],
+			    &regs[CPUID_EBX], &regs[CPUID_ECX],
+			    &regs[CPUID_EDX]);
 
 		if (regs[cb->reg] & (1 << cb->bit))
 			set_cpu_cap(c, cb->feature);
 	}
 }
 
+<<<<<<< HEAD
 u32 get_scattered_cpuid_leaf(unsigned int level, unsigned int sub_leaf, u8 reg)
+=======
+u32 get_scattered_cpuid_leaf(unsigned int level, unsigned int sub_leaf,
+			     enum cpuid_regs_idx reg)
+>>>>>>> temp
 {
 	const struct cpuid_bit *cb;
 	u32 cpuid_val = 0;

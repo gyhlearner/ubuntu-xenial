@@ -1,4 +1,9 @@
 /*
+<<<<<<< HEAD
+=======
+ * Generic PCI host driver common code
+ *
+>>>>>>> temp
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
@@ -17,7 +22,10 @@
  */
 
 #include <linux/kernel.h>
+<<<<<<< HEAD
 #include <linux/module.h>
+=======
+>>>>>>> temp
 #include <linux/of_address.h>
 #include <linux/of_pci.h>
 #include <linux/pci-ecam.h>
@@ -29,31 +37,55 @@ static int gen_pci_parse_request_of_pci_ranges(struct device *dev,
 	int err, res_valid = 0;
 	struct device_node *np = dev->of_node;
 	resource_size_t iobase;
+<<<<<<< HEAD
 	struct resource_entry *win;
+=======
+	struct resource_entry *win, *tmp;
+>>>>>>> temp
 
 	err = of_pci_get_host_bridge_resources(np, 0, 0xff, resources, &iobase);
 	if (err)
 		return err;
 
+<<<<<<< HEAD
 	resource_list_for_each_entry(win, resources) {
 		struct resource *parent, *res = win->res;
 
 		switch (resource_type(res)) {
 		case IORESOURCE_IO:
 			parent = &ioport_resource;
+=======
+	err = devm_request_pci_bus_resources(dev, resources);
+	if (err)
+		return err;
+
+	resource_list_for_each_entry_safe(win, tmp, resources) {
+		struct resource *res = win->res;
+
+		switch (resource_type(res)) {
+		case IORESOURCE_IO:
+>>>>>>> temp
 			err = pci_remap_iospace(res, iobase);
 			if (err) {
 				dev_warn(dev, "error %d: failed to map resource %pR\n",
 					 err, res);
+<<<<<<< HEAD
 				continue;
 			}
 			break;
 		case IORESOURCE_MEM:
 			parent = &iomem_resource;
+=======
+				resource_list_destroy_entry(win);
+			}
+			break;
+		case IORESOURCE_MEM:
+>>>>>>> temp
 			res_valid |= !(res->flags & IORESOURCE_PREFETCH);
 			break;
 		case IORESOURCE_BUS:
 			*bus_range = res;
+<<<<<<< HEAD
 		default:
 			continue;
 		}
@@ -73,6 +105,17 @@ static int gen_pci_parse_request_of_pci_ranges(struct device *dev,
 
 out_release_res:
 	return err;
+=======
+			break;
+		}
+	}
+
+	if (res_valid)
+		return 0;
+
+	dev_err(dev, "non-prefetchable memory resource required\n");
+	return -EINVAL;
+>>>>>>> temp
 }
 
 static void gen_pci_unmap_cfg(void *ptr)
@@ -124,8 +167,19 @@ int pci_host_common_probe(struct platform_device *pdev,
 	struct device *dev = &pdev->dev;
 	struct device_node *np = dev->of_node;
 	struct pci_bus *bus, *child;
+<<<<<<< HEAD
 	struct pci_config_window *cfg;
 	struct list_head resources;
+=======
+	struct pci_host_bridge *bridge;
+	struct pci_config_window *cfg;
+	struct list_head resources;
+	int ret;
+
+	bridge = devm_pci_alloc_host_bridge(dev, 0);
+	if (!bridge)
+		return -ENOMEM;
+>>>>>>> temp
 
 	type = of_get_property(np, "device_type", NULL);
 	if (!type || strcmp(type, "pci")) {
@@ -145,6 +199,7 @@ int pci_host_common_probe(struct platform_device *pdev,
 	if (!pci_has_flag(PCI_PROBE_ONLY))
 		pci_add_flags(PCI_REASSIGN_ALL_RSRC | PCI_REASSIGN_ALL_BUS);
 
+<<<<<<< HEAD
 	bus = pci_scan_root_bus(dev, cfg->busr.start, &ops->pci_ops, cfg,
 				&resources);
 	if (!bus) {
@@ -155,6 +210,32 @@ int pci_host_common_probe(struct platform_device *pdev,
 	pci_fixup_irqs(pci_common_swizzle, of_irq_parse_and_map_pci);
 
 	if (!pci_has_flag(PCI_PROBE_ONLY)) {
+=======
+	list_splice_init(&resources, &bridge->windows);
+	bridge->dev.parent = dev;
+	bridge->sysdata = cfg;
+	bridge->busnr = cfg->busr.start;
+	bridge->ops = &ops->pci_ops;
+	bridge->map_irq = of_irq_parse_and_map_pci;
+	bridge->swizzle_irq = pci_common_swizzle;
+
+	ret = pci_scan_root_bus_bridge(bridge);
+	if (ret < 0) {
+		dev_err(dev, "Scanning root bridge failed");
+		return ret;
+	}
+
+	bus = bridge->bus;
+
+	/*
+	 * We insert PCI resources into the iomem_resource and
+	 * ioport_resource trees in either pci_bus_claim_resources()
+	 * or pci_bus_assign_resources().
+	 */
+	if (pci_has_flag(PCI_PROBE_ONLY)) {
+		pci_bus_claim_resources(bus);
+	} else {
+>>>>>>> temp
 		pci_bus_size_bridges(bus);
 		pci_bus_assign_resources(bus);
 
@@ -165,7 +246,10 @@ int pci_host_common_probe(struct platform_device *pdev,
 	pci_bus_add_devices(bus);
 	return 0;
 }
+<<<<<<< HEAD
 
 MODULE_DESCRIPTION("Generic PCI host driver common code");
 MODULE_AUTHOR("Will Deacon <will.deacon@arm.com>");
 MODULE_LICENSE("GPL v2");
+=======
+>>>>>>> temp

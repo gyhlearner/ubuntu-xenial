@@ -4,7 +4,11 @@
  * This file contains AppArmor basic global
  *
  * Copyright (C) 1998-2008 Novell/SUSE
+<<<<<<< HEAD
  * Copyright 2009-2016 Canonical Ltd.
+=======
+ * Copyright 2009-2017 Canonical Ltd.
+>>>>>>> temp
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -16,8 +20,11 @@
 #define __APPARMOR_H
 
 #include <linux/types.h>
+<<<<<<< HEAD
 
 #include "backport.h"
+=======
+>>>>>>> temp
 
 /*
  * Class of mediation types in the AppArmor policy db
@@ -45,6 +52,9 @@ extern bool aa_g_lock_policy;
 extern bool aa_g_logsyscall;
 extern bool aa_g_paranoid_load;
 extern unsigned int aa_g_path_max;
+<<<<<<< HEAD
 extern bool aa_g_unconfined_init;
+=======
+>>>>>>> temp
 
 #endif /* __APPARMOR_H */

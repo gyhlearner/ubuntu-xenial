@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright (C) 2005-2015 Junjiro R. Okajima
+=======
+ * Copyright (C) 2005-2017 Junjiro R. Okajima
+>>>>>>> temp
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -73,17 +77,30 @@ void au_hn_ctl(struct au_hinode *hinode, int do_set)
 
 void au_hn_reset(struct inode *inode, unsigned int flags)
 {
+<<<<<<< HEAD
 	aufs_bindex_t bindex, bend;
 	struct inode *hi;
 	struct dentry *iwhdentry;
 
 	bend = au_ibend(inode);
 	for (bindex = au_ibstart(inode); bindex <= bend; bindex++) {
+=======
+	aufs_bindex_t bindex, bbot;
+	struct inode *hi;
+	struct dentry *iwhdentry;
+
+	bbot = au_ibbot(inode);
+	for (bindex = au_ibtop(inode); bindex <= bbot; bindex++) {
+>>>>>>> temp
 		hi = au_h_iptr(inode, bindex);
 		if (!hi)
 			continue;
 
+<<<<<<< HEAD
 		/* mutex_lock_nested(&hi->i_mutex, AuLsc_I_CHILD); */
+=======
+		/* inode_lock_nested(hi, AuLsc_I_CHILD); */
+>>>>>>> temp
 		iwhdentry = au_hi_wh(inode, bindex);
 		if (iwhdentry)
 			dget(iwhdentry);
@@ -93,7 +110,11 @@ void au_hn_reset(struct inode *inode, unsigned int flags)
 			      flags & ~AuHi_XINO);
 		iput(hi);
 		dput(iwhdentry);
+<<<<<<< HEAD
 		/* mutex_unlock(&hi->i_mutex); */
+=======
+		/* inode_unlock(hi); */
+>>>>>>> temp
 	}
 }
 
@@ -102,7 +123,11 @@ void au_hn_reset(struct inode *inode, unsigned int flags)
 static int hn_xino(struct inode *inode, struct inode *h_inode)
 {
 	int err;
+<<<<<<< HEAD
 	aufs_bindex_t bindex, bend, bfound, bstart;
+=======
+	aufs_bindex_t bindex, bbot, bfound, btop;
+>>>>>>> temp
 	struct inode *h_i;
 
 	err = 0;
@@ -112,15 +137,26 @@ static int hn_xino(struct inode *inode, struct inode *h_inode)
 	}
 
 	bfound = -1;
+<<<<<<< HEAD
 	bend = au_ibend(inode);
 	bstart = au_ibstart(inode);
 #if 0 /* reserved for future use */
 	if (bindex == bend) {
+=======
+	bbot = au_ibbot(inode);
+	btop = au_ibtop(inode);
+#if 0 /* reserved for future use */
+	if (bindex == bbot) {
+>>>>>>> temp
 		/* keep this ino in rename case */
 		goto out;
 	}
 #endif
+<<<<<<< HEAD
 	for (bindex = bstart; bindex <= bend; bindex++)
+=======
+	for (bindex = btop; bindex <= bbot; bindex++)
+>>>>>>> temp
 		if (au_h_iptr(inode, bindex) == h_inode) {
 			bfound = bindex;
 			break;
@@ -128,7 +164,11 @@ static int hn_xino(struct inode *inode, struct inode *h_inode)
 	if (bfound < 0)
 		goto out;
 
+<<<<<<< HEAD
 	for (bindex = bstart; bindex <= bend; bindex++) {
+=======
+	for (bindex = btop; bindex <= bbot; bindex++) {
+>>>>>>> temp
 		h_i = au_h_iptr(inode, bindex);
 		if (!h_i)
 			continue;
@@ -322,11 +362,19 @@ static int hn_job(struct hn_job_args *a)
 	if (au_ftest_hnjob(a->flags, TRYXINO0)
 	    && a->inode
 	    && a->h_inode) {
+<<<<<<< HEAD
 		mutex_lock_nested(&a->h_inode->i_mutex, AuLsc_I_CHILD);
 		if (!a->h_inode->i_nlink
 		    && !(a->h_inode->i_state & I_LINKABLE))
 			hn_xino(a->inode, a->h_inode); /* ignore this error */
 		mutex_unlock(&a->h_inode->i_mutex);
+=======
+		vfsub_inode_lock_shared_nested(a->h_inode, AuLsc_I_CHILD);
+		if (!a->h_inode->i_nlink
+		    && !(a->h_inode->i_state & I_LINKABLE))
+			hn_xino(a->inode, a->h_inode); /* ignore this error */
+		inode_unlock_shared(a->h_inode);
+>>>>>>> temp
 	}
 
 	/* make the generation obsolete */
@@ -433,7 +481,11 @@ static void au_hn_bh(void *_args)
 {
 	struct au_hnotify_args *a = _args;
 	struct super_block *sb;
+<<<<<<< HEAD
 	aufs_bindex_t bindex, bend, bfound;
+=======
+	aufs_bindex_t bindex, bbot, bfound;
+>>>>>>> temp
 	unsigned char xino, try_iput;
 	int err;
 	struct inode *inode;
@@ -462,10 +514,25 @@ static void au_hn_bh(void *_args)
 	AuDebugOn(!sbinfo);
 	si_write_lock(sb, AuLock_NOPLMW);
 
+<<<<<<< HEAD
 	ii_read_lock_parent(a->dir);
 	bfound = -1;
 	bend = au_ibend(a->dir);
 	for (bindex = au_ibstart(a->dir); bindex <= bend; bindex++)
+=======
+	if (au_opt_test(sbinfo->si_mntflags, DIRREN))
+		switch (a->mask & FS_EVENTS_POSS_ON_CHILD) {
+		case FS_MOVED_FROM:
+		case FS_MOVED_TO:
+			AuWarn1("DIRREN with UDBA may not work correctly "
+				"for the direct rename(2)\n");
+		}
+
+	ii_read_lock_parent(a->dir);
+	bfound = -1;
+	bbot = au_ibbot(a->dir);
+	for (bindex = au_ibtop(a->dir); bindex <= bbot; bindex++)
+>>>>>>> temp
 		if (au_h_iptr(a->dir, bindex) == a->h_dir) {
 			bfound = bindex;
 			break;
@@ -493,7 +560,11 @@ static void au_hn_bh(void *_args)
 		|| au_ftest_hnjob(a->flags[AuHn_CHILD], GEN))) {
 		inode = lookup_wlock_by_ino(sb, bfound, h_ino);
 		try_iput = 1;
+<<<<<<< HEAD
 	    }
+=======
+	}
+>>>>>>> temp
 
 	args.flags = a->flags[AuHn_CHILD];
 	args.dentry = dentry;
@@ -679,8 +750,13 @@ void au_hnotify_fin_br(struct au_branch *br)
 
 static void au_hn_destroy_cache(void)
 {
+<<<<<<< HEAD
 	kmem_cache_destroy(au_cachep[AuCache_HNOTIFY]);
 	au_cachep[AuCache_HNOTIFY] = NULL;
+=======
+	kmem_cache_destroy(au_cache[AuCache_HNOTIFY]);
+	au_cache[AuCache_HNOTIFY] = NULL;
+>>>>>>> temp
 }
 
 int __init au_hnotify_init(void)
@@ -688,8 +764,13 @@ int __init au_hnotify_init(void)
 	int err;
 
 	err = -ENOMEM;
+<<<<<<< HEAD
 	au_cachep[AuCache_HNOTIFY] = AuCache(au_hnotify);
 	if (au_cachep[AuCache_HNOTIFY]) {
+=======
+	au_cache[AuCache_HNOTIFY] = AuCache(au_hnotify);
+	if (au_cache[AuCache_HNOTIFY]) {
+>>>>>>> temp
 		err = 0;
 		if (au_hnotify_op.init)
 			err = au_hnotify_op.init();
@@ -704,7 +785,13 @@ void au_hnotify_fin(void)
 {
 	if (au_hnotify_op.fin)
 		au_hnotify_op.fin();
+<<<<<<< HEAD
 	/* cf. au_cache_fin() */
 	if (au_cachep[AuCache_HNOTIFY])
+=======
+
+	/* cf. au_cache_fin() */
+	if (au_cache[AuCache_HNOTIFY])
+>>>>>>> temp
 		au_hn_destroy_cache();
 }

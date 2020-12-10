@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright (C) 2014-2015 Junjiro R. Okajima
+=======
+ * Copyright (C) 2014-2017 Junjiro R. Okajima
+>>>>>>> temp
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +24,10 @@
  */
 
 #include <linux/fs.h>
+<<<<<<< HEAD
 #include <linux/posix_acl.h>
+=======
+>>>>>>> temp
 #include "aufs.h"
 
 struct posix_acl *aufs_get_acl(struct inode *inode, int type)
@@ -35,10 +42,17 @@ struct posix_acl *aufs_get_acl(struct inode *inode, int type)
 	sb = inode->i_sb;
 	si_read_lock(sb, AuLock_FLUSH);
 	ii_read_lock_child(inode);
+<<<<<<< HEAD
 	if (!(sb->s_flags & MS_POSIXACL))
 		goto out;
 
 	bindex = au_ibstart(inode);
+=======
+	if (!(sb->s_flags & SB_POSIXACL))
+		goto out;
+
+	bindex = au_ibtop(inode);
+>>>>>>> temp
 	h_inode = au_h_iptr(inode, bindex);
 	if (unlikely(!h_inode
 		     || ((h_inode->i_mode & S_IFMT)
@@ -50,6 +64,11 @@ struct posix_acl *aufs_get_acl(struct inode *inode, int type)
 
 	/* always topmost only */
 	acl = get_acl(h_inode, type);
+<<<<<<< HEAD
+=======
+	if (!IS_ERR_OR_NULL(acl))
+		set_cached_acl(inode, type, acl);
+>>>>>>> temp
 
 out:
 	ii_read_unlock(inode);
@@ -64,7 +83,11 @@ int aufs_set_acl(struct inode *inode, struct posix_acl *acl, int type)
 	int err;
 	ssize_t ssz;
 	struct dentry *dentry;
+<<<<<<< HEAD
 	struct au_srxattr arg = {
+=======
+	struct au_sxattr arg = {
+>>>>>>> temp
 		.type = AU_ACL_SET,
 		.u.acl_set = {
 			.acl	= acl,
@@ -72,7 +95,12 @@ int aufs_set_acl(struct inode *inode, struct posix_acl *acl, int type)
 		},
 	};
 
+<<<<<<< HEAD
 	mutex_lock(&inode->i_mutex);
+=======
+	IMustLock(inode);
+
+>>>>>>> temp
 	if (inode->i_ino == AUFS_ROOT_INO)
 		dentry = dget(inode->i_sb->s_root);
 	else {
@@ -87,6 +115,7 @@ int aufs_set_acl(struct inode *inode, struct posix_acl *acl, int type)
 		}
 	}
 
+<<<<<<< HEAD
 	ssz = au_srxattr(dentry, &arg);
 	dput(dentry);
 	err = ssz;
@@ -95,5 +124,16 @@ int aufs_set_acl(struct inode *inode, struct posix_acl *acl, int type)
 
 out:
 	mutex_unlock(&inode->i_mutex);
+=======
+	ssz = au_sxattr(dentry, inode, &arg);
+	dput(dentry);
+	err = ssz;
+	if (ssz >= 0) {
+		err = 0;
+		set_cached_acl(inode, type, acl);
+	}
+
+out:
+>>>>>>> temp
 	return err;
 }

@@ -4,7 +4,11 @@
  */
 
 /*
+<<<<<<< HEAD
  * Copyright (C) 2010-2015 Oracle Corporation
+=======
+ * Copyright (C) 2010-2017 Oracle Corporation
+>>>>>>> temp
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -42,6 +46,16 @@
 # define VBOXGUEST_USE_DEFERRED_WAKE_UP
 #endif
 
+<<<<<<< HEAD
+=======
+/** @def VBOXGUEST_MOUSE_NOTIFY_CAN_PREEMPT
+ * The mouse notification callback can cause preemption and must not be invoked
+ * while holding a high-level spinlock.
+ */
+#if defined(RT_OS_SOLARIS) || defined(RT_OS_WINDOWS) || defined(DOXYGEN_RUNNING)
+# define VBOXGUEST_MOUSE_NOTIFY_CAN_PREEMPT
+#endif
+>>>>>>> temp
 
 /** Pointer to the VBoxGuest per session data. */
 typedef struct VBOXGUESTSESSION *PVBOXGUESTSESSION;
@@ -186,8 +200,15 @@ typedef struct VBOXGUESTDEVEXT
     bool                        fLoggingEnabled;
     /** Memory balloon information for RTR0MemObjAllocPhysNC(). */
     VBOXGUESTMEMBALLOON         MemBalloon;
+<<<<<<< HEAD
     /** Callback and user data for a kernel mouse handler. */
     VBoxGuestMouseSetNotifyCallback MouseNotifyCallback;
+=======
+    /** Mouse notification callback function. */
+    PFNVBOXGUESTMOUSENOTIFY     pfnMouseNotifyCallback;
+    /** The callback argument for the mouse ntofication callback. */
+    void                       *pvMouseNotifyCallbackArg;
+>>>>>>> temp
 
     /** @name Host Event Filtering
      * @{ */
@@ -315,6 +336,10 @@ RT_C_DECLS_BEGIN
 
 int  VGDrvCommonInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase, void *pvMMIOBase, uint32_t cbMMIO,
                            VBOXOSTYPE enmOSType, uint32_t fEvents);
+<<<<<<< HEAD
+=======
+bool VGDrvCommonIsOurIRQ(PVBOXGUESTDEVEXT pDevExt);
+>>>>>>> temp
 bool VGDrvCommonISR(PVBOXGUESTDEVEXT pDevExt);
 void VGDrvCommonDeleteDevExt(PVBOXGUESTDEVEXT pDevExt);
 int  VGDrvCommonReinitDevExtAfterHibernation(PVBOXGUESTDEVEXT pDevExt, VBOXOSTYPE enmOSType);
@@ -326,9 +351,15 @@ int  VGDrvCommonCreateUserSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION *p
 int  VGDrvCommonCreateKernelSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION *ppSession);
 void VGDrvCommonCloseSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession);
 
+<<<<<<< HEAD
 int  VGDrvCommonIoCtlFast(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession);
 int  VGDrvCommonIoCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession,
                       void *pvData, size_t cbData, size_t *pcbDataReturned);
+=======
+int  VGDrvCommonIoCtlFast(uintptr_t iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession);
+int  VGDrvCommonIoCtl(uintptr_t iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession,
+                      PVBGLREQHDR pReqHdr, size_t cbReq);
+>>>>>>> temp
 
 /**
  * ISR callback for notifying threads polling for mouse events.
@@ -345,6 +376,13 @@ void VGDrvNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt);
 int VGDrvNtIOCtl_DpcLatencyChecker(void);
 #endif
 
+<<<<<<< HEAD
+=======
+#ifdef VBOXGUEST_MOUSE_NOTIFY_CAN_PREEMPT
+int VGDrvNativeSetMouseNotifyCallback(PVBOXGUESTDEVEXT pDevExt, PVBGLIOCSETMOUSENOTIFYCALLBACK pNotify);
+#endif
+
+>>>>>>> temp
 RT_C_DECLS_END
 
 #endif

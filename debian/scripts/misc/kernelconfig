@@ -97,6 +97,13 @@ for arch in $archs; do
 						make O=`pwd`/build ARCH=$kernarch menuconfig
 						break ;;
 					n* | N* )
+<<<<<<< HEAD
+=======
+						# 'silentoldconfig' prevents
+						# errors for '-' options set
+						# in common config fragments
+						make O=`pwd`/build ARCH=$kernarch silentoldconfig
+>>>>>>> temp
 						break ;;
 					*)
 						echo "Entry not valid"

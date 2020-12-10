@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright (C) 2005-2015 Junjiro R. Okajima
+=======
+ * Copyright (C) 2005-2017 Junjiro R. Okajima
+>>>>>>> temp
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +29,10 @@
 #include <linux/nsproxy.h>
 #include <linux/random.h>
 #include <linux/writeback.h>
+<<<<<<< HEAD
 #include "../fs/mount.h"
+=======
+>>>>>>> temp
 #include "aufs.h"
 
 union conv {
@@ -233,7 +240,11 @@ static struct dentry *decode_by_ino(struct super_block *sb, ino_t ino,
 
 	dentry = ERR_PTR(-ESTALE);
 	sigen = au_sigen(sb);
+<<<<<<< HEAD
 	if (unlikely(is_bad_inode(inode)
+=======
+	if (unlikely(au_is_bad_inode(inode)
+>>>>>>> temp
 		     || IS_DEADDIR(inode)
 		     || sigen != au_iigen(inode, NULL)))
 		goto out_iput;
@@ -406,9 +417,13 @@ static struct dentry *au_lkup_by_ino(struct path *path, ino_t ino,
 
 	/* do not call vfsub_lkup_one() */
 	dir = d_inode(parent);
+<<<<<<< HEAD
 	mutex_lock(&dir->i_mutex);
 	dentry = vfsub_lookup_one_len(arg.name, parent, arg.namelen);
 	mutex_unlock(&dir->i_mutex);
+=======
+	dentry = vfsub_lookup_one_len_unlocked(arg.name, parent, arg.namelen);
+>>>>>>> temp
 	AuTraceErrPtr(dentry);
 	if (IS_ERR(dentry))
 		goto out_name;
@@ -515,9 +530,17 @@ struct dentry *decode_by_path(struct super_block *sb, ino_t ino, __u32 *fh,
 	h_mnt = au_br_mnt(br);
 	h_sb = h_mnt->mnt_sb;
 	/* todo: call lower fh_to_dentry()? fh_to_parent()? */
+<<<<<<< HEAD
 	h_parent = exportfs_decode_fh(h_mnt, (void *)(fh + Fh_tail),
 				      fh_len - Fh_tail, fh[Fh_h_type],
 				      h_acceptable, /*context*/NULL);
+=======
+	lockdep_off();
+	h_parent = exportfs_decode_fh(h_mnt, (void *)(fh + Fh_tail),
+				      fh_len - Fh_tail, fh[Fh_h_type],
+				      h_acceptable, /*context*/NULL);
+	lockdep_on();
+>>>>>>> temp
 	dentry = h_parent;
 	if (unlikely(!h_parent || IS_ERR(h_parent))) {
 		AuWarn1("%s decode_fh failed, %ld\n",
@@ -610,7 +633,11 @@ aufs_fh_to_dentry(struct super_block *sb, struct fid *fid, int fh_len,
 	ino = decode_ino(fh + Fh_ino);
 	/* it should never happen */
 	if (unlikely(ino == AUFS_ROOT_INO))
+<<<<<<< HEAD
 		goto out;
+=======
+		goto out_unlock;
+>>>>>>> temp
 
 	dir_ino = decode_ino(fh + Fh_dir_ino);
 	dentry = decode_by_ino(sb, ino, dir_ino);
@@ -621,7 +648,11 @@ aufs_fh_to_dentry(struct super_block *sb, struct fid *fid, int fh_len,
 
 	/* is the parent dir cached? */
 	br = au_sbr(sb, nsi_lock.bindex);
+<<<<<<< HEAD
 	atomic_inc(&br->br_count);
+=======
+	au_br_get(br);
+>>>>>>> temp
 	dentry = decode_by_dir_ino(sb, ino, dir_ino, &nsi_lock);
 	if (IS_ERR(dentry))
 		goto out_unlock;
@@ -645,7 +676,11 @@ accept:
 	dentry = ERR_PTR(-ESTALE);
 out_unlock:
 	if (br)
+<<<<<<< HEAD
 		atomic_dec(&br->br_count);
+=======
+		au_br_put(br);
+>>>>>>> temp
 	si_read_unlock(sb);
 out:
 	AuTraceErrPtr(dentry);
@@ -712,7 +747,11 @@ static int aufs_encode_fh(struct inode *inode, __u32 *fh, int *max_len,
 	err = -EIO;
 	parent = NULL;
 	ii_read_lock_child(inode);
+<<<<<<< HEAD
 	bindex = au_ibstart(inode);
+=======
+	bindex = au_ibtop(inode);
+>>>>>>> temp
 	if (!dir) {
 		dentry = d_find_any_alias(inode);
 		if (unlikely(!dentry))
@@ -787,7 +826,11 @@ static int aufs_commit_metadata(struct inode *inode)
 	sb = inode->i_sb;
 	si_read_lock(sb, AuLock_FLUSH | AuLock_NOPLMW);
 	ii_write_lock_child(inode);
+<<<<<<< HEAD
 	bindex = au_ibstart(inode);
+=======
+	bindex = au_ibtop(inode);
+>>>>>>> temp
 	AuDebugOn(bindex < 0);
 	h_inode = au_h_iptr(inode, bindex);
 
@@ -823,6 +866,14 @@ void au_export_init(struct super_block *sb)
 	struct au_sbinfo *sbinfo;
 	__u32 u;
 
+<<<<<<< HEAD
+=======
+	BUILD_BUG_ON_MSG(IS_BUILTIN(CONFIG_AUFS_FS)
+			 && IS_MODULE(CONFIG_EXPORTFS),
+			 AUFS_NAME ": unsupported configuration "
+			 "CONFIG_EXPORTFS=m and CONFIG_AUFS_FS=y");
+
+>>>>>>> temp
 	sb->s_export_op = &aufs_export_op;
 	sbinfo = au_sbi(sb);
 	sbinfo->si_xigen = NULL;

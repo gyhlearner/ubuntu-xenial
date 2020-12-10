@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 #ifndef _LINUX_TIME_H
 #define _LINUX_TIME_H
 
@@ -8,41 +9,20 @@
 
 extern struct timezone sys_tz;
 
-#define TIME_T_MAX	(time_t)((1UL << ((sizeof(time_t) << 3) - 1)) - 1)
-
-static inline int timespec_equal(const struct timespec *a,
-                                 const struct timespec *b)
-{
-	return (a->tv_sec == b->tv_sec) && (a->tv_nsec == b->tv_nsec);
-}
-
-/*
- * lhs < rhs:  return <0
- * lhs == rhs: return 0
- * lhs > rhs:  return >0
- */
-static inline int timespec_compare(const struct timespec *lhs, const struct timespec *rhs)
-{
-	if (lhs->tv_sec < rhs->tv_sec)
-		return -1;
-	if (lhs->tv_sec > rhs->tv_sec)
-		return 1;
-	return lhs->tv_nsec - rhs->tv_nsec;
-}
-
-static inline int timeval_compare(const struct timeval *lhs, const struct timeval *rhs)
-{
-	if (lhs->tv_sec < rhs->tv_sec)
-		return -1;
-	if (lhs->tv_sec > rhs->tv_sec)
-		return 1;
-	return lhs->tv_usec - rhs->tv_usec;
-}
+int get_timespec64(struct timespec64 *ts,
+		const struct timespec __user *uts);
+int put_timespec64(const struct timespec64 *ts,
+		struct timespec __user *uts);
+int get_itimerspec64(struct itimerspec64 *it,
+			const struct itimerspec __user *uit);
+int put_itimerspec64(const struct itimerspec64 *it,
+			struct itimerspec __user *uit);
 
 extern time64_t mktime64(const unsigned int year, const unsigned int mon,
 			const unsigned int day, const unsigned int hour,
 			const unsigned int min, const unsigned int sec);
 
+<<<<<<< HEAD
 /**
  * Deprecated. Use mktime64().
  */
@@ -154,6 +134,8 @@ static inline bool timespec_inject_offset_valid(const struct timespec *ts)
 #define CURRENT_TIME		(current_kernel_time())
 #define CURRENT_TIME_SEC	((struct timespec) { get_seconds(), 0 })
 
+=======
+>>>>>>> temp
 /* Some architectures do not supply their own clocksource.
  * This is mainly the case in architectures that get their
  * inter-tick times by reading the counter on their interval
@@ -172,12 +154,7 @@ extern int do_setitimer(int which, struct itimerval *value,
 			struct itimerval *ovalue);
 extern int do_getitimer(int which, struct itimerval *value);
 
-extern unsigned int alarm_setitimer(unsigned int seconds);
-
-extern long do_utimes(int dfd, const char __user *filename, struct timespec *times, int flags);
-
-struct tms;
-extern void do_sys_times(struct tms *);
+extern long do_utimes(int dfd, const char __user *filename, struct timespec64 *times, int flags);
 
 /*
  * Similar to the struct tm in userspace <time.h>, but it needs to be here so
@@ -205,61 +182,32 @@ struct tm {
 	int tm_yday;
 };
 
-void time_to_tm(time_t totalsecs, int offset, struct tm *result);
+void time64_to_tm(time64_t totalsecs, int offset, struct tm *result);
 
-/**
- * timespec_to_ns - Convert timespec to nanoseconds
- * @ts:		pointer to the timespec variable to be converted
- *
- * Returns the scalar nanosecond representation of the timespec
- * parameter.
- */
-static inline s64 timespec_to_ns(const struct timespec *ts)
+# include <linux/time32.h>
+
+static inline bool itimerspec64_valid(const struct itimerspec64 *its)
 {
-	return ((s64) ts->tv_sec * NSEC_PER_SEC) + ts->tv_nsec;
+	if (!timespec64_valid(&(its->it_interval)) ||
+		!timespec64_valid(&(its->it_value)))
+		return false;
+
+	return true;
 }
 
 /**
- * timeval_to_ns - Convert timeval to nanoseconds
- * @ts:		pointer to the timeval variable to be converted
+ * time_after32 - compare two 32-bit relative times
+ * @a:	the time which may be after @b
+ * @b:	the time which may be before @a
  *
- * Returns the scalar nanosecond representation of the timeval
- * parameter.
- */
-static inline s64 timeval_to_ns(const struct timeval *tv)
-{
-	return ((s64) tv->tv_sec * NSEC_PER_SEC) +
-		tv->tv_usec * NSEC_PER_USEC;
-}
-
-/**
- * ns_to_timespec - Convert nanoseconds to timespec
- * @nsec:	the nanoseconds value to be converted
+ * time_after32(a, b) returns true if the time @a is after time @b.
+ * time_before32(b, a) returns true if the time @b is before time @a.
  *
- * Returns the timespec representation of the nsec parameter.
+ * Similar to time_after(), compare two 32-bit timestamps for relative
+ * times.  This is useful for comparing 32-bit seconds values that can't
+ * be converted to 64-bit values (e.g. due to disk format or wire protocol
+ * issues) when it is known that the times are less than 68 years apart.
  */
-extern struct timespec ns_to_timespec(const s64 nsec);
-
-/**
- * ns_to_timeval - Convert nanoseconds to timeval
- * @nsec:	the nanoseconds value to be converted
- *
- * Returns the timeval representation of the nsec parameter.
- */
-extern struct timeval ns_to_timeval(const s64 nsec);
-
-/**
- * timespec_add_ns - Adds nanoseconds to a timespec
- * @a:		pointer to timespec to be incremented
- * @ns:		unsigned nanoseconds value to be added
- *
- * This must always be inlined because its used from the x86-64 vdso,
- * which cannot call other kernel functions.
- */
-static __always_inline void timespec_add_ns(struct timespec *a, u64 ns)
-{
-	a->tv_sec += __iter_div_u64_rem(a->tv_nsec + ns, NSEC_PER_SEC, &ns);
-	a->tv_nsec = ns;
-}
-
+#define time_after32(a, b)	((s32)((u32)(b) - (u32)(a)) < 0)
+#define time_before32(b, a)	time_after32(a, b)
 #endif

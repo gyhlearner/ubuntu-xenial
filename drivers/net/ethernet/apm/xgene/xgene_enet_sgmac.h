@@ -36,10 +36,19 @@
 #define MPA_IDLE_WITH_QMI_EMPTY		BIT(12)
 #define SG_RX_DV_GATE_REG_0_ADDR	0x05fc
 #define SGMII_EN			0x1
+<<<<<<< HEAD
 
+=======
+>>>>>>> temp
 
-extern struct xgene_mac_ops xgene_sgmac_ops;
-extern struct xgene_port_ops xgene_sgport_ops;
+enum xgene_phy_speed {
+	PHY_SPEED_10,
+	PHY_SPEED_100,
+	PHY_SPEED_1000
+};
+
+extern const struct xgene_mac_ops xgene_sgmac_ops;
+extern const struct xgene_port_ops xgene_sgport_ops;
 
 enum xgene_phy_speed {
 	PHY_SPEED_10,

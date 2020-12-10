@@ -63,9 +63,12 @@ vn_mode_to_vtype(mode_t mode)
 	if (S_ISSOCK(mode))
 		return VSOCK;
 
+<<<<<<< HEAD
 	if (S_ISCHR(mode))
 		return VCHR;
 
+=======
+>>>>>>> temp
 	return VNON;
 } /* vn_mode_to_vtype() */
 EXPORT_SYMBOL(vn_mode_to_vtype);
@@ -156,7 +159,13 @@ vn_open(const char *path, uio_seg_t seg, int flags, int mode,
 	if (IS_ERR(fp))
 		return (-PTR_ERR(fp));
 
+<<<<<<< HEAD
 #ifdef HAVE_2ARGS_VFS_GETATTR
+=======
+#if defined(HAVE_4ARGS_VFS_GETATTR)
+	rc = vfs_getattr(&fp->f_path, &stat, STATX_TYPE, AT_STATX_SYNC_AS_STAT);
+#elif defined(HAVE_2ARGS_VFS_GETATTR)
+>>>>>>> temp
 	rc = vfs_getattr(&fp->f_path, &stat);
 #else
 	rc = vfs_getattr(fp->f_path.mnt, fp->f_dentry, &stat);
@@ -212,6 +221,7 @@ int
 vn_rdwr(uio_rw_t uio, vnode_t *vp, void *addr, ssize_t len, offset_t off,
 	uio_seg_t seg, int ioflag, rlim64_t x2, void *x3, ssize_t *residp)
 {
+<<<<<<< HEAD
 	loff_t offset;
 	mm_segment_t saved_fs;
 	struct file *fp;
@@ -242,6 +252,24 @@ vn_rdwr(uio_rw_t uio, vnode_t *vp, void *addr, ssize_t len, offset_t off,
 		rc = vfs_read(fp, addr, len, &offset);
 
 	set_fs(saved_fs);
+=======
+	struct file *fp = vp->v_file;
+	loff_t offset = off;
+	int rc;
+
+	ASSERT(uio == UIO_WRITE || uio == UIO_READ);
+	ASSERT(seg == UIO_SYSSPACE);
+	ASSERT((ioflag & ~FAPPEND) == 0);
+
+	if (ioflag & FAPPEND)
+		offset = fp->f_pos;
+
+	if (uio & UIO_WRITE)
+		rc = spl_kernel_write(fp, addr, len, &offset);
+	else
+		rc = spl_kernel_read(fp, addr, len, &offset);
+
+>>>>>>> temp
 	fp->f_pos = offset;
 
 	if (rc < 0)
@@ -353,7 +381,12 @@ spl_kern_path_locked(const char *name, struct path *path)
 	if (rc)
 		return (ERR_PTR(rc));
 
+<<<<<<< HEAD
 	spl_inode_lock(parent.dentry->d_inode);
+=======
+	/* use I_MUTEX_PARENT because vfs_unlink needs it */
+	spl_inode_lock_nested(parent.dentry->d_inode, I_MUTEX_PARENT);
+>>>>>>> temp
 
 	dentry = lookup_one_len(basename, parent.dentry, len);
 	if (IS_ERR(dentry)) {
@@ -513,7 +546,14 @@ vn_getattr(vnode_t *vp, vattr_t *vap, int flags, void *x3, void *x4)
 
 	fp = vp->v_file;
 
+<<<<<<< HEAD
 #ifdef HAVE_2ARGS_VFS_GETATTR
+=======
+#if defined(HAVE_4ARGS_VFS_GETATTR)
+	rc = vfs_getattr(&fp->f_path, &stat, STATX_BASIC_STATS,
+	    AT_STATX_SYNC_AS_STAT);
+#elif defined(HAVE_2ARGS_VFS_GETATTR)
+>>>>>>> temp
 	rc = vfs_getattr(&fp->f_path, &stat);
 #else
 	rc = vfs_getattr(fp->f_path.mnt, fp->f_dentry, &stat);
@@ -556,6 +596,7 @@ int vn_fsync(vnode_t *vp, int flags, void *x3, void *x4)
 	 * May enter XFS which generates a warning when PF_FSTRANS is set.
 	 * To avoid this the flag is cleared over vfs_sync() and then reset.
 	 */
+<<<<<<< HEAD
 	fstrans = spl_fstrans_check();
 	if (fstrans)
 		current->flags &= ~(PF_FSTRANS);
@@ -563,6 +604,15 @@ int vn_fsync(vnode_t *vp, int flags, void *x3, void *x4)
 	error = -spl_filp_fsync(vp->v_file, datasync);
 	if (fstrans)
 		current->flags |= PF_FSTRANS;
+=======
+	fstrans = __spl_pf_fstrans_check();
+	if (fstrans)
+		current->flags &= ~(__SPL_PF_FSTRANS);
+
+	error = -spl_filp_fsync(vp->v_file, datasync);
+	if (fstrans)
+		current->flags |= __SPL_PF_FSTRANS;
+>>>>>>> temp
 
 	return (error);
 } /* vn_fsync() */
@@ -572,6 +622,12 @@ int vn_space(vnode_t *vp, int cmd, struct flock *bfp, int flag,
     offset_t offset, void *x6, void *x7)
 {
 	int error = EOPNOTSUPP;
+<<<<<<< HEAD
+=======
+#ifdef FALLOC_FL_PUNCH_HOLE
+	int fstrans;
+#endif
+>>>>>>> temp
 
 	if (cmd != F_FREESP || bfp->l_whence != 0)
 		return (EOPNOTSUPP);
@@ -582,12 +638,30 @@ int vn_space(vnode_t *vp, int cmd, struct flock *bfp, int flag,
 
 #ifdef FALLOC_FL_PUNCH_HOLE
 	/*
+<<<<<<< HEAD
+=======
+	 * May enter XFS which generates a warning when PF_FSTRANS is set.
+	 * To avoid this the flag is cleared over vfs_sync() and then reset.
+	 */
+	fstrans = __spl_pf_fstrans_check();
+	if (fstrans)
+		current->flags &= ~(__SPL_PF_FSTRANS);
+
+	/*
+>>>>>>> temp
 	 * When supported by the underlying file system preferentially
 	 * use the fallocate() callback to preallocate the space.
 	 */
 	error = -spl_filp_fallocate(vp->v_file,
 	    FALLOC_FL_KEEP_SIZE | FALLOC_FL_PUNCH_HOLE,
 	    bfp->l_start, bfp->l_len);
+<<<<<<< HEAD
+=======
+
+	if (fstrans)
+		current->flags |= __SPL_PF_FSTRANS;
+
+>>>>>>> temp
 	if (error == 0)
 		return (0);
 #endif
@@ -656,6 +730,22 @@ vn_getf(int fd)
 
 	fp = file_find(fd, current);
 	if (fp) {
+<<<<<<< HEAD
+=======
+		lfp = fget(fd);
+		fput(fp->f_file);
+		/*
+		 * areleasef() can cause us to see a stale reference when
+		 * userspace has reused a file descriptor before areleasef()
+		 * has run. fput() the stale reference and replace it. We
+		 * retain the original reference count such that the concurrent
+		 * areleasef() will decrement its reference and terminate.
+		 */
+		if (lfp != fp->f_file) {
+			fp->f_file = lfp;
+			fp->f_vnode->v_file = lfp;
+		}
+>>>>>>> temp
 		atomic_inc(&fp->f_ref);
 		spin_unlock(&vn_file_lock);
 		return (fp);
@@ -683,7 +773,13 @@ vn_getf(int fd)
 	if (vp == NULL)
 		goto out_fget;
 
+<<<<<<< HEAD
 #ifdef HAVE_2ARGS_VFS_GETATTR
+=======
+#if defined(HAVE_4ARGS_VFS_GETATTR)
+	rc = vfs_getattr(&lfp->f_path, &stat, STATX_TYPE, AT_STATX_SYNC_AS_STAT);
+#elif defined(HAVE_2ARGS_VFS_GETATTR)
+>>>>>>> temp
 	rc = vfs_getattr(&lfp->f_path, &stat);
 #else
 	rc = vfs_getattr(lfp->f_path.mnt, lfp->f_dentry, &stat);
@@ -872,13 +968,21 @@ spl_vn_init(void)
 				     sizeof(struct vnode), 64,
 	                             vn_cache_constructor,
 				     vn_cache_destructor,
+<<<<<<< HEAD
 				     NULL, NULL, NULL, KMC_KMEM);
+=======
+				     NULL, NULL, NULL, 0);
+>>>>>>> temp
 
 	vn_file_cache = kmem_cache_create("spl_vn_file_cache",
 					  sizeof(file_t), 64,
 				          vn_file_cache_constructor,
 				          vn_file_cache_destructor,
+<<<<<<< HEAD
 				          NULL, NULL, NULL, KMC_KMEM);
+=======
+				          NULL, NULL, NULL, 0);
+>>>>>>> temp
 	return (0);
 } /* vn_init() */
 

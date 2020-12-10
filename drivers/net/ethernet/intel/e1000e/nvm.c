@@ -67,7 +67,7 @@ static void e1000_shift_out_eec_bits(struct e1000_hw *hw, u16 data, u16 count)
 	u32 eecd = er32(EECD);
 	u32 mask;
 
-	mask = 0x01 << (count - 1);
+	mask = BIT(count - 1);
 	if (nvm->type == e1000_nvm_eeprom_spi)
 		eecd |= E1000_EECD_DO;
 
@@ -410,7 +410,7 @@ s32 e1000e_write_nvm_spi(struct e1000_hw *hw, u16 offset, u16 words, u16 *data)
 				break;
 			}
 		}
-		usleep_range(10000, 20000);
+		usleep_range(10000, 11000);
 		nvm->ops.release(hw);
 	}
 

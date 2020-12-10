@@ -25,6 +25,7 @@
 
 #include <linux/seq_file.h>
 #include <linux/types.h>
+<<<<<<< HEAD
 #include "amd_shared.h"
 #include "cgs_common.h"
 
@@ -122,14 +123,52 @@ enum amd_dpm_forced_level {
 	AMD_DPM_FORCED_LEVEL_AUTO = 0,
 	AMD_DPM_FORCED_LEVEL_LOW = 1,
 	AMD_DPM_FORCED_LEVEL_HIGH = 2,
+=======
+#include <linux/errno.h>
+#include "amd_shared.h"
+#include "cgs_common.h"
+#include "dm_pp_interface.h"
+
+extern const struct amd_ip_funcs pp_ip_funcs;
+extern const struct amd_pm_funcs pp_dpm_funcs;
+
+enum amd_pp_sensors {
+	AMDGPU_PP_SENSOR_GFX_SCLK = 0,
+	AMDGPU_PP_SENSOR_VDDNB,
+	AMDGPU_PP_SENSOR_VDDGFX,
+	AMDGPU_PP_SENSOR_UVD_VCLK,
+	AMDGPU_PP_SENSOR_UVD_DCLK,
+	AMDGPU_PP_SENSOR_VCE_ECCLK,
+	AMDGPU_PP_SENSOR_GPU_LOAD,
+	AMDGPU_PP_SENSOR_GFX_MCLK,
+	AMDGPU_PP_SENSOR_GPU_TEMP,
+	AMDGPU_PP_SENSOR_VCE_POWER,
+	AMDGPU_PP_SENSOR_UVD_POWER,
+	AMDGPU_PP_SENSOR_GPU_POWER,
+};
+
+enum amd_pp_task {
+	AMD_PP_TASK_DISPLAY_CONFIG_CHANGE,
+	AMD_PP_TASK_ENABLE_USER_STATE,
+	AMD_PP_TASK_READJUST_POWER_STATE,
+	AMD_PP_TASK_COMPLETE_INIT,
+	AMD_PP_TASK_MAX
+>>>>>>> temp
 };
 
 struct amd_pp_init {
 	struct cgs_device *device;
 	uint32_t chip_family;
 	uint32_t chip_id;
+<<<<<<< HEAD
 	uint32_t rev_id;
 };
+=======
+	bool pm_en;
+	uint32_t feature_mask;
+};
+
+>>>>>>> temp
 enum amd_pp_display_config_type{
 	AMD_PP_DisplayConfigType_None = 0,
 	AMD_PP_DisplayConfigType_DP54 ,
@@ -209,14 +248,76 @@ struct amd_pp_display_configuration {
 	 * higher latency not allowed.
 	 */
 	uint32_t dce_tolerable_mclk_in_active_latency;
+<<<<<<< HEAD
 };
 
 struct amd_pp_dal_clock_info {
+=======
+	uint32_t min_dcef_set_clk;
+	uint32_t min_dcef_deep_sleep_set_clk;
+};
+
+struct amd_pp_simple_clock_info {
+>>>>>>> temp
 	uint32_t	engine_max_clock;
 	uint32_t	memory_max_clock;
 	uint32_t	level;
 };
 
+<<<<<<< HEAD
+=======
+enum PP_DAL_POWERLEVEL {
+	PP_DAL_POWERLEVEL_INVALID = 0,
+	PP_DAL_POWERLEVEL_ULTRALOW,
+	PP_DAL_POWERLEVEL_LOW,
+	PP_DAL_POWERLEVEL_NOMINAL,
+	PP_DAL_POWERLEVEL_PERFORMANCE,
+
+	PP_DAL_POWERLEVEL_0 = PP_DAL_POWERLEVEL_ULTRALOW,
+	PP_DAL_POWERLEVEL_1 = PP_DAL_POWERLEVEL_LOW,
+	PP_DAL_POWERLEVEL_2 = PP_DAL_POWERLEVEL_NOMINAL,
+	PP_DAL_POWERLEVEL_3 = PP_DAL_POWERLEVEL_PERFORMANCE,
+	PP_DAL_POWERLEVEL_4 = PP_DAL_POWERLEVEL_3+1,
+	PP_DAL_POWERLEVEL_5 = PP_DAL_POWERLEVEL_4+1,
+	PP_DAL_POWERLEVEL_6 = PP_DAL_POWERLEVEL_5+1,
+	PP_DAL_POWERLEVEL_7 = PP_DAL_POWERLEVEL_6+1,
+};
+
+struct amd_pp_clock_info {
+	uint32_t min_engine_clock;
+	uint32_t max_engine_clock;
+	uint32_t min_memory_clock;
+	uint32_t max_memory_clock;
+	uint32_t min_bus_bandwidth;
+	uint32_t max_bus_bandwidth;
+	uint32_t max_engine_clock_in_sr;
+	uint32_t min_engine_clock_in_sr;
+	enum PP_DAL_POWERLEVEL max_clocks_state;
+};
+
+enum amd_pp_clock_type {
+	amd_pp_disp_clock = 1,
+	amd_pp_sys_clock,
+	amd_pp_mem_clock,
+	amd_pp_dcef_clock,
+	amd_pp_soc_clock,
+	amd_pp_pixel_clock,
+	amd_pp_phy_clock,
+	amd_pp_dcf_clock,
+	amd_pp_dpp_clock,
+	amd_pp_f_clock = amd_pp_dcef_clock,
+};
+
+#define MAX_NUM_CLOCKS 16
+
+struct amd_pp_clocks {
+	uint32_t count;
+	uint32_t clock[MAX_NUM_CLOCKS];
+	uint32_t latency[MAX_NUM_CLOCKS];
+};
+
+
+>>>>>>> temp
 enum {
 	PP_GROUP_UNKNOWN = 0,
 	PP_GROUP_GFX = 1,
@@ -224,6 +325,26 @@ enum {
 	PP_GROUP_MAX
 };
 
+<<<<<<< HEAD
+=======
+struct pp_states_info {
+	uint32_t nums;
+	uint32_t states[16];
+};
+
+struct pp_gpu_power {
+	uint32_t vddc_power;
+	uint32_t vddci_power;
+	uint32_t max_gpu_power;
+	uint32_t average_gpu_power;
+};
+
+struct pp_display_clock_request {
+	enum amd_pp_clock_type clock_type;
+	uint32_t clock_freq_in_khz;
+};
+
+>>>>>>> temp
 #define PP_GROUP_MASK        0xF0000000
 #define PP_GROUP_SHIFT       28
 
@@ -232,6 +353,12 @@ enum {
 
 #define PP_BLOCK_GFX_CG         0x01
 #define PP_BLOCK_GFX_MG         0x02
+<<<<<<< HEAD
+=======
+#define PP_BLOCK_GFX_3D         0x04
+#define PP_BLOCK_GFX_RLC        0x08
+#define PP_BLOCK_GFX_CP         0x10
+>>>>>>> temp
 #define PP_BLOCK_SYS_BIF        0x01
 #define PP_BLOCK_SYS_MC         0x02
 #define PP_BLOCK_SYS_ROM        0x04
@@ -258,6 +385,7 @@ enum {
 								support << PP_STATE_SUPPORT_SHIFT |\
 								state << PP_STATE_SHIFT)
 
+<<<<<<< HEAD
 struct amd_powerplay_funcs {
 	int (*get_temperature)(void *handle);
 	int (*load_firmware)(void *handle);
@@ -293,6 +421,46 @@ int amd_powerplay_display_configuration_change(void *handle, const void *input);
 
 int amd_powerplay_get_display_power_level(void *handle,
 		struct amd_pp_dal_clock_info *output);
+=======
+struct amd_powerplay {
+	struct cgs_device *cgs_device;
+	void *pp_handle;
+	const struct amd_ip_funcs *ip_funcs;
+	const struct amd_pm_funcs *pp_funcs;
+};
+
+int amd_powerplay_reset(void *handle);
+
+int amd_powerplay_display_configuration_change(void *handle,
+		const struct amd_pp_display_configuration *input);
+
+int amd_powerplay_get_display_power_level(void *handle,
+		struct amd_pp_simple_clock_info *output);
+
+int amd_powerplay_get_current_clocks(void *handle,
+		struct amd_pp_clock_info *output);
+
+int amd_powerplay_get_clock_by_type(void *handle,
+		enum amd_pp_clock_type type,
+		struct amd_pp_clocks *clocks);
+
+int amd_powerplay_get_clock_by_type_with_latency(void *handle,
+		enum amd_pp_clock_type type,
+		struct pp_clock_levels_with_latency *clocks);
+
+int amd_powerplay_get_clock_by_type_with_voltage(void *handle,
+		enum amd_pp_clock_type type,
+		struct pp_clock_levels_with_voltage *clocks);
+
+int amd_powerplay_set_watermarks_for_clocks_ranges(void *handle,
+		struct pp_wm_sets_with_clock_ranges_soc15 *wm_with_clock_ranges);
+
+int amd_powerplay_display_clock_voltage_request(void *handle,
+		struct pp_display_clock_request *clock);
+
+int amd_powerplay_get_display_mode_validation_clocks(void *handle,
+		struct amd_pp_simple_clock_info *output);
+>>>>>>> temp
 
 
 #endif /* _AMD_POWERPLAY_H_ */

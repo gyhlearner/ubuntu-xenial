@@ -46,7 +46,11 @@
  * two AVL trees are created.  One tree is keyed by the index number
  * and the other by the domain string.  Nodes are never removed from
  * trees, but new entries may be added.  If a new entry is added then
+<<<<<<< HEAD
  * the zsb->z_fuid_dirty flag is set to true and the caller will then
+=======
+ * the zfsvfs->z_fuid_dirty flag is set to true and the caller will then
+>>>>>>> temp
  * be responsible for calling zfs_fuid_sync() to sync the changes to disk.
  *
  */
@@ -71,6 +75,7 @@ static char *nulldomain = "";
 static int
 idx_compare(const void *arg1, const void *arg2)
 {
+<<<<<<< HEAD
 	const fuid_domain_t *node1 = arg1;
 	const fuid_domain_t *node2 = arg2;
 
@@ -79,6 +84,12 @@ idx_compare(const void *arg1, const void *arg2)
 	else if (node1->f_idx > node2->f_idx)
 		return (1);
 	return (0);
+=======
+	const fuid_domain_t *node1 = (const fuid_domain_t *)arg1;
+	const fuid_domain_t *node2 = (const fuid_domain_t *)arg2;
+
+	return (AVL_CMP(node1->f_idx, node2->f_idx));
+>>>>>>> temp
 }
 
 /*
@@ -87,6 +98,7 @@ idx_compare(const void *arg1, const void *arg2)
 static int
 domain_compare(const void *arg1, const void *arg2)
 {
+<<<<<<< HEAD
 	const fuid_domain_t *node1 = arg1;
 	const fuid_domain_t *node2 = arg2;
 	int val;
@@ -95,6 +107,15 @@ domain_compare(const void *arg1, const void *arg2)
 	if (val == 0)
 		return (0);
 	return (val > 0 ? 1 : -1);
+=======
+	const fuid_domain_t *node1 = (const fuid_domain_t *)arg1;
+	const fuid_domain_t *node2 = (const fuid_domain_t *)arg2;
+	int val;
+
+	val = strcmp(node1->f_ksid->kd_name, node2->f_ksid->kd_name);
+
+	return (AVL_ISIGN(val));
+>>>>>>> temp
 }
 
 void
@@ -196,6 +217,7 @@ zfs_fuid_idx_domain(avl_tree_t *idx_tree, uint32_t idx)
  * Load the fuid table(s) into memory.
  */
 static void
+<<<<<<< HEAD
 zfs_fuid_init(zfs_sb_t *zsb)
 {
 	rw_enter(&zsb->z_fuid_lock, RW_WRITER);
@@ -217,13 +239,40 @@ zfs_fuid_init(zfs_sb_t *zsb)
 
 	zsb->z_fuid_loaded = B_TRUE;
 	rw_exit(&zsb->z_fuid_lock);
+=======
+zfs_fuid_init(zfsvfs_t *zfsvfs)
+{
+	rw_enter(&zfsvfs->z_fuid_lock, RW_WRITER);
+
+	if (zfsvfs->z_fuid_loaded) {
+		rw_exit(&zfsvfs->z_fuid_lock);
+		return;
+	}
+
+	zfs_fuid_avl_tree_create(&zfsvfs->z_fuid_idx, &zfsvfs->z_fuid_domain);
+
+	(void) zap_lookup(zfsvfs->z_os, MASTER_NODE_OBJ,
+	    ZFS_FUID_TABLES, 8, 1, &zfsvfs->z_fuid_obj);
+	if (zfsvfs->z_fuid_obj != 0) {
+		zfsvfs->z_fuid_size = zfs_fuid_table_load(zfsvfs->z_os,
+		    zfsvfs->z_fuid_obj, &zfsvfs->z_fuid_idx,
+		    &zfsvfs->z_fuid_domain);
+	}
+
+	zfsvfs->z_fuid_loaded = B_TRUE;
+	rw_exit(&zfsvfs->z_fuid_lock);
+>>>>>>> temp
 }
 
 /*
  * sync out AVL trees to persistent storage.
  */
 void
+<<<<<<< HEAD
 zfs_fuid_sync(zfs_sb_t *zsb, dmu_tx_t *tx)
+=======
+zfs_fuid_sync(zfsvfs_t *zfsvfs, dmu_tx_t *tx)
+>>>>>>> temp
 {
 	nvlist_t *nvp;
 	nvlist_t **fuids;
@@ -234,15 +283,24 @@ zfs_fuid_sync(zfs_sb_t *zsb, dmu_tx_t *tx)
 	int numnodes;
 	int i;
 
+<<<<<<< HEAD
 	if (!zsb->z_fuid_dirty) {
 		return;
 	}
 
 	rw_enter(&zsb->z_fuid_lock, RW_WRITER);
+=======
+	if (!zfsvfs->z_fuid_dirty) {
+		return;
+	}
+
+	rw_enter(&zfsvfs->z_fuid_lock, RW_WRITER);
+>>>>>>> temp
 
 	/*
 	 * First see if table needs to be created?
 	 */
+<<<<<<< HEAD
 	if (zsb->z_fuid_obj == 0) {
 		zsb->z_fuid_obj = dmu_object_alloc(zsb->z_os,
 		    DMU_OT_FUID, 1 << 14, DMU_OT_FUID_SIZE,
@@ -250,14 +308,30 @@ zfs_fuid_sync(zfs_sb_t *zsb, dmu_tx_t *tx)
 		VERIFY(zap_add(zsb->z_os, MASTER_NODE_OBJ,
 		    ZFS_FUID_TABLES, sizeof (uint64_t), 1,
 		    &zsb->z_fuid_obj, tx) == 0);
+=======
+	if (zfsvfs->z_fuid_obj == 0) {
+		zfsvfs->z_fuid_obj = dmu_object_alloc(zfsvfs->z_os,
+		    DMU_OT_FUID, 1 << 14, DMU_OT_FUID_SIZE,
+		    sizeof (uint64_t), tx);
+		VERIFY(zap_add(zfsvfs->z_os, MASTER_NODE_OBJ,
+		    ZFS_FUID_TABLES, sizeof (uint64_t), 1,
+		    &zfsvfs->z_fuid_obj, tx) == 0);
+>>>>>>> temp
 	}
 
 	VERIFY(nvlist_alloc(&nvp, NV_UNIQUE_NAME, KM_SLEEP) == 0);
 
+<<<<<<< HEAD
 	numnodes = avl_numnodes(&zsb->z_fuid_idx);
 	fuids = kmem_alloc(numnodes * sizeof (void *), KM_SLEEP);
 	for (i = 0, domnode = avl_first(&zsb->z_fuid_domain); domnode; i++,
 	    domnode = AVL_NEXT(&zsb->z_fuid_domain, domnode)) {
+=======
+	numnodes = avl_numnodes(&zfsvfs->z_fuid_idx);
+	fuids = kmem_alloc(numnodes * sizeof (void *), KM_SLEEP);
+	for (i = 0, domnode = avl_first(&zfsvfs->z_fuid_domain); domnode; i++,
+	    domnode = AVL_NEXT(&zfsvfs->z_fuid_domain, domnode)) {
+>>>>>>> temp
 		VERIFY(nvlist_alloc(&fuids[i], NV_UNIQUE_NAME, KM_SLEEP) == 0);
 		VERIFY(nvlist_add_uint64(fuids[i], FUID_IDX,
 		    domnode->f_idx) == 0);
@@ -275,6 +349,7 @@ zfs_fuid_sync(zfs_sb_t *zsb, dmu_tx_t *tx)
 	VERIFY(nvlist_pack(nvp, &packed, &nvsize,
 	    NV_ENCODE_XDR, KM_SLEEP) == 0);
 	nvlist_free(nvp);
+<<<<<<< HEAD
 	zsb->z_fuid_size = nvsize;
 	dmu_write(zsb->z_os, zsb->z_fuid_obj, 0, zsb->z_fuid_size, packed, tx);
 	kmem_free(packed, zsb->z_fuid_size);
@@ -286,18 +361,40 @@ zfs_fuid_sync(zfs_sb_t *zsb, dmu_tx_t *tx)
 
 	zsb->z_fuid_dirty = B_FALSE;
 	rw_exit(&zsb->z_fuid_lock);
+=======
+	zfsvfs->z_fuid_size = nvsize;
+	dmu_write(zfsvfs->z_os, zfsvfs->z_fuid_obj, 0,
+	    zfsvfs->z_fuid_size, packed, tx);
+	kmem_free(packed, zfsvfs->z_fuid_size);
+	VERIFY(0 == dmu_bonus_hold(zfsvfs->z_os, zfsvfs->z_fuid_obj,
+	    FTAG, &db));
+	dmu_buf_will_dirty(db, tx);
+	*(uint64_t *)db->db_data = zfsvfs->z_fuid_size;
+	dmu_buf_rele(db, FTAG);
+
+	zfsvfs->z_fuid_dirty = B_FALSE;
+	rw_exit(&zfsvfs->z_fuid_lock);
+>>>>>>> temp
 }
 
 /*
  * Query domain table for a given domain.
  *
  * If domain isn't found and addok is set, it is added to AVL trees and
+<<<<<<< HEAD
  * the zsb->z_fuid_dirty flag will be set to TRUE.  It will then be
+=======
+ * the zfsvfs->z_fuid_dirty flag will be set to TRUE.  It will then be
+>>>>>>> temp
  * necessary for the caller or another thread to detect the dirty table
  * and sync out the changes.
  */
 int
+<<<<<<< HEAD
 zfs_fuid_find_by_domain(zfs_sb_t *zsb, const char *domain,
+=======
+zfs_fuid_find_by_domain(zfsvfs_t *zfsvfs, const char *domain,
+>>>>>>> temp
     char **retdomain, boolean_t addok)
 {
 	fuid_domain_t searchnode, *findnode;
@@ -318,6 +415,7 @@ zfs_fuid_find_by_domain(zfs_sb_t *zsb, const char *domain,
 	searchnode.f_ksid = ksid_lookupdomain(domain);
 	if (retdomain)
 		*retdomain = searchnode.f_ksid->kd_name;
+<<<<<<< HEAD
 	if (!zsb->z_fuid_loaded)
 		zfs_fuid_init(zsb);
 
@@ -327,14 +425,30 @@ retry:
 
 	if (findnode) {
 		rw_exit(&zsb->z_fuid_lock);
+=======
+	if (!zfsvfs->z_fuid_loaded)
+		zfs_fuid_init(zfsvfs);
+
+retry:
+	rw_enter(&zfsvfs->z_fuid_lock, rw);
+	findnode = avl_find(&zfsvfs->z_fuid_domain, &searchnode, &loc);
+
+	if (findnode) {
+		rw_exit(&zfsvfs->z_fuid_lock);
+>>>>>>> temp
 		ksiddomain_rele(searchnode.f_ksid);
 		return (findnode->f_idx);
 	} else if (addok) {
 		fuid_domain_t *domnode;
 		uint64_t retidx;
 
+<<<<<<< HEAD
 		if (rw == RW_READER && !rw_tryupgrade(&zsb->z_fuid_lock)) {
 			rw_exit(&zsb->z_fuid_lock);
+=======
+		if (rw == RW_READER && !rw_tryupgrade(&zfsvfs->z_fuid_lock)) {
+			rw_exit(&zfsvfs->z_fuid_lock);
+>>>>>>> temp
 			rw = RW_WRITER;
 			goto retry;
 		}
@@ -342,6 +456,7 @@ retry:
 		domnode = kmem_alloc(sizeof (fuid_domain_t), KM_SLEEP);
 		domnode->f_ksid = searchnode.f_ksid;
 
+<<<<<<< HEAD
 		retidx = domnode->f_idx = avl_numnodes(&zsb->z_fuid_idx) + 1;
 
 		avl_add(&zsb->z_fuid_domain, domnode);
@@ -351,6 +466,17 @@ retry:
 		return (retidx);
 	} else {
 		rw_exit(&zsb->z_fuid_lock);
+=======
+		retidx = domnode->f_idx = avl_numnodes(&zfsvfs->z_fuid_idx) + 1;
+
+		avl_add(&zfsvfs->z_fuid_domain, domnode);
+		avl_add(&zfsvfs->z_fuid_idx, domnode);
+		zfsvfs->z_fuid_dirty = B_TRUE;
+		rw_exit(&zfsvfs->z_fuid_lock);
+		return (retidx);
+	} else {
+		rw_exit(&zfsvfs->z_fuid_lock);
+>>>>>>> temp
 		return (-1);
 	}
 }
@@ -362,6 +488,7 @@ retry:
  *
  */
 const char *
+<<<<<<< HEAD
 zfs_fuid_find_by_idx(zfs_sb_t *zsb, uint32_t idx)
 {
 	char *domain;
@@ -379,6 +506,25 @@ zfs_fuid_find_by_idx(zfs_sb_t *zsb, uint32_t idx)
 	else
 		domain = nulldomain;
 	rw_exit(&zsb->z_fuid_lock);
+=======
+zfs_fuid_find_by_idx(zfsvfs_t *zfsvfs, uint32_t idx)
+{
+	char *domain;
+
+	if (idx == 0 || !zfsvfs->z_use_fuids)
+		return (NULL);
+
+	if (!zfsvfs->z_fuid_loaded)
+		zfs_fuid_init(zfsvfs);
+
+	rw_enter(&zfsvfs->z_fuid_lock, RW_READER);
+
+	if (zfsvfs->z_fuid_obj || zfsvfs->z_fuid_dirty)
+		domain = zfs_fuid_idx_domain(&zfsvfs->z_fuid_idx, idx);
+	else
+		domain = nulldomain;
+	rw_exit(&zfsvfs->z_fuid_lock);
+>>>>>>> temp
 
 	ASSERT(domain);
 	return (domain);
@@ -387,12 +533,23 @@ zfs_fuid_find_by_idx(zfs_sb_t *zsb, uint32_t idx)
 void
 zfs_fuid_map_ids(znode_t *zp, cred_t *cr, uid_t *uidp, uid_t *gidp)
 {
+<<<<<<< HEAD
 	*uidp = zfs_fuid_map_id(ZTOZSB(zp), zp->z_uid, cr, ZFS_OWNER);
 	*gidp = zfs_fuid_map_id(ZTOZSB(zp), zp->z_gid, cr, ZFS_GROUP);
 }
 
 uid_t
 zfs_fuid_map_id(zfs_sb_t *zsb, uint64_t fuid,
+=======
+	*uidp = zfs_fuid_map_id(ZTOZSB(zp), KUID_TO_SUID(ZTOI(zp)->i_uid),
+	    cr, ZFS_OWNER);
+	*gidp = zfs_fuid_map_id(ZTOZSB(zp), KGID_TO_SGID(ZTOI(zp)->i_gid),
+	    cr, ZFS_GROUP);
+}
+
+uid_t
+zfs_fuid_map_id(zfsvfs_t *zfsvfs, uint64_t fuid,
+>>>>>>> temp
     cred_t *cr, zfs_fuid_type_t type)
 {
 #ifdef HAVE_KSID
@@ -403,7 +560,11 @@ zfs_fuid_map_id(zfs_sb_t *zsb, uint64_t fuid,
 	if (index == 0)
 		return (fuid);
 
+<<<<<<< HEAD
 	domain = zfs_fuid_find_by_idx(zsb, index);
+=======
+	domain = zfs_fuid_find_by_idx(zfsvfs, index);
+>>>>>>> temp
 	ASSERT(domain != NULL);
 
 	if (type == ZFS_OWNER || type == ZFS_ACE_USER) {
@@ -498,7 +659,11 @@ zfs_fuid_node_add(zfs_fuid_info_t **fuidpp, const char *domain, uint32_t rid,
  * be used if it exists.
  */
 uint64_t
+<<<<<<< HEAD
 zfs_fuid_create_cred(zfs_sb_t *zsb, zfs_fuid_type_t type,
+=======
+zfs_fuid_create_cred(zfsvfs_t *zfsvfs, zfs_fuid_type_t type,
+>>>>>>> temp
     cred_t *cr, zfs_fuid_info_t **fuidp)
 {
 	uint64_t	idx;
@@ -512,7 +677,11 @@ zfs_fuid_create_cred(zfs_sb_t *zsb, zfs_fuid_type_t type,
 
 	ksid = crgetsid(cr, (type == ZFS_OWNER) ? KSID_OWNER : KSID_GROUP);
 
+<<<<<<< HEAD
 	if (!zsb->z_use_fuids || (ksid == NULL)) {
+=======
+	if (!zfsvfs->z_use_fuids || (ksid == NULL)) {
+>>>>>>> temp
 		id = (type == ZFS_OWNER) ? crgetuid(cr) : crgetgid(cr);
 
 		if (IS_EPHEMERAL(id))
@@ -535,7 +704,11 @@ zfs_fuid_create_cred(zfs_sb_t *zsb, zfs_fuid_type_t type,
 	rid = ksid_getrid(ksid);
 	domain = ksid_getdomain(ksid);
 
+<<<<<<< HEAD
 	idx = zfs_fuid_find_by_domain(zsb, domain, &kdomain, B_TRUE);
+=======
+	idx = zfs_fuid_find_by_domain(zfsvfs, domain, &kdomain, B_TRUE);
+>>>>>>> temp
 
 	zfs_fuid_node_add(fuidp, kdomain, rid, idx, id, type);
 
@@ -553,10 +726,17 @@ zfs_fuid_create_cred(zfs_sb_t *zsb, zfs_fuid_type_t type,
  *
  * During replay operations the domain+rid information is
  * found in the zfs_fuid_info_t that the replay code has
+<<<<<<< HEAD
  * attached to the zsb of the file system.
  */
 uint64_t
 zfs_fuid_create(zfs_sb_t *zsb, uint64_t id, cred_t *cr,
+=======
+ * attached to the zfsvfs of the file system.
+ */
+uint64_t
+zfs_fuid_create(zfsvfs_t *zfsvfs, uint64_t id, cred_t *cr,
+>>>>>>> temp
     zfs_fuid_type_t type, zfs_fuid_info_t **fuidpp)
 {
 #ifdef HAVE_KSID
@@ -577,11 +757,19 @@ zfs_fuid_create(zfs_sb_t *zsb, uint64_t id, cred_t *cr,
 	 * chmod.
 	 */
 
+<<<<<<< HEAD
 	if (!zsb->z_use_fuids || !IS_EPHEMERAL(id) || fuid_idx != 0)
 		return (id);
 
 	if (zsb->z_replay) {
 		fuidp = zsb->z_fuid_replay;
+=======
+	if (!zfsvfs->z_use_fuids || !IS_EPHEMERAL(id) || fuid_idx != 0)
+		return (id);
+
+	if (zfsvfs->z_replay) {
+		fuidp = zfsvfs->z_fuid_replay;
+>>>>>>> temp
 
 		/*
 		 * If we are passed an ephemeral id, but no
@@ -631,9 +819,15 @@ zfs_fuid_create(zfs_sb_t *zsb, uint64_t id, cred_t *cr,
 		}
 	}
 
+<<<<<<< HEAD
 	idx = zfs_fuid_find_by_domain(zsb, domain, &kdomain, B_TRUE);
 
 	if (!zsb->z_replay)
+=======
+	idx = zfs_fuid_find_by_domain(zfsvfs, domain, &kdomain, B_TRUE);
+
+	if (!zfsvfs->z_replay)
+>>>>>>> temp
 		zfs_fuid_node_add(fuidpp, kdomain,
 		    rid, idx, id, type);
 	else if (zfuid != NULL) {
@@ -650,6 +844,7 @@ zfs_fuid_create(zfs_sb_t *zsb, uint64_t id, cred_t *cr,
 }
 
 void
+<<<<<<< HEAD
 zfs_fuid_destroy(zfs_sb_t *zsb)
 {
 	rw_enter(&zsb->z_fuid_lock, RW_WRITER);
@@ -659,6 +854,17 @@ zfs_fuid_destroy(zfs_sb_t *zsb)
 	}
 	zfs_fuid_table_destroy(&zsb->z_fuid_idx, &zsb->z_fuid_domain);
 	rw_exit(&zsb->z_fuid_lock);
+=======
+zfs_fuid_destroy(zfsvfs_t *zfsvfs)
+{
+	rw_enter(&zfsvfs->z_fuid_lock, RW_WRITER);
+	if (!zfsvfs->z_fuid_loaded) {
+		rw_exit(&zfsvfs->z_fuid_lock);
+		return;
+	}
+	zfs_fuid_table_destroy(&zfsvfs->z_fuid_idx, &zfsvfs->z_fuid_domain);
+	rw_exit(&zfsvfs->z_fuid_lock);
+>>>>>>> temp
 }
 
 /*
@@ -694,7 +900,11 @@ zfs_fuid_info_free(zfs_fuid_info_t *fuidp)
 
 	if (fuidp->z_domain_table != NULL)
 		kmem_free(fuidp->z_domain_table,
+<<<<<<< HEAD
 		    (sizeof (char **)) * fuidp->z_domain_cnt);
+=======
+		    (sizeof (char *)) * fuidp->z_domain_cnt);
+>>>>>>> temp
 
 	while ((zdomain = list_head(&fuidp->z_domains)) != NULL) {
 		list_remove(&fuidp->z_domains, zdomain);
@@ -712,7 +922,11 @@ zfs_fuid_info_free(zfs_fuid_info_t *fuidp)
  * Will use a straight FUID compare when possible.
  */
 boolean_t
+<<<<<<< HEAD
 zfs_groupmember(zfs_sb_t *zsb, uint64_t id, cred_t *cr)
+=======
+zfs_groupmember(zfsvfs_t *zfsvfs, uint64_t id, cred_t *cr)
+>>>>>>> temp
 {
 #ifdef HAVE_KSID
 	ksid_t		*ksid = crgetsid(cr, KSID_GROUP);
@@ -736,7 +950,11 @@ zfs_groupmember(zfs_sb_t *zsb, uint64_t id, cred_t *cr)
 			} else {
 				const char *domain;
 
+<<<<<<< HEAD
 				domain = zfs_fuid_find_by_idx(zsb, idx);
+=======
+				domain = zfs_fuid_find_by_idx(zfsvfs, idx);
+>>>>>>> temp
 				ASSERT(domain != NULL);
 
 				if (strcmp(domain,
@@ -754,7 +972,11 @@ zfs_groupmember(zfs_sb_t *zsb, uint64_t id, cred_t *cr)
 	/*
 	 * Not found in ksidlist, check posix groups
 	 */
+<<<<<<< HEAD
 	gid = zfs_fuid_map_id(zsb, id, cr, ZFS_GROUP);
+=======
+	gid = zfs_fuid_map_id(zfsvfs, id, cr, ZFS_GROUP);
+>>>>>>> temp
 	return (groupmember(gid, cr));
 #else
 	return (B_TRUE);
@@ -762,6 +984,7 @@ zfs_groupmember(zfs_sb_t *zsb, uint64_t id, cred_t *cr)
 }
 
 void
+<<<<<<< HEAD
 zfs_fuid_txhold(zfs_sb_t *zsb, dmu_tx_t *tx)
 {
 	if (zsb->z_fuid_obj == 0) {
@@ -773,6 +996,19 @@ zfs_fuid_txhold(zfs_sb_t *zsb, dmu_tx_t *tx)
 		dmu_tx_hold_bonus(tx, zsb->z_fuid_obj);
 		dmu_tx_hold_write(tx, zsb->z_fuid_obj, 0,
 		    FUID_SIZE_ESTIMATE(zsb));
+=======
+zfs_fuid_txhold(zfsvfs_t *zfsvfs, dmu_tx_t *tx)
+{
+	if (zfsvfs->z_fuid_obj == 0) {
+		dmu_tx_hold_bonus(tx, DMU_NEW_OBJECT);
+		dmu_tx_hold_write(tx, DMU_NEW_OBJECT, 0,
+		    FUID_SIZE_ESTIMATE(zfsvfs));
+		dmu_tx_hold_zap(tx, MASTER_NODE_OBJ, FALSE, NULL);
+	} else {
+		dmu_tx_hold_bonus(tx, zfsvfs->z_fuid_obj);
+		dmu_tx_hold_write(tx, zfsvfs->z_fuid_obj, 0,
+		    FUID_SIZE_ESTIMATE(zfsvfs));
+>>>>>>> temp
 	}
 }
 #endif

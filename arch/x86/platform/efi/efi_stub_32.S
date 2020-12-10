@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 /*
  * EFI call stub for IA32.
  *
@@ -7,6 +8,7 @@
 
 #include <linux/linkage.h>
 #include <asm/page_types.h>
+#include <asm/nospec-branch.h>
 
 /*
  * efi_call_phys(void *, ...) is a function with variable parameters.
@@ -38,6 +40,7 @@ ENTRY(efi_call_phys)
 	 */
 	movl	$1f, %edx
 	subl	$__PAGE_OFFSET, %edx
+	ANNOTATE_RETPOLINE_SAFE /* FRBS */
 	jmp	*%edx
 1:
 
@@ -73,6 +76,7 @@ ENTRY(efi_call_phys)
 	/*
 	 * 5. Call the physical function.
 	 */
+	ANNOTATE_RETPOLINE_SAFE /* FRBS */
 	jmp	*%ecx
 
 2:
@@ -95,6 +99,7 @@ ENTRY(efi_call_phys)
 	 * adding EIP with PAGE_OFFSET.
 	 */
 	movl	$1f, %edx
+	ANNOTATE_RETPOLINE_SAFE /* FRBS */
 	jmp	*%edx
 1:
 

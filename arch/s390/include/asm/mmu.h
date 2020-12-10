@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 #ifndef __MMU_H
 #define __MMU_H
 
@@ -7,11 +8,14 @@
 typedef struct {
 	spinlock_t lock;
 	cpumask_t cpu_attach_mask;
-	atomic_t attach_count;
+	atomic_t flush_count;
 	unsigned int flush_mm;
-	spinlock_t list_lock;
 	struct list_head pgtable_list;
 	struct list_head gmap_list;
+<<<<<<< HEAD
+=======
+	unsigned long gmap_asce;
+>>>>>>> temp
 	unsigned long asce;
 	unsigned long asce_limit;
 	unsigned long vdso_base;
@@ -21,12 +25,20 @@ typedef struct {
 	unsigned int has_pgste:1;
 	/* The mmu context uses storage keys. */
 	unsigned int use_skey:1;
+	/* The mmu context uses CMMA. */
+	unsigned int use_cmma:1;
 } mm_context_t;
 
+<<<<<<< HEAD
 #define INIT_MM_CONTEXT(name)						      \
 	.context.lock = __SPIN_LOCK_UNLOCKED(name.context.lock),	      \
 	.context.list_lock    = __SPIN_LOCK_UNLOCKED(name.context.list_lock), \
 	.context.pgtable_list = LIST_HEAD_INIT(name.context.pgtable_list),    \
+=======
+#define INIT_MM_CONTEXT(name)						   \
+	.context.lock =	__SPIN_LOCK_UNLOCKED(name.context.lock),	   \
+	.context.pgtable_list = LIST_HEAD_INIT(name.context.pgtable_list), \
+>>>>>>> temp
 	.context.gmap_list = LIST_HEAD_INIT(name.context.gmap_list),
 
 static inline int tprot(unsigned long addr)

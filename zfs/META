@@ -1,8 +1,13 @@
 Meta:         1
 Name:         zfs
 Branch:       1.0
+<<<<<<< HEAD
 Version:      0.6.5.6
 Release:      0ubuntu26
+=======
+Version:      0.7.5
+Release:      1ubuntu16.4
+>>>>>>> temp
 Release-Tags: relext
 License:      CDDL
 Author:       OpenZFS on Linux

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 /*
  * Copyright IBM Corp. 1999, 2010
  *
@@ -302,9 +303,11 @@ ENTRY(startup_kdump)
 	xc	0xe00(256),0xe00
 	xc	0xf00(256),0xf00
 	lctlg	%c0,%c15,0x200(%r0)	# initialize control registers
-	stck	__LC_LAST_UPDATE_CLOCK
+	stcke	__LC_BOOT_CLOCK
+	mvc	__LC_LAST_UPDATE_CLOCK(8),__LC_BOOT_CLOCK+1
 	spt	6f-.LPG0(%r13)
 	mvc	__LC_LAST_UPDATE_TIMER(8),6f-.LPG0(%r13)
+<<<<<<< HEAD
 	stfl	0(%r0)			# store facilities @ __LC_STFL_FAC_LIST
 	mvc	__LC_STFLE_FAC_LIST(4),__LC_STFL_FAC_LIST
 	tm	__LC_STFLE_FAC_LIST,0x01	# stfle available ?
@@ -325,43 +328,18 @@ ENTRY(startup_kdump)
 	jnz	1b
 	j	4f
 2:	l	%r15,.Lstack-.LPG0(%r13)
+=======
+	l	%r15,.Lstack-.LPG0(%r13)
+>>>>>>> temp
 	ahi	%r15,-STACK_FRAME_OVERHEAD
-	la	%r2,.Lals_string-.LPG0(%r13)
-	l	%r3,.Lsclp_print-.LPG0(%r13)
-	basr	%r14,%r3
-	lpsw	3f-.LPG0(%r13)		# machine type not good enough, crash
-.Lals_string:
-	.asciz	"The Linux kernel requires more recent processor hardware"
-.Lsclp_print:
-	.long	_sclp_print_early
-.Lstack:
-	.long	0x8000 + (1<<(PAGE_SHIFT+THREAD_ORDER))
-	.align 16
-3:	.long	0x000a0000,0x8badcccc
-
-# List of facilities that are required. If not all facilities are present
-# the kernel will crash. Format is number of facility words with bits set,
-# followed by the facility words.
-
-#if defined(CONFIG_MARCH_Z13)
-	.long 2, 0xc100eff2, 0xf46cc800
-#elif defined(CONFIG_MARCH_ZEC12)
-	.long 2, 0xc100eff2, 0xf46cc800
-#elif defined(CONFIG_MARCH_Z196)
-	.long 2, 0xc100eff2, 0xf46c0000
-#elif defined(CONFIG_MARCH_Z10)
-	.long 2, 0xc100eff2, 0xf0680000
-#elif defined(CONFIG_MARCH_Z9_109)
-	.long 1, 0xc100efc2
-#elif defined(CONFIG_MARCH_Z990)
-	.long 1, 0xc0002000
-#elif defined(CONFIG_MARCH_Z900)
-	.long 1, 0xc0000000
-#endif
-4:
-	/* Continue with startup code in head64.S */
+	brasl	%r14,verify_facilities
+# For uncompressed images, continue in
+# arch/s390/kernel/head64.S. For compressed images, continue in
+# arch/s390/boot/compressed/head.S.
 	jg	startup_continue
 
+.Lstack:
+	.long	0x8000 + (1<<(PAGE_SHIFT+THREAD_SIZE_ORDER))
 	.align	8
 6:	.long	0x7fffffff,0xffffffff
 

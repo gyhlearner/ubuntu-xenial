@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 /*
  * security/tomoyo/common.h
  *
@@ -28,6 +29,7 @@
 #include <linux/in.h>
 #include <linux/in6.h>
 #include <linux/un.h>
+#include <linux/lsm_hooks.h>
 #include <net/sock.h>
 #include <net/af_unix.h>
 #include <net/ip.h>
@@ -957,7 +959,7 @@ const struct tomoyo_path_info *tomoyo_get_name(const char *name);
 const struct tomoyo_path_info *tomoyo_path_matches_group
 (const struct tomoyo_path_info *pathname, const struct tomoyo_group *group);
 int tomoyo_check_open_permission(struct tomoyo_domain_info *domain,
-				 struct path *path, const int flag);
+				 const struct path *path, const int flag);
 void tomoyo_close_control(struct tomoyo_io_buffer *head);
 int tomoyo_env_perm(struct tomoyo_request_info *r, const char *env);
 int tomoyo_execute_permission(struct tomoyo_request_info *r,
@@ -968,15 +970,15 @@ int tomoyo_get_mode(const struct tomoyo_policy_namespace *ns, const u8 profile,
 int tomoyo_init_request_info(struct tomoyo_request_info *r,
 			     struct tomoyo_domain_info *domain,
 			     const u8 index);
-int tomoyo_mkdev_perm(const u8 operation, struct path *path,
+int tomoyo_mkdev_perm(const u8 operation, const struct path *path,
 		      const unsigned int mode, unsigned int dev);
-int tomoyo_mount_permission(const char *dev_name, struct path *path,
+int tomoyo_mount_permission(const char *dev_name, const struct path *path,
 			    const char *type, unsigned long flags,
 			    void *data_page);
 int tomoyo_open_control(const u8 type, struct file *file);
-int tomoyo_path2_perm(const u8 operation, struct path *path1,
-		      struct path *path2);
-int tomoyo_path_number_perm(const u8 operation, struct path *path,
+int tomoyo_path2_perm(const u8 operation, const struct path *path1,
+		      const struct path *path2);
+int tomoyo_path_number_perm(const u8 operation, const struct path *path,
 			    unsigned long number);
 int tomoyo_path_perm(const u8 operation, const struct path *path,
 		     const char *target);
@@ -1036,7 +1038,7 @@ void tomoyo_check_acl(struct tomoyo_request_info *r,
 		      bool (*check_entry) (struct tomoyo_request_info *,
 					   const struct tomoyo_acl_info *));
 void tomoyo_check_profile(void);
-void tomoyo_convert_time(time_t time, struct tomoyo_time *stamp);
+void tomoyo_convert_time(time64_t time, struct tomoyo_time *stamp);
 void tomoyo_del_condition(struct list_head *element);
 void tomoyo_fill_path_info(struct tomoyo_path_info *ptr);
 void tomoyo_get_attributes(struct tomoyo_obj_info *obj);
@@ -1061,6 +1063,7 @@ void tomoyo_write_log2(struct tomoyo_request_info *r, int len, const char *fmt,
 /********** External variable definitions. **********/
 
 extern bool tomoyo_policy_loaded;
+extern bool tomoyo_enabled;
 extern const char * const tomoyo_condition_keyword
 [TOMOYO_MAX_CONDITION_KEYWORD];
 extern const char * const tomoyo_dif[TOMOYO_MAX_DOMAIN_INFO_FLAGS];
@@ -1084,6 +1087,7 @@ extern struct tomoyo_domain_info tomoyo_kernel_domain;
 extern struct tomoyo_policy_namespace tomoyo_kernel_namespace;
 extern unsigned int tomoyo_memory_quota[TOMOYO_MAX_MEMORY_STAT];
 extern unsigned int tomoyo_memory_used[TOMOYO_MAX_MEMORY_STAT];
+extern struct lsm_blob_sizes tomoyo_blob_sizes;
 
 /********** Inlined functions. **********/
 
@@ -1196,13 +1200,35 @@ static inline void tomoyo_put_group(struct tomoyo_group *group)
 }
 
 /**
+ * tomoyo_cred - Get a pointer to the tomoyo cred security blob
+ * @cred - the relevant cred
+ *
+ * Returns pointer to the tomoyo cred blob.
+ */
+static inline struct tomoyo_domain_info **tomoyo_cred(const struct cred *cred)
+{
+#ifdef CONFIG_SECURITY_STACKING
+	return cred->security + tomoyo_blob_sizes.lbs_cred;
+#else
+	return cred->security;
+#endif
+}
+
+/**
  * tomoyo_domain - Get "struct tomoyo_domain_info" for current thread.
  *
  * Returns pointer to "struct tomoyo_domain_info" for current thread.
  */
 static inline struct tomoyo_domain_info *tomoyo_domain(void)
 {
-	return current_cred()->security;
+	const struct cred *cred = current_cred();
+	struct tomoyo_domain_info **blob;
+
+	if (cred->security == NULL)
+		return NULL;
+
+	blob = tomoyo_cred(cred);
+	return *blob;
 }
 
 /**
@@ -1215,7 +1241,9 @@ static inline struct tomoyo_domain_info *tomoyo_domain(void)
 static inline struct tomoyo_domain_info *tomoyo_real_domain(struct task_struct
 							    *task)
 {
-	return task_cred_xxx(task, security);
+	struct tomoyo_domain_info **blob = tomoyo_cred(get_task_cred(task));
+
+	return *blob;
 }
 
 /**

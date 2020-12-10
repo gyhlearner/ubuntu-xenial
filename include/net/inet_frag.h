@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 #ifndef __NET_FRAG_H__
 #define __NET_FRAG_H__
 
@@ -8,6 +9,7 @@ struct netns_frags {
 	int			timeout;
 	int			high_thresh;
 	int			low_thresh;
+	int			max_dist;
 };
 
 /**
@@ -44,7 +46,7 @@ struct inet_frag_queue {
 	spinlock_t		lock;
 	struct timer_list	timer;
 	struct hlist_node	list;
-	atomic_t		refcnt;
+	refcount_t		refcnt;
 	struct sk_buff		*fragments;
 	struct sk_buff		*fragments_tail;
 	ktime_t			stamp;
@@ -86,7 +88,7 @@ struct inet_frags {
 	 */
 	u32			rnd;
 	seqlock_t		rnd_seqlock;
-	int			qsize;
+	unsigned int		qsize;
 
 	unsigned int		(*hashfn)(const struct inet_frag_queue *);
 	bool			(*match)(const struct inet_frag_queue *q,
@@ -94,8 +96,7 @@ struct inet_frags {
 	void			(*constructor)(struct inet_frag_queue *q,
 					       const void *arg);
 	void			(*destructor)(struct inet_frag_queue *);
-	void			(*skb_free)(struct sk_buff *);
-	void			(*frag_expire)(unsigned long data);
+	void			(*frag_expire)(struct timer_list *t);
 	struct kmem_cache	*frags_cachep;
 	const char		*frags_cache_name;
 };
@@ -119,7 +120,7 @@ void inet_frag_maybe_warn_overflow(struct inet_frag_queue *q,
 
 static inline void inet_frag_put(struct inet_frag_queue *q, struct inet_frags *f)
 {
-	if (atomic_dec_and_test(&q->refcnt))
+	if (refcount_dec_and_test(&q->refcnt))
 		inet_frag_destroy(q, f);
 }
 

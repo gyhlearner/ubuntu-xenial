@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright (C) 2005-2015 Junjiro R. Okajima
+=======
+ * Copyright (C) 2005-2017 Junjiro R. Okajima
+>>>>>>> temp
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,15 +36,26 @@ void au_si_free(struct kobject *kobj)
 
 	sbinfo = container_of(kobj, struct au_sbinfo, si_kobj);
 	for (i = 0; i < AuPlink_NHASH; i++)
+<<<<<<< HEAD
 		AuDebugOn(!hlist_empty(&sbinfo->si_plink[i].head));
 	AuDebugOn(atomic_read(&sbinfo->si_nowait.nw_len));
 
 	AuDebugOn(!hlist_empty(&sbinfo->si_symlink.head));
+=======
+		AuDebugOn(!hlist_bl_empty(sbinfo->si_plink + i));
+	AuDebugOn(atomic_read(&sbinfo->si_nowait.nw_len));
+
+	AuDebugOn(percpu_counter_sum(&sbinfo->si_ninodes));
+	percpu_counter_destroy(&sbinfo->si_ninodes);
+	AuDebugOn(percpu_counter_sum(&sbinfo->si_nfiles));
+	percpu_counter_destroy(&sbinfo->si_nfiles);
+>>>>>>> temp
 
 	au_rw_write_lock(&sbinfo->si_rwsem);
 	au_br_free(sbinfo);
 	au_rw_write_unlock(&sbinfo->si_rwsem);
 
+<<<<<<< HEAD
 	AuDebugOn(radix_tree_gang_lookup
 		  (&sbinfo->au_si_pid.tree, (void **)&locked,
 		   /*first_index*/PID_MAX_DEFAULT - 1,
@@ -48,6 +63,9 @@ void au_si_free(struct kobject *kobj)
 
 	kfree(sbinfo->si_branch);
 	kfree(sbinfo->au_si_pid.bitmap);
+=======
+	kfree(sbinfo->si_branch);
+>>>>>>> temp
 	mutex_destroy(&sbinfo->si_xib_mtx);
 	AuRwDestroy(&sbinfo->si_rwsem);
 
@@ -58,13 +76,17 @@ int au_si_alloc(struct super_block *sb)
 {
 	int err, i;
 	struct au_sbinfo *sbinfo;
+<<<<<<< HEAD
 	static struct lock_class_key aufs_si;
+=======
+>>>>>>> temp
 
 	err = -ENOMEM;
 	sbinfo = kzalloc(sizeof(*sbinfo), GFP_NOFS);
 	if (unlikely(!sbinfo))
 		goto out;
 
+<<<<<<< HEAD
 	BUILD_BUG_ON(sizeof(unsigned long) !=
 		     sizeof(*sbinfo->au_si_pid.bitmap));
 	sbinfo->au_si_pid.bitmap = kcalloc(BITS_TO_LONGS(PID_MAX_DEFAULT),
@@ -77,6 +99,12 @@ int au_si_alloc(struct super_block *sb)
 	sbinfo->si_branch = kzalloc(sizeof(*sbinfo->si_branch), GFP_NOFS);
 	if (unlikely(!sbinfo->si_branch))
 		goto out_pidmap;
+=======
+	/* will be reallocated separately */
+	sbinfo->si_branch = kzalloc(sizeof(*sbinfo->si_branch), GFP_NOFS);
+	if (unlikely(!sbinfo->si_branch))
+		goto out_sbinfo;
+>>>>>>> temp
 
 	err = sysaufs_si_init(sbinfo);
 	if (unlikely(err))
@@ -84,6 +112,7 @@ int au_si_alloc(struct super_block *sb)
 
 	au_nwt_init(&sbinfo->si_nowait);
 	au_rw_init_wlock(&sbinfo->si_rwsem);
+<<<<<<< HEAD
 	au_rw_class(&sbinfo->si_rwsem, &aufs_si);
 	spin_lock_init(&sbinfo->au_si_pid.tree_lock);
 	INIT_RADIX_TREE(&sbinfo->au_si_pid.tree, GFP_ATOMIC | __GFP_NOFAIL);
@@ -92,6 +121,13 @@ int au_si_alloc(struct super_block *sb)
 	atomic_long_set(&sbinfo->si_nfiles, 0);
 
 	sbinfo->si_bend = -1;
+=======
+
+	percpu_counter_init(&sbinfo->si_ninodes, 0, GFP_NOFS);
+	percpu_counter_init(&sbinfo->si_nfiles, 0, GFP_NOFS);
+
+	sbinfo->si_bbot = -1;
+>>>>>>> temp
 	sbinfo->si_last_br_id = AUFS_BRANCH_MAX / 2;
 
 	sbinfo->si_wbr_copyup = AuWbrCopyup_Def;
@@ -103,8 +139,11 @@ int au_si_alloc(struct super_block *sb)
 
 	sbinfo->si_mntflags = au_opts_plink(AuOpt_Def);
 
+<<<<<<< HEAD
 	au_sphl_init(&sbinfo->si_symlink);
 
+=======
+>>>>>>> temp
 	sbinfo->si_xino_jiffy = jiffies;
 	sbinfo->si_xino_expire
 		= msecs_to_jiffies(AUFS_XINO_DEF_SEC * MSEC_PER_SEC);
@@ -112,7 +151,11 @@ int au_si_alloc(struct super_block *sb)
 	sbinfo->si_xino_brid = -1;
 	/* leave si_xib_last_pindex and si_xib_next_bit */
 
+<<<<<<< HEAD
 	au_sphl_init(&sbinfo->si_aopen);
+=======
+	INIT_HLIST_BL_HEAD(&sbinfo->si_aopen);
+>>>>>>> temp
 
 	sbinfo->si_rdcache = msecs_to_jiffies(AUFS_RDCACHE_DEF * MSEC_PER_SEC);
 	sbinfo->si_rdblk = AUFS_RDBLK_DEF;
@@ -120,11 +163,19 @@ int au_si_alloc(struct super_block *sb)
 	sbinfo->si_dirwh = AUFS_DIRWH_DEF;
 
 	for (i = 0; i < AuPlink_NHASH; i++)
+<<<<<<< HEAD
 		au_sphl_init(sbinfo->si_plink + i);
 	init_waitqueue_head(&sbinfo->si_plink_wq);
 	spin_lock_init(&sbinfo->si_plink_maint_lock);
 
 	au_sphl_init(&sbinfo->si_files);
+=======
+		INIT_HLIST_BL_HEAD(sbinfo->si_plink + i);
+	init_waitqueue_head(&sbinfo->si_plink_wq);
+	spin_lock_init(&sbinfo->si_plink_maint_lock);
+
+	INIT_HLIST_BL_HEAD(&sbinfo->si_files);
+>>>>>>> temp
 
 	/* with getattr by default */
 	sbinfo->si_iop_array = aufs_iop;
@@ -137,15 +188,22 @@ int au_si_alloc(struct super_block *sb)
 
 out_br:
 	kfree(sbinfo->si_branch);
+<<<<<<< HEAD
 out_pidmap:
 	kfree(sbinfo->au_si_pid.bitmap);
+=======
+>>>>>>> temp
 out_sbinfo:
 	kfree(sbinfo);
 out:
 	return err;
 }
 
+<<<<<<< HEAD
 int au_sbr_realloc(struct au_sbinfo *sbinfo, int nbr)
+=======
+int au_sbr_realloc(struct au_sbinfo *sbinfo, int nbr, int may_shrink)
+>>>>>>> temp
 {
 	int err, sz;
 	struct au_branch **brp;
@@ -153,10 +211,18 @@ int au_sbr_realloc(struct au_sbinfo *sbinfo, int nbr)
 	AuRwMustWriteLock(&sbinfo->si_rwsem);
 
 	err = -ENOMEM;
+<<<<<<< HEAD
 	sz = sizeof(*brp) * (sbinfo->si_bend + 1);
 	if (unlikely(!sz))
 		sz = sizeof(*brp);
 	brp = au_kzrealloc(sbinfo->si_branch, sz, sizeof(*brp) * nbr, GFP_NOFS);
+=======
+	sz = sizeof(*brp) * (sbinfo->si_bbot + 1);
+	if (unlikely(!sz))
+		sz = sizeof(*brp);
+	brp = au_kzrealloc(sbinfo->si_branch, sz, sizeof(*brp) * nbr, GFP_NOFS,
+			   may_shrink);
+>>>>>>> temp
 	if (brp) {
 		sbinfo->si_branch = brp;
 		err = 0;
@@ -320,6 +386,7 @@ void aufs_read_and_write_unlock2(struct dentry *d1, struct dentry *d2)
 	di_write_unlock2(d1, d2);
 	si_read_unlock(d1->d_sb);
 }
+<<<<<<< HEAD
 
 /* ---------------------------------------------------------------------- */
 
@@ -364,3 +431,5 @@ void si_pid_clr_slow(struct super_block *sb)
 	p = radix_tree_delete(&sbinfo->au_si_pid.tree, current->pid);
 	spin_unlock(&sbinfo->au_si_pid.tree_lock);
 }
+=======
+>>>>>>> temp

@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright (C) 2005-2015 Junjiro R. Okajima
+=======
+ * Copyright (C) 2005-2017 Junjiro R. Okajima
+>>>>>>> temp
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,8 +30,13 @@
 
 #include <linux/fs.h>
 #include <linux/kobject.h>
+<<<<<<< HEAD
 #include "rwsem.h"
 #include "spl.h"
+=======
+#include "hbl.h"
+#include "rwsem.h"
+>>>>>>> temp
 #include "wkq.h"
 
 /* policies to select one among multiple writable branches */
@@ -58,6 +67,7 @@ struct au_wbr_mfs {
 	unsigned long long	mfsrr_watermark;
 };
 
+<<<<<<< HEAD
 struct pseudo_link {
 	union {
 		struct hlist_node hlist;
@@ -66,6 +76,8 @@ struct pseudo_link {
 	struct inode *inode;
 };
 
+=======
+>>>>>>> temp
 #define AuPlink_NHASH 100
 static inline int au_plink_hash(ino_t ino)
 {
@@ -98,6 +110,7 @@ struct au_sbinfo {
 	 */
 	struct au_rwsem		si_rwsem;
 
+<<<<<<< HEAD
 	/* prevent recursive locking in deleting inode */
 	struct {
 		unsigned long		*bitmap;
@@ -105,11 +118,17 @@ struct au_sbinfo {
 		struct radix_tree_root	tree;
 	} au_si_pid;
 
+=======
+>>>>>>> temp
 	/*
 	 * dirty approach to protect sb->sb_inodes and ->s_files (gone) from
 	 * remount.
 	 */
+<<<<<<< HEAD
 	atomic_long_t		si_ninodes, si_nfiles;
+=======
+	struct percpu_counter	si_ninodes, si_nfiles;
+>>>>>>> temp
 
 	/* branch management */
 	unsigned int		si_generation;
@@ -117,7 +136,11 @@ struct au_sbinfo {
 	/* see AuSi_ flags */
 	unsigned char		au_si_status;
 
+<<<<<<< HEAD
 	aufs_bindex_t		si_bend;
+=======
+	aufs_bindex_t		si_bbot;
+>>>>>>> temp
 
 	/* dirty trick to keep br_id plus */
 	unsigned int		si_last_br_id :
@@ -143,9 +166,12 @@ struct au_sbinfo {
 	/* include/asm-ia64/siginfo.h defines a macro named si_flags */
 	unsigned int		si_mntflags;
 
+<<<<<<< HEAD
 	/* symlink to follow_link() and put_link() */
 	struct au_sphlhead	si_symlink;
 
+=======
+>>>>>>> temp
 	/* external inode number (bitmap and translation table) */
 	vfs_readf_t		si_xread;
 	vfs_writef_t		si_xwrite;
@@ -167,7 +193,11 @@ struct au_sbinfo {
 #endif
 
 	/* dirty trick to suppoer atomic_open */
+<<<<<<< HEAD
 	struct au_sphlhead	si_aopen;
+=======
+	struct hlist_bl_head	si_aopen;
+>>>>>>> temp
 
 	/* vdir parameters */
 	unsigned long		si_rdcache;	/* max cache time in jiffies */
@@ -183,13 +213,21 @@ struct au_sbinfo {
 	unsigned int		si_dirwh;
 
 	/* pseudo_link list */
+<<<<<<< HEAD
 	struct au_sphlhead	si_plink[AuPlink_NHASH];
+=======
+	struct hlist_bl_head	si_plink[AuPlink_NHASH];
+>>>>>>> temp
 	wait_queue_head_t	si_plink_wq;
 	spinlock_t		si_plink_maint_lock;
 	pid_t			si_plink_maint_pid;
 
 	/* file list */
+<<<<<<< HEAD
 	struct au_sphlhead	si_files;
+=======
+	struct hlist_bl_head	si_files;
+>>>>>>> temp
 
 	/* with/without getattr, brother of sb->s_d_op */
 	struct inode_operations *si_iop_array;
@@ -211,7 +249,11 @@ struct au_sbinfo {
 #endif
 
 #ifdef CONFIG_AUFS_SBILIST
+<<<<<<< HEAD
 	struct list_head	si_list;
+=======
+	struct hlist_bl_node	si_list;
+>>>>>>> temp
 #endif
 
 	/* dirty, necessary for unmounting, sysfs and sysrq */
@@ -263,6 +305,10 @@ static inline unsigned char au_do_ftest_si(struct au_sbinfo *sbi,
 #define AuLock_IW		(1 << 2)	/* write-lock inode */
 #define AuLock_FLUSH		(1 << 3)	/* wait for 'nowait' tasks */
 #define AuLock_DIRS		(1 << 4)	/* target is a pair of dirs */
+<<<<<<< HEAD
+=======
+						/* except RENAME_EXCHANGE */
+>>>>>>> temp
 #define AuLock_NOPLM		(1 << 5)	/* return err in plm mode */
 #define AuLock_NOPLMW		(1 << 6)	/* wait for plm mode ends */
 #define AuLock_GEN		(1 << 7)	/* test digen/iigen */
@@ -287,7 +333,11 @@ void au_iarray_free(struct inode **a, unsigned long long max);
 /* sbinfo.c */
 void au_si_free(struct kobject *kobj);
 int au_si_alloc(struct super_block *sb);
+<<<<<<< HEAD
 int au_sbr_realloc(struct au_sbinfo *sbinfo, int nbr);
+=======
+int au_sbr_realloc(struct au_sbinfo *sbinfo, int nbr, int may_shrink);
+>>>>>>> temp
 
 unsigned int au_sigen_inc(struct super_block *sb);
 aufs_bindex_t au_new_br_id(struct super_block *sb);
@@ -301,16 +351,23 @@ void aufs_write_unlock(struct dentry *dentry);
 int aufs_read_and_write_lock2(struct dentry *d1, struct dentry *d2, int flags);
 void aufs_read_and_write_unlock2(struct dentry *d1, struct dentry *d2);
 
+<<<<<<< HEAD
 int si_pid_test_slow(struct super_block *sb);
 void si_pid_set_slow(struct super_block *sb);
 void si_pid_clr_slow(struct super_block *sb);
 
+=======
+>>>>>>> temp
 /* wbr_policy.c */
 extern struct au_wbr_copyup_operations au_wbr_copyup_ops[];
 extern struct au_wbr_create_operations au_wbr_create_ops[];
 int au_cpdown_dirs(struct dentry *dentry, aufs_bindex_t bdst);
 int au_wbr_nonopq(struct dentry *dentry, aufs_bindex_t bindex);
+<<<<<<< HEAD
 int au_wbr_do_copyup_bu(struct dentry *dentry, aufs_bindex_t bstart);
+=======
+int au_wbr_do_copyup_bu(struct dentry *dentry, aufs_bindex_t btop);
+>>>>>>> temp
 
 /* mvdown.c */
 int au_mvdown(struct dentry *dentry, struct aufs_mvdown __user *arg);
@@ -389,32 +446,56 @@ AuStub(int, au_busy_or_stale, return -EBUSY, void)
 
 #ifdef CONFIG_AUFS_SBILIST
 /* module.c */
+<<<<<<< HEAD
 extern struct au_splhead au_sbilist;
 
 static inline void au_sbilist_init(void)
 {
 	au_spl_init(&au_sbilist);
+=======
+extern struct hlist_bl_head au_sbilist;
+
+static inline void au_sbilist_init(void)
+{
+	INIT_HLIST_BL_HEAD(&au_sbilist);
+>>>>>>> temp
 }
 
 static inline void au_sbilist_add(struct super_block *sb)
 {
+<<<<<<< HEAD
 	au_spl_add(&au_sbi(sb)->si_list, &au_sbilist);
+=======
+	au_hbl_add(&au_sbi(sb)->si_list, &au_sbilist);
+>>>>>>> temp
 }
 
 static inline void au_sbilist_del(struct super_block *sb)
 {
+<<<<<<< HEAD
 	au_spl_del(&au_sbi(sb)->si_list, &au_sbilist);
+=======
+	au_hbl_del(&au_sbi(sb)->si_list, &au_sbilist);
+>>>>>>> temp
 }
 
 #ifdef CONFIG_AUFS_MAGIC_SYSRQ
 static inline void au_sbilist_lock(void)
 {
+<<<<<<< HEAD
 	spin_lock(&au_sbilist.spin);
+=======
+	hlist_bl_lock(&au_sbilist);
+>>>>>>> temp
 }
 
 static inline void au_sbilist_unlock(void)
 {
+<<<<<<< HEAD
 	spin_unlock(&au_sbilist.spin);
+=======
+	hlist_bl_unlock(&au_sbilist);
+>>>>>>> temp
 }
 #define AuGFP_SBILIST	GFP_ATOMIC
 #else
@@ -452,6 +533,7 @@ static inline void dbgaufs_si_null(struct au_sbinfo *sbinfo)
 
 /* ---------------------------------------------------------------------- */
 
+<<<<<<< HEAD
 static inline pid_t si_pid_bit(void)
 {
 	/* the origin of pid is 1, but the bitmap's is 0 */
@@ -492,16 +574,58 @@ static inline void si_pid_clr(struct super_block *sb)
 		/* smp_mb(); */
 	} else
 		si_pid_clr_slow(sb);
+=======
+/* current->atomic_flags */
+/* this value should never corrupt the ones defined in linux/sched.h */
+#define PFA_AUFS	7
+
+TASK_PFA_TEST(AUFS, test_aufs)	/* task_test_aufs */
+TASK_PFA_SET(AUFS, aufs)	/* task_set_aufs */
+TASK_PFA_CLEAR(AUFS, aufs)	/* task_clear_aufs */
+
+static inline int si_pid_test(struct super_block *sb)
+{
+	return !!task_test_aufs(current);
+}
+
+static inline void si_pid_clr(struct super_block *sb)
+{
+	AuDebugOn(!task_test_aufs(current));
+	task_clear_aufs(current);
+}
+
+static inline void si_pid_set(struct super_block *sb)
+{
+	AuDebugOn(task_test_aufs(current));
+	task_set_aufs(current);
+>>>>>>> temp
 }
 
 /* ---------------------------------------------------------------------- */
 
 /* lock superblock. mainly for entry point functions */
+<<<<<<< HEAD
 /*
  * __si_read_lock, __si_write_lock,
  * __si_read_unlock, __si_write_unlock, __si_downgrade_lock
  */
 AuSimpleRwsemFuncs(__si, struct super_block *sb, &au_sbi(sb)->si_rwsem);
+=======
+#define __si_read_lock(sb)	au_rw_read_lock(&au_sbi(sb)->si_rwsem)
+#define __si_write_lock(sb)	au_rw_write_lock(&au_sbi(sb)->si_rwsem)
+#define __si_read_trylock(sb)	au_rw_read_trylock(&au_sbi(sb)->si_rwsem)
+#define __si_write_trylock(sb)	au_rw_write_trylock(&au_sbi(sb)->si_rwsem)
+/*
+#define __si_read_trylock_nested(sb) \
+	au_rw_read_trylock_nested(&au_sbi(sb)->si_rwsem)
+#define __si_write_trylock_nested(sb) \
+	au_rw_write_trylock_nested(&au_sbi(sb)->si_rwsem)
+*/
+
+#define __si_read_unlock(sb)	au_rw_read_unlock(&au_sbi(sb)->si_rwsem)
+#define __si_write_unlock(sb)	au_rw_write_unlock(&au_sbi(sb)->si_rwsem)
+#define __si_downgrade_lock(sb)	au_rw_dgrade_lock(&au_sbi(sb)->si_rwsem)
+>>>>>>> temp
 
 #define SiMustNoWaiters(sb)	AuRwMustNoWaiters(&au_sbi(sb)->si_rwsem)
 #define SiMustAnyLock(sb)	AuRwMustAnyLock(&au_sbi(sb)->si_rwsem)
@@ -578,10 +702,17 @@ static inline void si_downgrade_lock(struct super_block *sb)
 
 /* ---------------------------------------------------------------------- */
 
+<<<<<<< HEAD
 static inline aufs_bindex_t au_sbend(struct super_block *sb)
 {
 	SiMustAnyLock(sb);
 	return au_sbi(sb)->si_bend;
+=======
+static inline aufs_bindex_t au_sbbot(struct super_block *sb)
+{
+	SiMustAnyLock(sb);
+	return au_sbi(sb)->si_bbot;
+>>>>>>> temp
 }
 
 static inline unsigned int au_mntflags(struct super_block *sb)
@@ -596,26 +727,60 @@ static inline unsigned int au_sigen(struct super_block *sb)
 	return au_sbi(sb)->si_generation;
 }
 
+<<<<<<< HEAD
 static inline void au_ninodes_inc(struct super_block *sb)
 {
 	atomic_long_inc(&au_sbi(sb)->si_ninodes);
+=======
+static inline unsigned long long au_ninodes(struct super_block *sb)
+{
+	s64 n = percpu_counter_sum(&au_sbi(sb)->si_ninodes);
+
+	BUG_ON(n < 0);
+	return n;
+}
+
+static inline void au_ninodes_inc(struct super_block *sb)
+{
+	percpu_counter_inc(&au_sbi(sb)->si_ninodes);
+>>>>>>> temp
 }
 
 static inline void au_ninodes_dec(struct super_block *sb)
 {
+<<<<<<< HEAD
 	AuDebugOn(!atomic_long_read(&au_sbi(sb)->si_ninodes));
 	atomic_long_dec(&au_sbi(sb)->si_ninodes);
+=======
+	percpu_counter_dec(&au_sbi(sb)->si_ninodes);
+}
+
+static inline unsigned long long au_nfiles(struct super_block *sb)
+{
+	s64 n = percpu_counter_sum(&au_sbi(sb)->si_nfiles);
+
+	BUG_ON(n < 0);
+	return n;
+>>>>>>> temp
 }
 
 static inline void au_nfiles_inc(struct super_block *sb)
 {
+<<<<<<< HEAD
 	atomic_long_inc(&au_sbi(sb)->si_nfiles);
+=======
+	percpu_counter_inc(&au_sbi(sb)->si_nfiles);
+>>>>>>> temp
 }
 
 static inline void au_nfiles_dec(struct super_block *sb)
 {
+<<<<<<< HEAD
 	AuDebugOn(!atomic_long_read(&au_sbi(sb)->si_nfiles));
 	atomic_long_dec(&au_sbi(sb)->si_nfiles);
+=======
+	percpu_counter_dec(&au_sbi(sb)->si_nfiles);
+>>>>>>> temp
 }
 
 static inline struct au_branch *au_sbr(struct super_block *sb,

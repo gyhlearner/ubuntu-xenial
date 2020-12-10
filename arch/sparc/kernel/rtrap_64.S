@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 /*
  * rtrap.S: Preparing for return from trap on Sparc V9.
  *
@@ -224,10 +225,19 @@ rt_continue:	ldx			[%sp + PTREGS_OFF + PT_V9_G1], %g1
 		rdpr			%otherwin, %l2
 		srl			%l1, 3, %l1
 
-		wrpr			%l2, %g0, %canrestore
+661:		wrpr			%l2, %g0, %canrestore
+		.section		.fast_win_ctrl_1insn_patch, "ax"
+		.word			661b
+		.word			0x89880000	! normalw
+		.previous
+
 		wrpr			%l1, %g0, %wstate
 		brnz,pt			%l2, user_rtt_restore
-		 wrpr			%g0, %g0, %otherwin
+661:		 wrpr			%g0, %g0, %otherwin
+		.section		.fast_win_ctrl_1insn_patch, "ax"
+		.word			661b
+		 nop
+		.previous
 
 		ldx			[%g6 + TI_FLAGS], %g3
 		wr			%g0, ASI_AIUP, %asi
@@ -237,15 +247,24 @@ rt_continue:	ldx			[%sp + PTREGS_OFF + PT_V9_G1], %g1
 		bne,pt			%xcc, user_rtt_fill_32bit
 		 wrpr			%g1, %cwp
 		ba,a,pt			%xcc, user_rtt_fill_64bit
+		 nop
 
 user_rtt_fill_fixup_dax:
 		ba,pt	%xcc, user_rtt_fill_fixup_common
 		 mov	1, %g3
+<<<<<<< HEAD
 
 user_rtt_fill_fixup_mna:
 		ba,pt	%xcc, user_rtt_fill_fixup_common
 		 mov	2, %g3
 
+=======
+
+user_rtt_fill_fixup_mna:
+		ba,pt	%xcc, user_rtt_fill_fixup_common
+		 mov	2, %g3
+
+>>>>>>> temp
 user_rtt_fill_fixup:
 		ba,pt	%xcc, user_rtt_fill_fixup_common
 		 clr	%g3

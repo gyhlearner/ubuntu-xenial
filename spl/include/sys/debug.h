@@ -31,11 +31,19 @@
  * PANIC()	- Panic the node and print message.
  * ASSERT()	- Assert X is true, if not panic.
  * ASSERTV()	- Wraps a variable declaration which is only used by ASSERT().
+<<<<<<< HEAD
+=======
+ * ASSERT3B()	- Assert boolean X OP Y is true, if not panic.
+>>>>>>> temp
  * ASSERT3S()	- Assert signed X OP Y is true, if not panic.
  * ASSERT3U()	- Assert unsigned X OP Y is true, if not panic.
  * ASSERT3P()	- Assert pointer X OP Y is true, if not panic.
  * ASSERT0()	- Assert value is zero, if not panic.
  * VERIFY()	- Verify X is true, if not panic.
+<<<<<<< HEAD
+=======
+ * VERIFY3B()	- Verify boolean X OP Y is true, if not panic.
+>>>>>>> temp
  * VERIFY3S()	- Verify signed X OP Y is true, if not panic.
  * VERIFY3U()	- Verify unsigned X OP Y is true, if not panic.
  * VERIFY3P()	- Verify pointer X OP Y is true, if not panic.
@@ -67,6 +75,10 @@ void spl_dumpstack(void);
 	    "failed (" FMT " " #OP " " FMT ")\n",			\
 	    CAST (LEFT), CAST (RIGHT)))
 
+<<<<<<< HEAD
+=======
+#define	VERIFY3B(x,y,z)	VERIFY3_IMPL(x, y, z, boolean_t, "%d", (boolean_t))
+>>>>>>> temp
 #define	VERIFY3S(x,y,z)	VERIFY3_IMPL(x, y, z, int64_t, "%lld", (long long))
 #define	VERIFY3U(x,y,z)	VERIFY3_IMPL(x, y, z, uint64_t, "%llu",		\
 				    (unsigned long long))
@@ -88,6 +100,10 @@ void spl_dumpstack(void);
 #define	SPL_DEBUG_STR		""
 #define	ASSERT(x)		((void)0)
 #define	ASSERTV(x)
+<<<<<<< HEAD
+=======
+#define	ASSERT3B(x,y,z)		((void)0)
+>>>>>>> temp
 #define	ASSERT3S(x,y,z)		((void)0)
 #define	ASSERT3U(x,y,z)		((void)0)
 #define	ASSERT3P(x,y,z)		((void)0)
@@ -103,6 +119,10 @@ void spl_dumpstack(void);
 #define	SPL_DEBUG_STR		" (DEBUG mode)"
 #define	ASSERT(cond)		VERIFY(cond)
 #define	ASSERTV(x)		x
+<<<<<<< HEAD
+=======
+#define	ASSERT3B(x,y,z)		VERIFY3B(x, y, z)
+>>>>>>> temp
 #define	ASSERT3S(x,y,z)		VERIFY3S(x, y, z)
 #define	ASSERT3U(x,y,z)		VERIFY3U(x, y, z)
 #define	ASSERT3P(x,y,z)		VERIFY3P(x, y, z)

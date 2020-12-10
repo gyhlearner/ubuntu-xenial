@@ -23,8 +23,11 @@
 #include <linux/sched.h>
 #include <linux/slab.h>
 #include <linux/timekeeping.h>
+<<<<<<< HEAD
 
 #include <linux/nospec.h>
+=======
+>>>>>>> temp
 
 #include "ptp_private.h"
 
@@ -190,6 +193,7 @@ long ptp_ioctl(struct posix_clock *pc, unsigned int cmd, unsigned long arg)
 	case PTP_SYS_OFFSET_PRECISE:
 		if (!ptp->info->getcrosststamp) {
 			err = -EOPNOTSUPP;
+<<<<<<< HEAD
 			break;
 		}
 		err = ptp->info->getcrosststamp(ptp->info, &xtstamp);
@@ -214,11 +218,34 @@ long ptp_ioctl(struct posix_clock *pc, unsigned int cmd, unsigned long arg)
 		sysoff = kmalloc(sizeof(*sysoff), GFP_KERNEL);
 		if (!sysoff) {
 			err = -ENOMEM;
+=======
+>>>>>>> temp
 			break;
 		}
-		if (copy_from_user(sysoff, (void __user *)arg,
-				   sizeof(*sysoff))) {
+		err = ptp->info->getcrosststamp(ptp->info, &xtstamp);
+		if (err)
+			break;
+
+		memset(&precise_offset, 0, sizeof(precise_offset));
+		ts = ktime_to_timespec64(xtstamp.device);
+		precise_offset.device.sec = ts.tv_sec;
+		precise_offset.device.nsec = ts.tv_nsec;
+		ts = ktime_to_timespec64(xtstamp.sys_realtime);
+		precise_offset.sys_realtime.sec = ts.tv_sec;
+		precise_offset.sys_realtime.nsec = ts.tv_nsec;
+		ts = ktime_to_timespec64(xtstamp.sys_monoraw);
+		precise_offset.sys_monoraw.sec = ts.tv_sec;
+		precise_offset.sys_monoraw.nsec = ts.tv_nsec;
+		if (copy_to_user((void __user *)arg, &precise_offset,
+				 sizeof(precise_offset)))
 			err = -EFAULT;
+		break;
+
+	case PTP_SYS_OFFSET:
+		sysoff = memdup_user((void __user *)arg, sizeof(*sysoff));
+		if (IS_ERR(sysoff)) {
+			err = PTR_ERR(sysoff);
+			sysoff = NULL;
 			break;
 		}
 		if (sysoff->n_samples > PTP_MAX_SAMPLES) {

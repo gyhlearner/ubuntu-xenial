@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright (C) 2005-2015 Junjiro R. Okajima
+=======
+ * Copyright (C) 2005-2017 Junjiro R. Okajima
+>>>>>>> temp
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,6 +27,7 @@
 #include <linux/seq_file.h>
 #include "aufs.h"
 
+<<<<<<< HEAD
 void *au_kzrealloc(void *p, unsigned int nused, unsigned int new_sz, gfp_t gfp)
 {
 	if (new_sz <= nused)
@@ -30,11 +35,65 @@ void *au_kzrealloc(void *p, unsigned int nused, unsigned int new_sz, gfp_t gfp)
 
 	p = krealloc(p, new_sz, gfp);
 	if (p)
+=======
+/* shrinkable realloc */
+void *au_krealloc(void *p, unsigned int new_sz, gfp_t gfp, int may_shrink)
+{
+	size_t sz;
+	int diff;
+
+	sz = 0;
+	diff = -1;
+	if (p) {
+#if 0 /* unused */
+		if (!new_sz) {
+			kfree(p);
+			p = NULL;
+			goto out;
+		}
+#else
+		AuDebugOn(!new_sz);
+#endif
+		sz = ksize(p);
+		diff = au_kmidx_sub(sz, new_sz);
+	}
+	if (sz && !diff)
+		goto out;
+
+	if (sz < new_sz)
+		/* expand or SLOB */
+		p = krealloc(p, new_sz, gfp);
+	else if (new_sz < sz && may_shrink) {
+		/* shrink */
+		void *q;
+
+		q = kmalloc(new_sz, gfp);
+		if (q) {
+			if (p) {
+				memcpy(q, p, new_sz);
+				kfree(p);
+			}
+			p = q;
+		} else
+			p = NULL;
+	}
+
+out:
+	return p;
+}
+
+void *au_kzrealloc(void *p, unsigned int nused, unsigned int new_sz, gfp_t gfp,
+		   int may_shrink)
+{
+	p = au_krealloc(p, new_sz, gfp, may_shrink);
+	if (p && new_sz > nused)
+>>>>>>> temp
 		memset(p + nused, 0, new_sz - nused);
 	return p;
 }
 
 /* ---------------------------------------------------------------------- */
+<<<<<<< HEAD
 
 /*
  * aufs caches
@@ -59,6 +118,12 @@ static int __init au_cache_init(void)
 
 	return -ENOMEM;
 }
+=======
+/*
+ * aufs caches
+ */
+struct kmem_cache *au_cache[AuCache_Last];
+>>>>>>> temp
 
 static void au_cache_fin(void)
 {
@@ -73,11 +138,40 @@ static void au_cache_fin(void)
 	/* excluding AuCache_HNOTIFY */
 	BUILD_BUG_ON(AuCache_HNOTIFY + 1 != AuCache_Last);
 	for (i = 0; i < AuCache_HNOTIFY; i++) {
+<<<<<<< HEAD
 		kmem_cache_destroy(au_cachep[i]);
 		au_cachep[i] = NULL;
 	}
 }
 
+=======
+		kmem_cache_destroy(au_cache[i]);
+		au_cache[i] = NULL;
+	}
+}
+
+static int __init au_cache_init(void)
+{
+	au_cache[AuCache_DINFO] = AuCacheCtor(au_dinfo, au_di_init_once);
+	if (au_cache[AuCache_DINFO])
+		/* SLAB_DESTROY_BY_RCU */
+		au_cache[AuCache_ICNTNR] = AuCacheCtor(au_icntnr,
+						       au_icntnr_init_once);
+	if (au_cache[AuCache_ICNTNR])
+		au_cache[AuCache_FINFO] = AuCacheCtor(au_finfo,
+						      au_fi_init_once);
+	if (au_cache[AuCache_FINFO])
+		au_cache[AuCache_VDIR] = AuCache(au_vdir);
+	if (au_cache[AuCache_VDIR])
+		au_cache[AuCache_DEHSTR] = AuCache(au_vdir_dehstr);
+	if (au_cache[AuCache_DEHSTR])
+		return 0;
+
+	au_cache_fin();
+	return -ENOMEM;
+}
+
+>>>>>>> temp
 /* ---------------------------------------------------------------------- */
 
 int au_dir_roflags;
@@ -87,11 +181,17 @@ int au_dir_roflags;
  * iterate_supers_type() doesn't protect us from
  * remounting (branch management)
  */
+<<<<<<< HEAD
 struct au_splhead au_sbilist;
 #endif
 
 struct lock_class_key au_lc_key[AuLcKey_Last];
 
+=======
+struct hlist_bl_head au_sbilist;
+#endif
+
+>>>>>>> temp
 /*
  * functions for module interface.
  */
@@ -109,7 +209,11 @@ MODULE_PARM_DESC(brs, "use <sysfs>/fs/aufs/si_*/brN");
 module_param_named(brs, sysaufs_brs, int, S_IRUGO);
 
 /* this module parameter has no meaning when USER_NS is disabled */
+<<<<<<< HEAD
 static bool au_userns;
+=======
+bool au_userns;
+>>>>>>> temp
 MODULE_PARM_DESC(allow_userns, "allow unprivileged to mount under userns");
 module_param_named(allow_userns, au_userns, bool, S_IRUGO);
 
@@ -122,9 +226,15 @@ int au_seq_path(struct seq_file *seq, struct path *path)
 	int err;
 
 	err = seq_path(seq, path, au_esc_chars);
+<<<<<<< HEAD
 	if (err > 0)
 		err = 0;
 	else if (err < 0)
+=======
+	if (err >= 0)
+		err = 0;
+	else
+>>>>>>> temp
 		err = -ENOMEM;
 
 	return err;
@@ -150,6 +260,11 @@ static int __init aufs_init(void)
 	for (i = 0; i < AuIop_Last; i++)
 		aufs_iop_nogetattr[i].getattr = NULL;
 
+<<<<<<< HEAD
+=======
+	memset(au_cache, 0, sizeof(au_cache));	/* including hnotify */
+
+>>>>>>> temp
 	au_sbilist_init();
 	sysaufs_brs_init();
 	au_debug_init();

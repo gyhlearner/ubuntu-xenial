@@ -95,7 +95,10 @@ struct cavium_mdiobus {
 	struct mii_bus *mii_bus;
 	u64 register_base;
 	enum cavium_mdiobus_mode mode;
+<<<<<<< HEAD
 	int phy_irq[PHY_MAX_ADDR];
+=======
+>>>>>>> temp
 };
 
 #ifdef CONFIG_CAVIUM_OCTEON_SOC

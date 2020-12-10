@@ -53,6 +53,7 @@ splat_cred_test1(struct file *file, void *arg)
 	uid_t uid, ruid, suid;
 	gid_t gid, rgid, sgid, *groups;
 	int ngroups, i, count = 0;
+<<<<<<< HEAD
 
 	uid  = crgetuid(CRED());
 	ruid = crgetruid(CRED());
@@ -65,6 +66,20 @@ splat_cred_test1(struct file *file, void *arg)
 	crhold(CRED());
 	ngroups = crgetngroups(CRED());
 	groups  = crgetgroups(CRED());
+=======
+	cred_t *cr = CRED();
+
+	uid  = crgetuid(cr);
+	ruid = crgetruid(cr);
+	suid = crgetsuid(cr);
+
+	gid  = crgetgid(cr);
+	rgid = crgetrgid(cr);
+	sgid = crgetsgid(cr);
+
+	ngroups = crgetngroups(cr);
+	groups = crgetgroups(cr);
+>>>>>>> temp
 
 	memset(str, 0, GROUP_STR_SIZE);
 	for (i = 0; i < ngroups; i++) {
@@ -78,8 +93,11 @@ splat_cred_test1(struct file *file, void *arg)
 		}
 	}
 
+<<<<<<< HEAD
 	crfree(CRED());
 
+=======
+>>>>>>> temp
 	splat_vprint(file, SPLAT_CRED_TEST1_NAME,
 		     "uid: %d ruid: %d suid: %d "
 		     "gid: %d rgid: %d sgid: %d\n",
@@ -114,6 +132,11 @@ splat_cred_test2(struct file *file, void *arg)
 	gid_t gid, rgid, sgid, *groups;
 	int ngroups, i, count = 0;
 
+<<<<<<< HEAD
+=======
+	crhold(kcred);
+
+>>>>>>> temp
 	uid  = crgetuid(kcred);
 	ruid = crgetruid(kcred);
 	suid = crgetsuid(kcred);
@@ -122,7 +145,10 @@ splat_cred_test2(struct file *file, void *arg)
 	rgid = crgetrgid(kcred);
 	sgid = crgetsgid(kcred);
 
+<<<<<<< HEAD
 	crhold(kcred);
+=======
+>>>>>>> temp
 	ngroups = crgetngroups(kcred);
 	groups  = crgetgroups(kcred);
 
@@ -134,6 +160,10 @@ splat_cred_test2(struct file *file, void *arg)
 			splat_vprint(file, SPLAT_CRED_TEST2_NAME,
 				     "Failed too many group entries for temp "
 				     "buffer: %d, %s\n", ngroups, str);
+<<<<<<< HEAD
+=======
+			crfree(kcred);
+>>>>>>> temp
 			return -ENOSPC;
 		}
 	}
@@ -166,6 +196,10 @@ splat_cred_test2(struct file *file, void *arg)
         return 0;
 } /* splat_cred_test2() */
 
+<<<<<<< HEAD
+=======
+#define	SPLAT_NGROUPS	32
+>>>>>>> temp
 /*
  * Verify the groupmember() works correctly by constructing an interesting
  * CRED() and checking that the expected gids are part of it.
@@ -188,7 +222,11 @@ splat_cred_test3(struct file *file, void *arg)
 	 * 1:(NGROUPS_MAX-1).  Gid 0 is explicitly avoided so we can reliably
 	 * test for its absence in the test cases.
 	 */
+<<<<<<< HEAD
 	gi = groups_alloc(NGROUPS_SMALL);
+=======
+	gi = groups_alloc(SPLAT_NGROUPS);
+>>>>>>> temp
 	if (gi == NULL) {
 		splat_vprint(file, SPLAT_CRED_TEST3_NAME, "Failed create "
 		    "group_info for known gids: %d\n", -ENOMEM);
@@ -196,7 +234,11 @@ splat_cred_test3(struct file *file, void *arg)
 		goto show_groups;
 	}
 
+<<<<<<< HEAD
 	for (i = 0, tmp_gid = known_gid; i < NGROUPS_SMALL; i++) {
+=======
+	for (i = 0, tmp_gid = known_gid; i < SPLAT_NGROUPS; i++) {
+>>>>>>> temp
 		splat_vprint(file, SPLAT_CRED_TEST3_NAME, "Adding gid %d "
 		    "to current CRED() (%d/%d)\n", tmp_gid, i, gi->ngroups);
 #ifdef HAVE_KUIDGID_T
@@ -269,11 +311,19 @@ splat_cred_init(void)
         spin_lock_init(&sub->test_lock);
         sub->desc.id = SPLAT_SUBSYSTEM_CRED;
 
+<<<<<<< HEAD
         SPLAT_TEST_INIT(sub, SPLAT_CRED_TEST1_NAME, SPLAT_CRED_TEST1_DESC,
 	              SPLAT_CRED_TEST1_ID, splat_cred_test1);
         SPLAT_TEST_INIT(sub, SPLAT_CRED_TEST2_NAME, SPLAT_CRED_TEST2_DESC,
 	              SPLAT_CRED_TEST2_ID, splat_cred_test2);
         SPLAT_TEST_INIT(sub, SPLAT_CRED_TEST3_NAME, SPLAT_CRED_TEST3_DESC,
+=======
+        splat_test_init(sub, SPLAT_CRED_TEST1_NAME, SPLAT_CRED_TEST1_DESC,
+	              SPLAT_CRED_TEST1_ID, splat_cred_test1);
+        splat_test_init(sub, SPLAT_CRED_TEST2_NAME, SPLAT_CRED_TEST2_DESC,
+	              SPLAT_CRED_TEST2_ID, splat_cred_test2);
+        splat_test_init(sub, SPLAT_CRED_TEST3_NAME, SPLAT_CRED_TEST3_DESC,
+>>>>>>> temp
 	              SPLAT_CRED_TEST3_ID, splat_cred_test3);
 
         return sub;
@@ -284,9 +334,15 @@ splat_cred_fini(splat_subsystem_t *sub)
 {
         ASSERT(sub);
 
+<<<<<<< HEAD
         SPLAT_TEST_FINI(sub, SPLAT_CRED_TEST3_ID);
         SPLAT_TEST_FINI(sub, SPLAT_CRED_TEST2_ID);
         SPLAT_TEST_FINI(sub, SPLAT_CRED_TEST1_ID);
+=======
+        splat_test_fini(sub, SPLAT_CRED_TEST3_ID);
+        splat_test_fini(sub, SPLAT_CRED_TEST2_ID);
+        splat_test_fini(sub, SPLAT_CRED_TEST1_ID);
+>>>>>>> temp
 
         kfree(sub);
 } /* splat_cred_fini() */

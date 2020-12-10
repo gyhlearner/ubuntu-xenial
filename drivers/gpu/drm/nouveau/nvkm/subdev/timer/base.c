@@ -89,6 +89,7 @@ nvkm_timer_alarm(struct nvkm_timer *tmr, u32 nsec, struct nvkm_alarm *alarm)
 		}
 
 		list_add_tail(&alarm->head, &list->head);
+<<<<<<< HEAD
 
 		/* Update HW if this is now the earliest alarm. */
 		list = list_first_entry(&tmr->alarms, typeof(*list), head);
@@ -104,13 +105,21 @@ nvkm_timer_alarm(struct nvkm_timer *tmr, u32 nsec, struct nvkm_alarm *alarm)
 	}
 	spin_unlock_irqrestore(&tmr->lock, flags);
 }
+=======
+>>>>>>> temp
 
-void
-nvkm_timer_alarm_cancel(struct nvkm_timer *tmr, struct nvkm_alarm *alarm)
-{
-	unsigned long flags;
-	spin_lock_irqsave(&tmr->lock, flags);
-	list_del_init(&alarm->head);
+		/* Update HW if this is now the earliest alarm. */
+		list = list_first_entry(&tmr->alarms, typeof(*list), head);
+		if (list == alarm) {
+			tmr->func->alarm_init(tmr, alarm->timestamp);
+			/* This shouldn't happen if callers aren't stupid.
+			 *
+			 * Worst case scenario is that it'll take roughly
+			 * 4 seconds for the next alarm to trigger.
+			 */
+			WARN_ON(alarm->timestamp <= nvkm_timer_read(tmr));
+		}
+	}
 	spin_unlock_irqrestore(&tmr->lock, flags);
 }
 
@@ -163,7 +172,7 @@ nvkm_timer_new_(const struct nvkm_timer_func *func, struct nvkm_device *device,
 	if (!(tmr = *ptmr = kzalloc(sizeof(*tmr), GFP_KERNEL)))
 		return -ENOMEM;
 
-	nvkm_subdev_ctor(&nvkm_timer, device, index, 0, &tmr->subdev);
+	nvkm_subdev_ctor(&nvkm_timer, device, index, &tmr->subdev);
 	tmr->func = func;
 	INIT_LIST_HEAD(&tmr->alarms);
 	spin_lock_init(&tmr->lock);

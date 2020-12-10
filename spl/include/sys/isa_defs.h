@@ -44,6 +44,12 @@
 #define _LP64
 #endif
 
+<<<<<<< HEAD
+=======
+#define _ALIGNMENT_REQUIRED            1
+
+
+>>>>>>> temp
 /* i386 arch specific defines */
 #elif defined(__i386) || defined(__i386__)
 
@@ -59,6 +65,11 @@
 #define _ILP32
 #endif
 
+<<<<<<< HEAD
+=======
+#define _ALIGNMENT_REQUIRED            0
+
+>>>>>>> temp
 /* powerpc (ppc64) arch specific defines */
 #elif defined(__powerpc) || defined(__powerpc__) || defined(__powerpc64__)
 
@@ -80,6 +91,15 @@
 #endif
 #endif
 
+<<<<<<< HEAD
+=======
+/*
+ * Illumos doesn't define _ALIGNMENT_REQUIRED for PPC, so default to 1
+ * out of paranoia.
+ */
+#define _ALIGNMENT_REQUIRED            1
+
+>>>>>>> temp
 /* arm arch specific defines */
 #elif defined(__arm) || defined(__arm__) || defined(__aarch64__)
 
@@ -107,6 +127,15 @@
 #define _BIG_ENDIAN
 #endif
 
+<<<<<<< HEAD
+=======
+/*
+ * Illumos doesn't define _ALIGNMENT_REQUIRED for ARM, so default to 1
+ * out of paranoia.
+ */
+#define _ALIGNMENT_REQUIRED            1
+
+>>>>>>> temp
 /* sparc arch specific defines */
 #elif defined(__sparc) || defined(__sparc__)
 
@@ -130,6 +159,10 @@
 
 #define _BIG_ENDIAN
 #define _SUNOS_VTOC_16
+<<<<<<< HEAD
+=======
+#define _ALIGNMENT_REQUIRED            1
+>>>>>>> temp
 
 /* s390 arch specific defines */
 #elif defined(__s390__)
@@ -145,7 +178,44 @@
 
 #define	_BIG_ENDIAN
 
+<<<<<<< HEAD
 #else /* Currently x86_64, i386, arm, powerpc, s390, and sparc are supported */
+=======
+/*
+ * Illumos doesn't define _ALIGNMENT_REQUIRED for s390, so default to 1
+ * out of paranoia.
+ */
+#define _ALIGNMENT_REQUIRED            1
+
+/* MIPS arch specific defines */
+#elif defined(__mips__)
+
+#if defined(__MIPSEB__)
+#define	_BIG_ENDIAN
+#elif defined(__MIPSEL__)
+#define	_LITTLE_ENDIAN
+#else
+#error MIPS no endian specified
+#endif
+
+#ifndef _LP64
+#define	_ILP32
+#endif
+
+#define	_SUNOS_VTOC_16
+
+/*
+ * Illumos doesn't define _ALIGNMENT_REQUIRED for MIPS, so default to 1
+ * out of paranoia.
+ */
+#define _ALIGNMENT_REQUIRED            1
+
+#else
+/*
+ * Currently supported:
+ * x86_64, i386, arm, powerpc, s390, sparc, and mips
+ */
+>>>>>>> temp
 #error "Unsupported ISA type"
 #endif
 

@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+/* SPDX-License-Identifier: GPL-2.0 */
+>>>>>>> temp
 #include <asm/thread_info.h>
 #include <asm/trap_block.h>
 #include <asm/spitfire.h>
@@ -92,6 +96,10 @@ user_rtt_fill_fixup_common:
 		call	sun4v_data_access_exception
 		 nop
 		ba,a,pt	%xcc, rtrap
+<<<<<<< HEAD
+=======
+		 nop
+>>>>>>> temp
 
 1:		call	spitfire_data_access_exception
 		 nop

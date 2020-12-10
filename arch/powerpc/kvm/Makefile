@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-2.0
 #
 # Makefile for Kernel-based Virtual Machine module
 #
@@ -20,7 +21,7 @@ common-objs-y += powerpc.o emulate_loadstore.o
 obj-$(CONFIG_KVM_EXIT_TIMING) += timing.o
 obj-$(CONFIG_KVM_BOOK3S_HANDLER) += book3s_exports.o
 
-AFLAGS_booke_interrupts.o := -I$(obj)
+AFLAGS_booke_interrupts.o := -I$(objtree)/$(obj)
 
 kvm-e500-objs := \
 	$(common-objs-y) \
@@ -46,7 +47,7 @@ kvm-e500mc-objs := \
 	e500_emulate.o
 kvm-objs-$(CONFIG_KVM_E500MC) := $(kvm-e500mc-objs)
 
-kvm-book3s_64-builtin-objs-$(CONFIG_KVM_BOOK3S_64_HANDLER) := \
+kvm-book3s_64-builtin-objs-$(CONFIG_SPAPR_TCE_IOMMU) := \
 	book3s_64_vio_hv.o
 
 kvm-pr-y := \
@@ -70,27 +71,41 @@ endif
 kvm-hv-y += \
 	book3s_hv.o \
 	book3s_hv_interrupts.o \
-	book3s_64_mmu_hv.o
+	book3s_64_mmu_hv.o \
+	book3s_64_mmu_radix.o
+
+kvm-hv-$(CONFIG_PPC_TRANSACTIONAL_MEM) += \
+	book3s_hv_tm.o
 
 kvm-book3s_64-builtin-xics-objs-$(CONFIG_KVM_XICS) := \
-	book3s_hv_rm_xics.o
+	book3s_hv_rm_xics.o book3s_hv_rm_xive.o
+
+kvm-book3s_64-builtin-tm-objs-$(CONFIG_PPC_TRANSACTIONAL_MEM) += \
+	book3s_hv_tm_builtin.o
 
 ifdef CONFIG_KVM_BOOK3S_HV_POSSIBLE
 kvm-book3s_64-builtin-objs-$(CONFIG_KVM_BOOK3S_64_HANDLER) += \
+	book3s_hv_hmi.o \
 	book3s_hv_rmhandlers.o \
 	book3s_hv_rm_mmu.o \
 	book3s_hv_ras.o \
 	book3s_hv_builtin.o \
+	$(kvm-book3s_64-builtin-tm-objs-y) \
 	$(kvm-book3s_64-builtin-xics-objs-y)
 endif
 
 kvm-book3s_64-objs-$(CONFIG_KVM_XICS) += \
 	book3s_xics.o
 
+<<<<<<< HEAD
+=======
+kvm-book3s_64-objs-$(CONFIG_KVM_XIVE) += book3s_xive.o
+kvm-book3s_64-objs-$(CONFIG_SPAPR_TCE_IOMMU) += book3s_64_vio.o
+
+>>>>>>> temp
 kvm-book3s_64-module-objs := \
 	$(common-objs-y) \
 	book3s.o \
-	book3s_64_vio.o \
 	book3s_rtas.o \
 	$(kvm-book3s_64-objs-y)
 

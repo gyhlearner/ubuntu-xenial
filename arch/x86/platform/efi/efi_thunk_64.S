@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 /*
  * Copyright (C) 2014 Intel Corporation; author Matt Fleming
  *
@@ -21,6 +22,7 @@
 #include <linux/linkage.h>
 #include <asm/page_types.h>
 #include <asm/segment.h>
+#include <asm/nospec-branch.h>
 
 	.text
 	.code64
@@ -53,6 +55,7 @@ ENTRY(efi64_thunk)
 
 	leaq	__efi64_thunk(%rip), %rbx
 	subq	%rax, %rbx
+	ANNOTATE_RETPOLINE_SAFE /* FRBS */
 	call	*%rbx
 
 	movq	efi_saved_sp(%rip), %rsp
@@ -134,6 +137,7 @@ ENTRY(efi_enter32)
 	movl	%eax, %es
 	movl	%eax, %ss
 
+	ANNOTATE_RETPOLINE_SAFE /* FRBS */
 	call	*%edi
 
 	/* We must preserve return value */

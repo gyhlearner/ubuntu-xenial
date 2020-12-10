@@ -35,7 +35,7 @@
 #include <linux/pagemap.h>
 #include <linux/swap.h>
 #include <linux/task_io_accounting_ops.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 #include "cifspdu.h"
 #include "cifsglob.h"
 #include "cifsacl.h"
@@ -184,6 +184,18 @@ cifs_reconnect_tcon(struct cifs_tcon *tcon, int smb_command)
 	 * reconnect the same SMB session
 	 */
 	mutex_lock(&ses->session_mutex);
+
+	/*
+	 * Recheck after acquire mutex. If another thread is negotiating
+	 * and the server never sends an answer the socket will be closed
+	 * and tcpStatus set to reconnect.
+	 */
+	if (server->tcpStatus == CifsNeedReconnect) {
+		rc = -EHOSTDOWN;
+		mutex_unlock(&ses->session_mutex);
+		goto out;
+	}
+
 	rc = cifs_negotiate_protocol(0, ses);
 	if (rc == 0 && ses->need_reconnect)
 		rc = cifs_setup_session(0, ses, nls_codepage);
@@ -484,14 +496,14 @@ decode_lanman_negprot_rsp(struct TCP_Server_Info *server, NEGOTIATE_RSP *pSMBr)
 		 * this requirement.
 		 */
 		int val, seconds, remain, result;
-		struct timespec ts, utc;
-		utc = CURRENT_TIME;
+		struct timespec ts;
+		unsigned long utc = ktime_get_real_seconds();
 		ts = cnvrtDosUnixTm(rsp->SrvTime.Date,
 				    rsp->SrvTime.Time, 0);
 		cifs_dbg(FYI, "SrvTime %d sec since 1970 (utc: %d) diff: %d\n",
-			 (int)ts.tv_sec, (int)utc.tv_sec,
-			 (int)(utc.tv_sec - ts.tv_sec));
-		val = (int)(utc.tv_sec - ts.tv_sec);
+			 (int)ts.tv_sec, (int)utc,
+			 (int)(utc - ts.tv_sec));
+		val = (int)(utc - ts.tv_sec);
 		seconds = abs(val);
 		result = (seconds / MIN_TZ_ADJ) * MIN_TZ_ADJ;
 		remain = seconds % MIN_TZ_ADJ;
@@ -708,9 +720,7 @@ cifs_echo_callback(struct mid_q_entry *mid)
 {
 	struct TCP_Server_Info *server = mid->callback_data;
 
-	mutex_lock(&server->srv_mutex);
 	DeleteMidQEntry(mid);
-	mutex_unlock(&server->srv_mutex);
 	add_credits(server, 1, CIFS_ECHO_OP);
 }
 
@@ -1247,7 +1257,6 @@ OldOpenRetry:
 	inc_rfc1001_len(pSMB, count);
 
 	pSMB->ByteCount = cpu_to_le16(count);
-	/* long_op set to 1 to allow for oplock break timeouts */
 	rc = SendReceive(xid, tcon->ses, (struct smb_hdr *) pSMB,
 			(struct smb_hdr *)pSMBr, &bytes_returned, 0);
 	cifs_stats_inc(&tcon->stats.cifs_stats.num_opens);
@@ -1618,9 +1627,7 @@ cifs_readv_callback(struct mid_q_entry *mid)
 	}
 
 	queue_work(cifsiod_wq, &rdata->work);
-	mutex_lock(&server->srv_mutex);
 	DeleteMidQEntry(mid);
-	mutex_unlock(&server->srv_mutex);
 	add_credits(server, 1, 0);
 }
 
@@ -1803,8 +1810,7 @@ CIFSSMBRead(const unsigned int xid, struct cifs_io_parms *io_parms,
 
 int
 CIFSSMBWrite(const unsigned int xid, struct cifs_io_parms *io_parms,
-	     unsigned int *nbytes, const char *buf,
-	     const char __user *ubuf, const int long_op)
+	     unsigned int *nbytes, const char *buf)
 {
 	int rc = -EACCES;
 	WRITE_REQ *pSMB = NULL;
@@ -1873,12 +1879,7 @@ CIFSSMBWrite(const unsigned int xid, struct cifs_io_parms *io_parms,
 		cpu_to_le16(offsetof(struct smb_com_write_req, Data) - 4);
 	if (buf)
 		memcpy(pSMB->Data, buf, bytes_sent);
-	else if (ubuf) {
-		if (copy_from_user(pSMB->Data, ubuf, bytes_sent)) {
-			cifs_buf_release(pSMB);
-			return -EFAULT;
-		}
-	} else if (count != 0) {
+	else if (count != 0) {
 		/* No buffer */
 		cifs_buf_release(pSMB);
 		return -EINVAL;
@@ -1902,7 +1903,7 @@ CIFSSMBWrite(const unsigned int xid, struct cifs_io_parms *io_parms,
 	}
 
 	rc = SendReceive(xid, tcon->ses, (struct smb_hdr *) pSMB,
-			 (struct smb_hdr *) pSMBr, &bytes_returned, long_op);
+			 (struct smb_hdr *) pSMBr, &bytes_returned, 0);
 	cifs_stats_inc(&tcon->stats.cifs_stats.num_writes);
 	if (rc) {
 		cifs_dbg(FYI, "Send error in write = %d\n", rc);
@@ -1961,17 +1962,17 @@ cifs_writev_requeue(struct cifs_writedata *wdata)
 
 		wsize = server->ops->wp_retry_size(inode);
 		if (wsize < rest_len) {
-			nr_pages = wsize / PAGE_CACHE_SIZE;
+			nr_pages = wsize / PAGE_SIZE;
 			if (!nr_pages) {
 				rc = -ENOTSUPP;
 				break;
 			}
-			cur_len = nr_pages * PAGE_CACHE_SIZE;
-			tailsz = PAGE_CACHE_SIZE;
+			cur_len = nr_pages * PAGE_SIZE;
+			tailsz = PAGE_SIZE;
 		} else {
-			nr_pages = DIV_ROUND_UP(rest_len, PAGE_CACHE_SIZE);
+			nr_pages = DIV_ROUND_UP(rest_len, PAGE_SIZE);
 			cur_len = rest_len;
-			tailsz = rest_len - (nr_pages - 1) * PAGE_CACHE_SIZE;
+			tailsz = rest_len - (nr_pages - 1) * PAGE_SIZE;
 		}
 
 		wdata2 = cifs_writedata_alloc(nr_pages, cifs_writev_complete);
@@ -1989,7 +1990,7 @@ cifs_writev_requeue(struct cifs_writedata *wdata)
 		wdata2->sync_mode = wdata->sync_mode;
 		wdata2->nr_pages = nr_pages;
 		wdata2->offset = page_offset(wdata2->pages[0]);
-		wdata2->pagesz = PAGE_CACHE_SIZE;
+		wdata2->pagesz = PAGE_SIZE;
 		wdata2->tailsz = tailsz;
 		wdata2->bytes = cur_len;
 
@@ -2007,7 +2008,7 @@ cifs_writev_requeue(struct cifs_writedata *wdata)
 			if (rc != 0 && rc != -EAGAIN) {
 				SetPageError(wdata2->pages[j]);
 				end_page_writeback(wdata2->pages[j]);
-				page_cache_release(wdata2->pages[j]);
+				put_page(wdata2->pages[j]);
 			}
 		}
 
@@ -2050,7 +2051,7 @@ cifs_writev_complete(struct work_struct *work)
 		else if (wdata->result < 0)
 			SetPageError(page);
 		end_page_writeback(page);
-		page_cache_release(page);
+		put_page(page);
 	}
 	if (wdata->result != -EAGAIN)
 		mapping_set_error(inode->i_mapping, wdata->result);
@@ -2083,7 +2084,6 @@ cifs_writev_callback(struct mid_q_entry *mid)
 {
 	struct cifs_writedata *wdata = mid->callback_data;
 	struct cifs_tcon *tcon = tlink_tcon(wdata->cfile->tlink);
-	struct TCP_Server_Info *server = tcon->ses->server;
 	unsigned int written;
 	WRITE_RSP *smb = (WRITE_RSP *)mid->resp_buf;
 
@@ -2120,9 +2120,7 @@ cifs_writev_callback(struct mid_q_entry *mid)
 	}
 
 	queue_work(cifsiod_wq, &wdata->work);
-	mutex_lock(&server->srv_mutex);
 	DeleteMidQEntry(mid);
-	mutex_unlock(&server->srv_mutex);
 	add_credits(tcon->ses->server, 1, 0);
 }
 
@@ -2547,7 +2545,7 @@ CIFSSMBPosixLock(const unsigned int xid, struct cifs_tcon *tcon,
 			pLockData->fl_start = le64_to_cpu(parm_data->start);
 			pLockData->fl_end = pLockData->fl_start +
 					le64_to_cpu(parm_data->length) - 1;
-			pLockData->fl_pid = le32_to_cpu(parm_data->pid);
+			pLockData->fl_pid = -le32_to_cpu(parm_data->pid);
 		}
 	}
 
@@ -3372,7 +3370,7 @@ CIFSSMB_set_compression(const unsigned int xid, struct cifs_tcon *tcon,
 #ifdef CONFIG_CIFS_POSIX
 
 /*Convert an Access Control Entry from wire format to local POSIX xattr format*/
-static void cifs_convert_ace(posix_acl_xattr_entry *ace,
+static void cifs_convert_ace(struct posix_acl_xattr_entry *ace,
 			     struct cifs_posix_ace *cifs_ace)
 {
 	/* u8 cifs fields do not need le conversion */
@@ -3396,12 +3394,12 @@ static int cifs_copy_posix_acl(char *trgt, char *src, const int buflen,
 	__u16 count;
 	struct cifs_posix_ace *pACE;
 	struct cifs_posix_acl *cifs_acl = (struct cifs_posix_acl *)src;
-	posix_acl_xattr_header *local_acl = (posix_acl_xattr_header *)trgt;
+	struct posix_acl_xattr_header *local_acl = (void *)trgt;
 
 	if (le16_to_cpu(cifs_acl->version) != CIFS_ACL_VERSION)
 		return -EOPNOTSUPP;
 
-	if (acl_type & ACL_TYPE_ACCESS) {
+	if (acl_type == ACL_TYPE_ACCESS) {
 		count = le16_to_cpu(cifs_acl->access_entry_count);
 		pACE = &cifs_acl->ace_array[0];
 		size = sizeof(struct cifs_posix_acl);
@@ -3412,7 +3410,7 @@ static int cifs_copy_posix_acl(char *trgt, char *src, const int buflen,
 				 size_of_data_area, size);
 			return -EINVAL;
 		}
-	} else if (acl_type & ACL_TYPE_DEFAULT) {
+	} else if (acl_type == ACL_TYPE_DEFAULT) {
 		count = le16_to_cpu(cifs_acl->access_entry_count);
 		size = sizeof(struct cifs_posix_acl);
 		size += sizeof(struct cifs_posix_ace) * count;
@@ -3434,9 +3432,11 @@ static int cifs_copy_posix_acl(char *trgt, char *src, const int buflen,
 	} else if (size > buflen) {
 		return -ERANGE;
 	} else /* buffer big enough */ {
+		struct posix_acl_xattr_entry *ace = (void *)(local_acl + 1);
+
 		local_acl->a_version = cpu_to_le32(POSIX_ACL_XATTR_VERSION);
 		for (i = 0; i < count ; i++) {
-			cifs_convert_ace(&local_acl->a_entries[i], pACE);
+			cifs_convert_ace(&ace[i], pACE);
 			pACE++;
 		}
 	}
@@ -3444,7 +3444,7 @@ static int cifs_copy_posix_acl(char *trgt, char *src, const int buflen,
 }
 
 static __u16 convert_ace_to_cifs_ace(struct cifs_posix_ace *cifs_ace,
-				     const posix_acl_xattr_entry *local_ace)
+				     const struct posix_acl_xattr_entry *local_ace)
 {
 	__u16 rc = 0; /* 0 = ACL converted ok */
 
@@ -3469,7 +3469,8 @@ static __u16 ACL_to_cifs_posix(char *parm_data, const char *pACL,
 {
 	__u16 rc = 0;
 	struct cifs_posix_acl *cifs_acl = (struct cifs_posix_acl *)parm_data;
-	posix_acl_xattr_header *local_acl = (posix_acl_xattr_header *)pACL;
+	struct posix_acl_xattr_header *local_acl = (void *)pACL;
+	struct posix_acl_xattr_entry *ace = (void *)(local_acl + 1);
 	int count;
 	int i;
 
@@ -3496,8 +3497,7 @@ static __u16 ACL_to_cifs_posix(char *parm_data, const char *pACL,
 		return 0;
 	}
 	for (i = 0; i < count; i++) {
-		rc = convert_ace_to_cifs_ace(&cifs_acl->ace_array[i],
-					&local_acl->a_entries[i]);
+		rc = convert_ace_to_cifs_ace(&cifs_acl->ace_array[i], &ace[i]);
 		if (rc != 0) {
 			/* ACE not converted */
 			break;
@@ -4816,117 +4816,6 @@ GetInodeNumOut:
 	return rc;
 }
 
-/* parses DFS refferal V3 structure
- * caller is responsible for freeing target_nodes
- * returns:
- * 	on success - 0
- *	on failure - errno
- */
-static int
-parse_DFS_referrals(TRANSACTION2_GET_DFS_REFER_RSP *pSMBr,
-		unsigned int *num_of_nodes,
-		struct dfs_info3_param **target_nodes,
-		const struct nls_table *nls_codepage, int remap,
-		const char *searchName)
-{
-	int i, rc = 0;
-	char *data_end;
-	bool is_unicode;
-	struct dfs_referral_level_3 *ref;
-
-	if (pSMBr->hdr.Flags2 & SMBFLG2_UNICODE)
-		is_unicode = true;
-	else
-		is_unicode = false;
-	*num_of_nodes = le16_to_cpu(pSMBr->NumberOfReferrals);
-
-	if (*num_of_nodes < 1) {
-		cifs_dbg(VFS, "num_referrals: must be at least > 0, but we get num_referrals = %d\n",
-			 *num_of_nodes);
-		rc = -EINVAL;
-		goto parse_DFS_referrals_exit;
-	}
-
-	ref = (struct dfs_referral_level_3 *) &(pSMBr->referrals);
-	if (ref->VersionNumber != cpu_to_le16(3)) {
-		cifs_dbg(VFS, "Referrals of V%d version are not supported, should be V3\n",
-			 le16_to_cpu(ref->VersionNumber));
-		rc = -EINVAL;
-		goto parse_DFS_referrals_exit;
-	}
-
-	/* get the upper boundary of the resp buffer */
-	data_end = (char *)(&(pSMBr->PathConsumed)) +
-				le16_to_cpu(pSMBr->t2.DataCount);
-
-	cifs_dbg(FYI, "num_referrals: %d dfs flags: 0x%x ...\n",
-		 *num_of_nodes, le32_to_cpu(pSMBr->DFSFlags));
-
-	*target_nodes = kcalloc(*num_of_nodes, sizeof(struct dfs_info3_param),
-				GFP_KERNEL);
-	if (*target_nodes == NULL) {
-		rc = -ENOMEM;
-		goto parse_DFS_referrals_exit;
-	}
-
-	/* collect necessary data from referrals */
-	for (i = 0; i < *num_of_nodes; i++) {
-		char *temp;
-		int max_len;
-		struct dfs_info3_param *node = (*target_nodes)+i;
-
-		node->flags = le32_to_cpu(pSMBr->DFSFlags);
-		if (is_unicode) {
-			__le16 *tmp = kmalloc(strlen(searchName)*2 + 2,
-						GFP_KERNEL);
-			if (tmp == NULL) {
-				rc = -ENOMEM;
-				goto parse_DFS_referrals_exit;
-			}
-			cifsConvertToUTF16((__le16 *) tmp, searchName,
-					   PATH_MAX, nls_codepage, remap);
-			node->path_consumed = cifs_utf16_bytes(tmp,
-					le16_to_cpu(pSMBr->PathConsumed),
-					nls_codepage);
-			kfree(tmp);
-		} else
-			node->path_consumed = le16_to_cpu(pSMBr->PathConsumed);
-
-		node->server_type = le16_to_cpu(ref->ServerType);
-		node->ref_flag = le16_to_cpu(ref->ReferralEntryFlags);
-
-		/* copy DfsPath */
-		temp = (char *)ref + le16_to_cpu(ref->DfsPathOffset);
-		max_len = data_end - temp;
-		node->path_name = cifs_strndup_from_utf16(temp, max_len,
-						is_unicode, nls_codepage);
-		if (!node->path_name) {
-			rc = -ENOMEM;
-			goto parse_DFS_referrals_exit;
-		}
-
-		/* copy link target UNC */
-		temp = (char *)ref + le16_to_cpu(ref->NetworkAddressOffset);
-		max_len = data_end - temp;
-		node->node_name = cifs_strndup_from_utf16(temp, max_len,
-						is_unicode, nls_codepage);
-		if (!node->node_name) {
-			rc = -ENOMEM;
-			goto parse_DFS_referrals_exit;
-		}
-
-		ref++;
-	}
-
-parse_DFS_referrals_exit:
-	if (rc) {
-		free_dfs_info_array(*target_nodes, *num_of_nodes);
-		*target_nodes = NULL;
-		*num_of_nodes = 0;
-	}
-	return rc;
-}
-
 int
 CIFSGetDFSRefer(const unsigned int xid, struct cifs_ses *ses,
 		const char *search_name, struct dfs_info3_param **target_nodes,
@@ -4944,10 +4833,11 @@ CIFSGetDFSRefer(const unsigned int xid, struct cifs_ses *ses,
 	*target_nodes = NULL;
 
 	cifs_dbg(FYI, "In GetDFSRefer the path %s\n", search_name);
-	if (ses == NULL)
+	if (ses == NULL || ses->tcon_ipc == NULL)
 		return -ENODEV;
+
 getDFSRetry:
-	rc = smb_init(SMB_COM_TRANSACTION2, 15, NULL, (void **) &pSMB,
+	rc = smb_init(SMB_COM_TRANSACTION2, 15, ses->tcon_ipc, (void **) &pSMB,
 		      (void **) &pSMBr);
 	if (rc)
 		return rc;
@@ -4955,7 +4845,7 @@ getDFSRetry:
 	/* server pointer checked in called function,
 	but should never be null here anyway */
 	pSMB->hdr.Mid = get_next_mid(ses->server);
-	pSMB->hdr.Tid = ses->ipc_tid;
+	pSMB->hdr.Tid = ses->tcon_ipc->tid;
 	pSMB->hdr.Uid = ses->Suid;
 	if (ses->capabilities & CAP_STATUS32)
 		pSMB->hdr.Flags2 |= SMBFLG2_ERR_STATUS;
@@ -5023,9 +4913,11 @@ getDFSRetry:
 		 get_bcc(&pSMBr->hdr), le16_to_cpu(pSMBr->t2.DataOffset));
 
 	/* parse returned result into more usable form */
-	rc = parse_DFS_referrals(pSMBr, num_of_nodes,
-				 target_nodes, nls_codepage, remap,
-				 search_name);
+	rc = parse_dfs_referrals(&pSMBr->dfs_data,
+				 le16_to_cpu(pSMBr->t2.DataCount),
+				 num_of_nodes, target_nodes, nls_codepage,
+				 remap, search_name,
+				 (pSMBr->hdr.Flags2 & SMBFLG2_UNICODE) != 0);
 
 GetDFSRefExit:
 	cifs_buf_release(pSMB);
@@ -6208,11 +6100,13 @@ ssize_t
 CIFSSMBQAllEAs(const unsigned int xid, struct cifs_tcon *tcon,
 		const unsigned char *searchName, const unsigned char *ea_name,
 		char *EAData, size_t buf_size,
-		const struct nls_table *nls_codepage, int remap)
+		struct cifs_sb_info *cifs_sb)
 {
 		/* BB assumes one setup word */
 	TRANSACTION2_QPI_REQ *pSMB = NULL;
 	TRANSACTION2_QPI_RSP *pSMBr = NULL;
+	int remap = cifs_remap(cifs_sb);
+	struct nls_table *nls_codepage = cifs_sb->local_nls;
 	int rc = 0;
 	int bytes_returned;
 	int list_len;
@@ -6394,7 +6288,7 @@ int
 CIFSSMBSetEA(const unsigned int xid, struct cifs_tcon *tcon,
 	     const char *fileName, const char *ea_name, const void *ea_value,
 	     const __u16 ea_value_len, const struct nls_table *nls_codepage,
-	     int remap)
+	     struct cifs_sb_info *cifs_sb)
 {
 	struct smb_com_transaction2_spi_req *pSMB = NULL;
 	struct smb_com_transaction2_spi_rsp *pSMBr = NULL;
@@ -6403,6 +6297,7 @@ CIFSSMBSetEA(const unsigned int xid, struct cifs_tcon *tcon,
 	int rc = 0;
 	int bytes_returned = 0;
 	__u16 params, param_offset, byte_count, offset, count;
+	int remap = cifs_remap(cifs_sb);
 
 	cifs_dbg(FYI, "In SetEA\n");
 SetEARetry:

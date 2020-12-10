@@ -20,8 +20,13 @@
  */
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+<<<<<<< HEAD
  * Copyright (c) 2013 by Saso Kiselkov. All rights reserved.
  * Copyright (c) 2012, 2014 by Delphix. All rights reserved.
+=======
+ * Copyright (c) 2012, 2017 by Delphix. All rights reserved.
+ * Copyright (c) 2013 by Saso Kiselkov. All rights reserved.
+>>>>>>> temp
  * Copyright (c) 2014 Spectra Logic Corporation, All rights reserved.
  */
 
@@ -56,6 +61,10 @@ struct dmu_tx;
 	(arc_buf_size(buf) > OBJSET_OLD_PHYS_SIZE)
 
 #define	OBJSET_FLAG_USERACCOUNTING_COMPLETE	(1ULL<<0)
+<<<<<<< HEAD
+=======
+#define	OBJSET_FLAG_USEROBJACCOUNTING_COMPLETE	(1ULL<<1)
+>>>>>>> temp
 
 typedef struct objset_phys {
 	dnode_phys_t os_meta_dnode;
@@ -68,6 +77,11 @@ typedef struct objset_phys {
 	dnode_phys_t os_groupused_dnode;
 } objset_phys_t;
 
+<<<<<<< HEAD
+=======
+typedef int (*dmu_objset_upgrade_cb_t)(objset_t *);
+
+>>>>>>> temp
 struct objset {
 	/* Immutable: */
 	struct dsl_dataset *os_dsl_dataset;
@@ -88,6 +102,10 @@ struct objset {
 	list_node_t os_evicting_node;
 
 	/* can change, under dsl_dir's locks: */
+<<<<<<< HEAD
+=======
+	uint64_t os_dnodesize; /* default dnode size for new objects */
+>>>>>>> temp
 	enum zio_checksum os_checksum;
 	enum zio_compress os_compress;
 	uint8_t os_copies;
@@ -100,6 +118,7 @@ struct objset {
 	zfs_redundant_metadata_type_t os_redundant_metadata;
 	int os_recordsize;
 
+<<<<<<< HEAD
 	/* no lock needed: */
 	struct dmu_tx *os_synctx; /* XXX sketchy */
 	blkptr_t *os_rootbp;
@@ -118,10 +137,53 @@ struct objset {
 	list_t os_dnodes;
 	list_t os_downgraded_dbufs;
 
+=======
+	/*
+	 * Pointer is constant; the blkptr it points to is protected by
+	 * os_dsl_dataset->ds_bp_rwlock
+	 */
+	blkptr_t *os_rootbp;
+
+	/* no lock needed: */
+	struct dmu_tx *os_synctx; /* XXX sketchy */
+	zil_header_t os_zil_header;
+	multilist_t *os_synced_dnodes;
+	uint64_t os_flags;
+	uint64_t os_freed_dnodes;
+	boolean_t os_rescan_dnodes;
+
+	/* Protected by os_obj_lock */
+	kmutex_t os_obj_lock;
+	uint64_t os_obj_next_chunk;
+
+	/* Per-CPU next object to allocate, protected by atomic ops. */
+	uint64_t *os_obj_next_percpu;
+	int os_obj_next_percpu_len;
+
+	/* Protected by os_lock */
+	kmutex_t os_lock;
+	multilist_t *os_dirty_dnodes[TXG_SIZE];
+	list_t os_dnodes;
+	list_t os_downgraded_dbufs;
+
+	/* Protects changes to DMU_{USER,GROUP}USED_OBJECT */
+	kmutex_t os_userused_lock;
+
+>>>>>>> temp
 	/* stuff we store for the user */
 	kmutex_t os_user_ptr_lock;
 	void *os_user_ptr;
 	sa_os_t *os_sa;
+<<<<<<< HEAD
+=======
+
+	/* kernel thread to upgrade this dataset */
+	kmutex_t os_upgrade_lock;
+	taskqid_t os_upgrade_id;
+	dmu_objset_upgrade_cb_t os_upgrade_cb;
+	boolean_t os_upgrade_exit;
+	int os_upgrade_status;
+>>>>>>> temp
 };
 
 #define	DMU_META_OBJSET		0
@@ -135,8 +197,11 @@ struct objset {
 	((os)->os_secondary_cache == ZFS_CACHE_ALL ||		\
 	(os)->os_secondary_cache == ZFS_CACHE_METADATA)
 
+<<<<<<< HEAD
 #define	DMU_OS_IS_L2COMPRESSIBLE(os)	(zfs_mdcomp_disable == B_FALSE)
 
+=======
+>>>>>>> temp
 /* called from zpl */
 int dmu_objset_hold(const char *name, void *tag, objset_t **osp);
 int dmu_objset_own(const char *name, dmu_objset_type_t type,
@@ -172,9 +237,21 @@ void dmu_objset_userquota_get_ids(dnode_t *dn, boolean_t before, dmu_tx_t *tx);
 boolean_t dmu_objset_userused_enabled(objset_t *os);
 int dmu_objset_userspace_upgrade(objset_t *os);
 boolean_t dmu_objset_userspace_present(objset_t *os);
+<<<<<<< HEAD
 int dmu_fsname(const char *snapname, char *buf);
 
 void dmu_objset_evict_done(objset_t *os);
+=======
+boolean_t dmu_objset_userobjused_enabled(objset_t *os);
+boolean_t dmu_objset_userobjspace_upgradable(objset_t *os);
+void dmu_objset_userobjspace_upgrade(objset_t *os);
+boolean_t dmu_objset_userobjspace_present(objset_t *os);
+
+int dmu_fsname(const char *snapname, char *buf);
+
+void dmu_objset_evict_done(objset_t *os);
+void dmu_objset_willuse_space(objset_t *os, int64_t space, dmu_tx_t *tx);
+>>>>>>> temp
 
 void dmu_objset_init(void);
 void dmu_objset_fini(void);

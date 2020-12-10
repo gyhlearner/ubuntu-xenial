@@ -2,7 +2,13 @@
 #
 # This script is intended as a helper when closing a release.
 #
+<<<<<<< HEAD
 source debian/debian.env
+=======
+
+# shellcheck disable=SC1091
+. debian/debian.env
+>>>>>>> temp
 
 # Parse args
 usage="$0 [-c] [-d] [-s]"$'\n\n'

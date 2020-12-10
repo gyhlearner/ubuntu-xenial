@@ -29,6 +29,9 @@
 #include <linux/dma_remapping.h>
 #include <linux/mmu_notifier.h>
 #include <linux/list.h>
+#include <linux/iommu.h>
+#include <linux/io-64-nonatomic-lo-hi.h>
+
 #include <asm/cacheflush.h>
 #include <asm/iommu.h>
 
@@ -71,24 +74,8 @@
 
 #define OFFSET_STRIDE		(9)
 
-#ifdef CONFIG_64BIT
 #define dmar_readq(a) readq(a)
 #define dmar_writeq(a,v) writeq(v,a)
-#else
-static inline u64 dmar_readq(void __iomem *addr)
-{
-	u32 lo, hi;
-	lo = readl(addr);
-	hi = readl(addr + 4);
-	return (((u64) hi) << 32) + lo;
-}
-
-static inline void dmar_writeq(void __iomem *addr, u64 val)
-{
-	writel((u32)val, addr);
-	writel((u32)(val >> 32), addr + 4);
-}
-#endif
 
 #define DMAR_VER_MAJOR(v)		(((v) & 0xf0) >> 4)
 #define DMAR_VER_MINOR(v)		((v) & 0x0f)
@@ -226,6 +213,7 @@ static inline void dmar_writeq(void __iomem *addr, u64 val)
 #define DMA_FSTS_IQE (1 << 4)
 #define DMA_FSTS_ICE (1 << 5)
 #define DMA_FSTS_ITE (1 << 6)
+#define DMA_FSTS_PRO (1 << 7)
 #define dma_fsts_fault_record_index(s) (((s) >> 8) & 0xff)
 
 /* FRCD_REG, 32 bits access */
@@ -320,7 +308,10 @@ enum {
 #define QI_DEV_EIOTLB_PASID(p)	(((u64)p) << 32)
 #define QI_DEV_EIOTLB_SID(sid)	((u64)((sid) & 0xffff) << 16)
 #define QI_DEV_EIOTLB_QDEP(qd)	((u64)((qd) & 0x1f) << 4)
+<<<<<<< HEAD
 #define QI_DEV_EIOTLB_PFSID(pfsid) (((u64)(pfsid & 0xf) << 12) | ((u64)(pfsid & 0xfff) << 52))
+=======
+>>>>>>> temp
 #define QI_DEV_EIOTLB_MAX_INVS	32
 
 #define QI_PGRP_IDX(idx)	(((u64)(idx)) << 55)
@@ -442,7 +433,7 @@ struct intel_iommu {
 	struct irq_domain *ir_domain;
 	struct irq_domain *ir_msi_domain;
 #endif
-	struct device	*iommu_dev; /* IOMMU-sysfs device */
+	struct iommu_device iommu;  /* IOMMU core code handle */
 	int		node;
 	u32		flags;      /* Software defined flags */
 };

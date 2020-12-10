@@ -4,7 +4,11 @@
  */
 
 /*
+<<<<<<< HEAD
  * Copyright (C) 2006-2015 Oracle Corporation
+=======
+ * Copyright (C) 2006-2017 Oracle Corporation
+>>>>>>> temp
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -656,7 +660,11 @@ RTDECL(void) RTHeapSimpleFree(RTHEAPSIMPLE hHeap, void *pv)
     pHeapInt = pBlock->pHeap;
     ASSERT_BLOCK_USED(pHeapInt, pBlock);
     ASSERT_ANCHOR(pHeapInt);
+<<<<<<< HEAD
     Assert(pHeapInt == (PRTHEAPSIMPLEINTERNAL)hHeap || !hHeap);
+=======
+    Assert(pHeapInt == (PRTHEAPSIMPLEINTERNAL)hHeap || !hHeap); RT_NOREF_PV(hHeap);
+>>>>>>> temp
 
 #ifdef RTHEAPSIMPLE_FREE_POISON
     /*
@@ -850,7 +858,11 @@ RTDECL(size_t) RTHeapSimpleSize(RTHEAPSIMPLE hHeap, void *pv)
     pHeapInt = pBlock->pHeap;
     ASSERT_BLOCK_USED(pHeapInt, pBlock);
     ASSERT_ANCHOR(pHeapInt);
+<<<<<<< HEAD
     Assert(pHeapInt == (PRTHEAPSIMPLEINTERNAL)hHeap || !hHeap);
+=======
+    Assert(pHeapInt == (PRTHEAPSIMPLEINTERNAL)hHeap || !hHeap); RT_NOREF_PV(hHeap);
+>>>>>>> temp
 
     /*
      * Calculate the block size.

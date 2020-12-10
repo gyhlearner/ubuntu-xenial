@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright (C) 2005-2015 Junjiro R. Okajima
+=======
+ * Copyright (C) 2005-2017 Junjiro R. Okajima
+>>>>>>> temp
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -191,7 +195,12 @@ int au_whtmp_ren(struct dentry *h_dentry, struct au_branch *br)
 
 	/* under the same dir, no need to lock_rename() */
 	delegated = NULL;
+<<<<<<< HEAD
 	err = vfsub_rename(h_dir, h_dentry, h_dir, &h_path, &delegated);
+=======
+	err = vfsub_rename(h_dir, h_dentry, h_dir, &h_path, &delegated,
+			   /*flags*/0);
+>>>>>>> temp
 	AuTraceErr(err);
 	if (unlikely(err == -EWOULDBLOCK)) {
 		pr_warn("cannot retry for NFSv4 delegation"
@@ -566,7 +575,11 @@ static void reinit_br_wh(void *arg)
 	h_root = au_h_dptr(a->sb->s_root, bindex);
 	AuDebugOn(h_root != au_br_dentry(a->br));
 
+<<<<<<< HEAD
 	au_hn_imtx_lock_nested(hdir, AuLsc_I_PARENT);
+=======
+	au_hn_inode_lock_nested(hdir, AuLsc_I_PARENT);
+>>>>>>> temp
 	wbr_wh_write_lock(wbr);
 	err = au_h_verify(wbr->wbr_whbase, au_opt_udba(a->sb), hdir->hi_inode,
 			  h_root, a->br);
@@ -590,7 +603,11 @@ static void reinit_br_wh(void *arg)
 	if (!err)
 		err = au_wh_init(a->br, a->sb);
 	wbr_wh_write_unlock(wbr);
+<<<<<<< HEAD
 	au_hn_imtx_unlock(hdir);
+=======
+	au_hn_inode_unlock(hdir);
+>>>>>>> temp
 	di_read_unlock(a->sb->s_root, AuLock_IR);
 	if (!err)
 		au_fhsm_wrote(a->sb, bindex, /*force*/0);
@@ -598,7 +615,11 @@ static void reinit_br_wh(void *arg)
 out:
 	if (wbr)
 		atomic_dec(&wbr->wbr_wh_running);
+<<<<<<< HEAD
 	atomic_dec(&a->br->br_count);
+=======
+	au_br_put(a->br);
+>>>>>>> temp
 	si_write_unlock(a->sb);
 	au_nwt_done(&au_sbi(a->sb)->si_nowait);
 	kfree(arg);
@@ -624,11 +645,19 @@ static void kick_reinit_br_wh(struct super_block *sb, struct au_branch *br)
 		 */
 		arg->sb = sb;
 		arg->br = br;
+<<<<<<< HEAD
 		atomic_inc(&br->br_count);
 		wkq_err = au_wkq_nowait(reinit_br_wh, arg, sb, /*flags*/0);
 		if (unlikely(wkq_err)) {
 			atomic_dec(&br->br_wbr->wbr_wh_running);
 			atomic_dec(&br->br_count);
+=======
+		au_br_get(br);
+		wkq_err = au_wkq_nowait(reinit_br_wh, arg, sb, /*flags*/0);
+		if (unlikely(wkq_err)) {
+			atomic_dec(&br->br_wbr->wbr_wh_running);
+			au_br_put(br);
+>>>>>>> temp
 			kfree(arg);
 		}
 		do_dec = 0;
@@ -917,7 +946,11 @@ out:
 void au_whtmp_rmdir_free(struct au_whtmp_rmdir *whtmp)
 {
 	if (whtmp->br)
+<<<<<<< HEAD
 		atomic_dec(&whtmp->br->br_count);
+=======
+		au_br_put(whtmp->br);
+>>>>>>> temp
 	dput(whtmp->wh_dentry);
 	iput(whtmp->dir);
 	au_nhash_wh_free(&whtmp->whlist);
@@ -942,7 +975,11 @@ int au_whtmp_rmdir(struct inode *dir, aufs_bindex_t bindex,
 
 	br = au_sbr(dir->i_sb, bindex);
 	wh_inode = d_inode(wh_dentry);
+<<<<<<< HEAD
 	mutex_lock_nested(&wh_inode->i_mutex, AuLsc_I_CHILD);
+=======
+	inode_lock_nested(wh_inode, AuLsc_I_CHILD);
+>>>>>>> temp
 
 	/*
 	 * someone else might change some whiteouts while we were sleeping.
@@ -964,7 +1001,11 @@ int au_whtmp_rmdir(struct inode *dir, aufs_bindex_t bindex,
 		if (unlikely(wkq_err))
 			err = wkq_err;
 	}
+<<<<<<< HEAD
 	mutex_unlock(&wh_inode->i_mutex);
+=======
+	inode_unlock(wh_inode);
+>>>>>>> temp
 
 	if (!err) {
 		h_tmp.dentry = wh_dentry;
@@ -976,7 +1017,11 @@ int au_whtmp_rmdir(struct inode *dir, aufs_bindex_t bindex,
 	}
 
 	if (!err) {
+<<<<<<< HEAD
 		if (au_ibstart(dir) == bindex) {
+=======
+		if (au_ibtop(dir) == bindex) {
+>>>>>>> temp
 			/* todo: dir->i_mutex is necessary */
 			au_cpup_attr_timesizes(dir);
 			if (h_nlink)
@@ -1000,7 +1045,11 @@ static void call_rmdir_whtmp(void *args)
 	struct au_hinode *hdir;
 
 	/* rmdir by nfsd may cause deadlock with this i_mutex */
+<<<<<<< HEAD
 	/* mutex_lock(&a->dir->i_mutex); */
+=======
+	/* inode_lock(a->dir); */
+>>>>>>> temp
 	err = -EROFS;
 	sb = a->dir->i_sb;
 	si_read_lock(sb, !AuLock_FLUSH);
@@ -1018,19 +1067,31 @@ static void call_rmdir_whtmp(void *args)
 	err = vfsub_mnt_want_write(au_br_mnt(a->br));
 	if (unlikely(err))
 		goto out_mnt;
+<<<<<<< HEAD
 	au_hn_imtx_lock_nested(hdir, AuLsc_I_PARENT);
+=======
+	au_hn_inode_lock_nested(hdir, AuLsc_I_PARENT);
+>>>>>>> temp
 	err = au_h_verify(a->wh_dentry, au_opt_udba(sb), h_dir, h_parent,
 			  a->br);
 	if (!err)
 		err = au_whtmp_rmdir(a->dir, bindex, a->wh_dentry, &a->whlist);
+<<<<<<< HEAD
 	au_hn_imtx_unlock(hdir);
+=======
+	au_hn_inode_unlock(hdir);
+>>>>>>> temp
 	vfsub_mnt_drop_write(au_br_mnt(a->br));
 
 out_mnt:
 	dput(h_parent);
 	ii_write_unlock(a->dir);
 out:
+<<<<<<< HEAD
 	/* mutex_unlock(&a->dir->i_mutex); */
+=======
+	/* inode_unlock(a->dir); */
+>>>>>>> temp
 	au_whtmp_rmdir_free(a);
 	si_read_unlock(sb);
 	au_nwt_done(&au_sbi(sb)->si_nowait);
@@ -1050,7 +1111,11 @@ void au_whtmp_kick_rmdir(struct inode *dir, aufs_bindex_t bindex,
 	sb = dir->i_sb;
 	args->dir = au_igrab(dir);
 	args->br = au_sbr(sb, bindex);
+<<<<<<< HEAD
 	atomic_inc(&args->br->br_count);
+=======
+	au_br_get(args->br);
+>>>>>>> temp
 	args->wh_dentry = dget(wh_dentry);
 	wkq_err = au_wkq_nowait(call_rmdir_whtmp, args, sb, /*flags*/0);
 	if (unlikely(wkq_err)) {

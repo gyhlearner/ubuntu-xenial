@@ -700,14 +700,7 @@ static void qib_clean_part_key(struct qib_ctxtdata *rcd,
 			       struct qib_devdata *dd)
 {
 	int i, j, pchanged = 0;
-	u64 oldpkey;
 	struct qib_pportdata *ppd = rcd->ppd;
-
-	/* for debugging only */
-	oldpkey = (u64) ppd->pkeys[0] |
-		((u64) ppd->pkeys[1] << 16) |
-		((u64) ppd->pkeys[2] << 32) |
-		((u64) ppd->pkeys[3] << 48);
 
 	for (i = 0; i < ARRAY_SIZE(rcd->pkeys); i++) {
 		if (!rcd->pkeys[i])
@@ -828,10 +821,7 @@ static int mmap_piobufs(struct vm_area_struct *vma,
 	phys = dd->physaddr + piobufs;
 
 #if defined(__powerpc__)
-	/* There isn't a generic way to specify writethrough mappings */
-	pgprot_val(vma->vm_page_prot) |= _PAGE_NO_CACHE;
-	pgprot_val(vma->vm_page_prot) |= _PAGE_WRITETHRU;
-	pgprot_val(vma->vm_page_prot) &= ~_PAGE_GUARDED;
+	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
 #endif
 
 	/*
@@ -900,7 +890,7 @@ bail:
 /*
  * qib_file_vma_fault - handle a VMA page fault.
  */
-static int qib_file_vma_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
+static int qib_file_vma_fault(struct vm_fault *vmf)
 {
 	struct page *page;
 
@@ -1824,7 +1814,6 @@ static int qib_close(struct inode *in, struct file *fp)
 	struct qib_devdata *dd;
 	unsigned long flags;
 	unsigned ctxt;
-	pid_t pid;
 
 	mutex_lock(&qib_mutex);
 
@@ -1866,7 +1855,6 @@ static int qib_close(struct inode *in, struct file *fp)
 	spin_lock_irqsave(&dd->uctxt_lock, flags);
 	ctxt = rcd->ctxt;
 	dd->rcd[ctxt] = NULL;
-	pid = rcd->pid;
 	rcd->pid = 0;
 	spin_unlock_irqrestore(&dd->uctxt_lock, flags);
 
@@ -2073,8 +2061,16 @@ static ssize_t qib_write(struct file *fp, const char __user *data,
 	ssize_t ret = 0;
 	void *dest;
 
+<<<<<<< HEAD
 	if (WARN_ON_ONCE(!ib_safe_file_access(fp)))
 		return -EACCES;
+=======
+	if (!ib_safe_file_access(fp)) {
+		pr_err_once("qib_write: process %d (%s) changed security contexts after opening file descriptor, this is not allowed.\n",
+			    task_tgid_vnr(current), current->comm);
+		return -EACCES;
+	}
+>>>>>>> temp
 
 	if (count < sizeof(cmd.type)) {
 		ret = -EINVAL;
@@ -2185,6 +2181,11 @@ static ssize_t qib_write(struct file *fp, const char __user *data,
 
 	switch (cmd.type) {
 	case QIB_CMD_ASSIGN_CTXT:
+		if (rcd) {
+			ret = -EINVAL;
+			goto bail;
+		}
+
 		ret = qib_assign_ctxt(fp, &cmd.cmd.user_info);
 		if (ret)
 			goto bail;

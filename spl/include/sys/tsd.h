@@ -35,6 +35,10 @@ typedef void (*dtor_func_t)(void *);
 
 extern int tsd_set(uint_t, void *);
 extern void *tsd_get(uint_t);
+<<<<<<< HEAD
+=======
+extern void *tsd_get_by_thread(uint_t, kthread_t *);
+>>>>>>> temp
 extern void tsd_create(uint_t *, dtor_func_t);
 extern void tsd_destroy(uint_t *);
 extern void tsd_exit(void);

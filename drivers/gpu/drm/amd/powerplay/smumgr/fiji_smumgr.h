@@ -23,6 +23,7 @@
 #ifndef _FIJI_SMUMANAGER_H_
 #define _FIJI_SMUMANAGER_H_
 
+<<<<<<< HEAD
 enum AVFS_BTC_STATUS {
 	AVFS_BTC_BOOT = 0,
 	AVFS_BTC_BOOT_STARTEDSMU,
@@ -73,5 +74,31 @@ int fiji_write_smc_sram_dword(struct pp_smumgr *smumgr, uint32_t smc_addr,
 int fiji_copy_bytes_to_smc(struct pp_smumgr *smumgr, uint32_t smcStartAddress,
 		const uint8_t *src,	uint32_t byteCount, uint32_t limit);
 
+=======
+#include "smu73_discrete.h"
+#include <pp_endian.h>
+#include "smu7_smumgr.h"
+
+
+struct fiji_pt_defaults {
+	uint8_t   SviLoadLineEn;
+	uint8_t   SviLoadLineVddC;
+	uint8_t   TDC_VDDC_ThrottleReleaseLimitPerc;
+	uint8_t   TDC_MAWt;
+	uint8_t   TdcWaterfallCtl;
+	uint8_t   DTEAmbientTempBase;
+};
+
+struct fiji_smumgr {
+	struct smu7_smumgr                   smu7_data;
+	struct SMU73_Discrete_DpmTable       smc_state_table;
+	struct SMU73_Discrete_Ulv            ulv_setting;
+	struct SMU73_Discrete_PmFuses  power_tune_table;
+	const struct fiji_pt_defaults  *power_tune_defaults;
+	uint32_t        activity_target[SMU73_MAX_LEVELS_GRAPHICS];
+
+};
+
+>>>>>>> temp
 #endif
 

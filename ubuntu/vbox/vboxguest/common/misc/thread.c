@@ -4,7 +4,11 @@
  */
 
 /*
+<<<<<<< HEAD
  * Copyright (C) 2006-2015 Oracle Corporation
+=======
+ * Copyright (C) 2006-2017 Oracle Corporation
+>>>>>>> temp
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -281,6 +285,11 @@ static int rtThreadAdopt(RTTHREADTYPE enmType, unsigned fFlags, uint32_t fIntFla
             rtThreadSetState(pThread, RTTHREADSTATE_RUNNING);
             rtThreadRelease(pThread);
         }
+<<<<<<< HEAD
+=======
+        else
+            rtThreadDestroy(pThread);
+>>>>>>> temp
     }
     return rc;
 }
@@ -449,7 +458,11 @@ DECLHIDDEN(void) rtThreadInsert(PRTTHREADINT pThread, RTNATIVETHREAD NativeThrea
                     ASMAtomicBitClear(&pThread->fIntFlags, RTTHREADINT_FLAG_IN_TREE_BIT);
                     rtThreadRemoveLocked(pThreadOther);
                     if (pThreadOther->fIntFlags & RTTHREADINT_FLAGS_ALIEN)
+<<<<<<< HEAD
                     rtThreadRelease(pThreadOther);
+=======
+                        rtThreadRelease(pThreadOther);
+>>>>>>> temp
                 }
 
                 /* insert the thread */
@@ -1165,10 +1178,30 @@ static int rtThreadWait(RTTHREAD Thread, RTMSINTERVAL cMillies, int *prc, bool f
         {
             if (pThread->fFlags & RTTHREADFLAGS_WAITABLE)
             {
+<<<<<<< HEAD
                 if (fAutoResume)
                     rc = RTSemEventMultiWait(pThread->EventTerminated, cMillies);
                 else
                     rc = RTSemEventMultiWaitNoResume(pThread->EventTerminated, cMillies);
+=======
+#if defined(IN_RING3) && defined(RT_OS_WINDOWS)
+                if (RT_LIKELY(rtThreadNativeIsAliveKludge(pThread)))
+#endif
+                {
+                    if (fAutoResume)
+                        rc = RTSemEventMultiWait(pThread->EventTerminated, cMillies);
+                    else
+                        rc = RTSemEventMultiWaitNoResume(pThread->EventTerminated, cMillies);
+                }
+#if defined(IN_RING3) && defined(RT_OS_WINDOWS)
+                else
+                {
+                    rc = VINF_SUCCESS;
+                    if (pThread->rc == VERR_PROCESS_RUNNING)
+                        pThread->rc = VERR_THREAD_IS_DEAD;
+                }
+#endif
+>>>>>>> temp
                 if (RT_SUCCESS(rc))
                 {
                     if (prc)
@@ -1565,6 +1598,10 @@ static DECLCALLBACK(int) rtThreadNameThreadCallback(PAVLPVNODECORE pNode, void *
 {
     PRTTHREADINT pThread = (PRTTHREADINT)pNode;
     rtThreadNativeInformDebugger(pThread);
+<<<<<<< HEAD
+=======
+    RT_NOREF_PV(pvUser);
+>>>>>>> temp
     return 0;
 }
 

@@ -5,6 +5,11 @@
 
 #include <linux/mm.h>
 #include <linux/sched.h>
+<<<<<<< HEAD
+=======
+#include <linux/sched/mm.h>
+#include <linux/sched/task.h>
+>>>>>>> temp
 #include <linux/mmu_context.h>
 #include <linux/export.h>
 
@@ -25,7 +30,7 @@ void use_mm(struct mm_struct *mm)
 	task_lock(tsk);
 	active_mm = tsk->active_mm;
 	if (active_mm != mm) {
-		atomic_inc(&mm->mm_count);
+		mmgrab(mm);
 		tsk->active_mm = mm;
 	}
 	tsk->mm = mm;

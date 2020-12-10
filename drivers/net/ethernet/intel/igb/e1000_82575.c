@@ -245,7 +245,19 @@ static s32 igb_init_phy_params_82575(struct e1000_hw *hw)
 	hw->bus.func = (rd32(E1000_STATUS) & E1000_STATUS_FUNC_MASK) >>
 			E1000_STATUS_FUNC_SHIFT;
 
+	/* Make sure the PHY is in a good state. Several people have reported
+	 * firmware leaving the PHY's page select register set to something
+	 * other than the default of zero, which causes the PHY ID read to
+	 * access something other than the intended register.
+	 */
+	ret_val = hw->phy.ops.reset(hw);
+	if (ret_val) {
+		hw_dbg("Error resetting the PHY.\n");
+		goto out;
+	}
+
 	/* Set phy->phy_addr and phy->id. */
+	igb_write_phy_reg_82580(hw, I347AT4_PAGE_SELECT, 0);
 	ret_val = igb_get_phy_id_82575(hw);
 	if (ret_val)
 		return ret_val;
@@ -364,7 +376,7 @@ static s32 igb_init_nvm_params_82575(struct e1000_hw *hw)
 	if (size > 15)
 		size = 15;
 
-	nvm->word_size = 1 << size;
+	nvm->word_size = BIT(size);
 	nvm->opcode_bits = 8;
 	nvm->delay_usec = 1;
 
@@ -383,7 +395,7 @@ static s32 igb_init_nvm_params_82575(struct e1000_hw *hw)
 				    16 : 8;
 		break;
 	}
-	if (nvm->word_size == (1 << 15))
+	if (nvm->word_size == BIT(15))
 		nvm->page_size = 128;
 
 	nvm->type = e1000_nvm_eeprom_spi;
@@ -394,7 +406,7 @@ static s32 igb_init_nvm_params_82575(struct e1000_hw *hw)
 	nvm->ops.write = igb_write_nvm_spi;
 	nvm->ops.validate = igb_validate_nvm_checksum;
 	nvm->ops.update = igb_update_nvm_checksum;
-	if (nvm->word_size < (1 << 15))
+	if (nvm->word_size < BIT(15))
 		nvm->ops.read = igb_read_nvm_eerd;
 	else
 		nvm->ops.read = igb_read_nvm_spi;
@@ -1652,6 +1664,10 @@ static s32 igb_setup_copper_link_82575(struct e1000_hw *hw)
 		ret_val = igb_copper_link_setup_82580(hw);
 		break;
 	case e1000_phy_bcm54616:
+<<<<<<< HEAD
+=======
+		ret_val = 0;
+>>>>>>> temp
 		break;
 	default:
 		ret_val = -E1000_ERR_PHY;
@@ -2113,7 +2129,7 @@ void igb_vmdq_set_anti_spoofing_pf(struct e1000_hw *hw, bool enable, int pf)
 		/* The PF can spoof - it has to in order to
 		 * support emulation mode NICs
 		 */
-		reg_val ^= (1 << pf | 1 << (pf + MAX_NUM_VFS));
+		reg_val ^= (BIT(pf) | BIT(pf + MAX_NUM_VFS));
 	} else {
 		reg_val &= ~(E1000_DTXSWC_MAC_SPOOF_MASK |
 			     E1000_DTXSWC_VLAN_SPOOF_MASK);
@@ -2926,7 +2942,7 @@ static struct e1000_mac_operations e1000_mac_ops_82575 = {
 #endif
 };
 
-static struct e1000_phy_operations e1000_phy_ops_82575 = {
+static const struct e1000_phy_operations e1000_phy_ops_82575 = {
 	.acquire              = igb_acquire_phy_82575,
 	.get_cfg_done         = igb_get_cfg_done_82575,
 	.release              = igb_release_phy_82575,

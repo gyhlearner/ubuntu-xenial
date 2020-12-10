@@ -23,6 +23,7 @@
 #ifndef _PP_INSTANCE_H_
 #define _PP_INSTANCE_H_
 
+<<<<<<< HEAD
 #include "smumgr.h"
 #include "hwmgr.h"
 #include "eventmgr.h"
@@ -34,6 +35,18 @@ struct pp_instance {
 	struct pp_smumgr *smu_mgr;
 	struct pp_hwmgr *hwmgr;
 	struct pp_eventmgr *eventmgr;
+=======
+#include "hwmgr.h"
+
+struct pp_instance {
+	uint32_t chip_family;
+	uint32_t chip_id;
+	bool pm_en;
+	uint32_t feature_mask;
+	void *device;
+	struct pp_hwmgr *hwmgr;
+	struct mutex pp_lock;
+>>>>>>> temp
 };
 
 #endif

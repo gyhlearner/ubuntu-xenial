@@ -24,21 +24,28 @@
 #include <linux/slab.h>
 #include <linux/hardirq.h>
 #include <linux/preempt.h>
-#include <linux/module.h>
+#include <linux/extable.h>
 #include <linux/kdebug.h>
 #include <linux/kallsyms.h>
 #include <linux/ftrace.h>
+#include <linux/frame.h>
 
 #include <asm/text-patching.h>
 #include <asm/cacheflush.h>
 #include <asm/desc.h>
 #include <asm/pgtable.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 #include <asm/alternative.h>
 #include <asm/insn.h>
 #include <asm/debugreg.h>
+<<<<<<< HEAD
 #include <asm/nospec-branch.h>
 #include <asm/sections.h>
+=======
+#include <asm/set_memory.h>
+#include <asm/sections.h>
+#include <asm/nospec-branch.h>
+>>>>>>> temp
 
 #include "common.h"
 
@@ -67,7 +74,10 @@ found:
 	 * overwritten by jump destination address. In this case, original
 	 * bytes must be recovered from op->optinsn.copied_insn buffer.
 	 */
-	memcpy(buf, (void *)addr, MAX_INSN_SIZE * sizeof(kprobe_opcode_t));
+	if (probe_kernel_read(buf, (void *)addr,
+		MAX_INSN_SIZE * sizeof(kprobe_opcode_t)))
+		return 0UL;
+
 	if (addr == (unsigned long)kp->addr) {
 		buf[0] = kp->opcode;
 		memcpy(buf + 1, op->optinsn.copied_insn, RELATIVE_ADDR_SIZE);
@@ -92,6 +102,7 @@ static void synthesize_set_arg1(kprobe_opcode_t *addr, unsigned long val)
 }
 
 asm (
+			"optprobe_template_func:\n"
 			".global optprobe_template_entry\n"
 			"optprobe_template_entry:\n"
 #ifdef CONFIG_X86_64
@@ -129,14 +140,19 @@ asm (
 			"	popf\n"
 #endif
 			".global optprobe_template_end\n"
-			"optprobe_template_end:\n");
+			"optprobe_template_end:\n"
+			".type optprobe_template_func, @function\n"
+			".size optprobe_template_func, .-optprobe_template_func\n");
+
+void optprobe_template_func(void);
+STACK_FRAME_NON_STANDARD(optprobe_template_func);
 
 #define TMPL_MOVE_IDX \
-	((long)&optprobe_template_val - (long)&optprobe_template_entry)
+	((long)optprobe_template_val - (long)optprobe_template_entry)
 #define TMPL_CALL_IDX \
-	((long)&optprobe_template_call - (long)&optprobe_template_entry)
+	((long)optprobe_template_call - (long)optprobe_template_entry)
 #define TMPL_END_IDX \
-	((long)&optprobe_template_end - (long)&optprobe_template_entry)
+	((long)optprobe_template_end - (long)optprobe_template_entry)
 
 #define INT3_SIZE sizeof(kprobe_opcode_t)
 
@@ -144,17 +160,15 @@ asm (
 static void
 optimized_callback(struct optimized_kprobe *op, struct pt_regs *regs)
 {
-	struct kprobe_ctlblk *kcb = get_kprobe_ctlblk();
-	unsigned long flags;
-
 	/* This is possible if op is under delayed unoptimizing */
 	if (kprobe_disabled(&op->kp))
 		return;
 
-	local_irq_save(flags);
+	preempt_disable();
 	if (kprobe_running()) {
 		kprobes_inc_nmissed_count(&op->kp);
 	} else {
+		struct kprobe_ctlblk *kcb = get_kprobe_ctlblk();
 		/* Save skipped registers */
 #ifdef CONFIG_X86_64
 		regs->cs = __KERNEL_CS;
@@ -170,17 +184,23 @@ optimized_callback(struct optimized_kprobe *op, struct pt_regs *regs)
 		opt_pre_handler(&op->kp, regs);
 		__this_cpu_write(current_kprobe, NULL);
 	}
-	local_irq_restore(flags);
+	preempt_enable_no_resched();
 }
 NOKPROBE_SYMBOL(optimized_callback);
 
-static int copy_optimized_instructions(u8 *dest, u8 *src)
+static int copy_optimized_instructions(u8 *dest, u8 *src, u8 *real)
 {
+	struct insn insn;
 	int len = 0, ret;
 
 	while (len < RELATIVEJUMP_SIZE) {
+<<<<<<< HEAD
 		ret = __copy_instruction(dest + len, src + len);
 		if (!ret || !can_boost(dest + len, src + len))
+=======
+		ret = __copy_instruction(dest + len, src + len, real, &insn);
+		if (!ret || !can_boost(&insn, src + len))
+>>>>>>> temp
 			return -EINVAL;
 		len += ret;
 	}
@@ -261,10 +281,12 @@ static int can_optimize(unsigned long paddr)
 
 	/*
 	 * Do not optimize in the entry code due to the unstable
-	 * stack handling.
+	 * stack handling and registers setup.
 	 */
-	if ((paddr >= (unsigned long)__entry_text_start) &&
-	    (paddr <  (unsigned long)__entry_text_end))
+	if (((paddr >= (unsigned long)__entry_text_start) &&
+	     (paddr <  (unsigned long)__entry_text_end)) ||
+	    ((paddr >= (unsigned long)__irqentry_text_start) &&
+	     (paddr <  (unsigned long)__irqentry_text_end)))
 		return 0;
 
 	/* Check there is enough space for a relative jump. */
@@ -350,50 +372,60 @@ void arch_remove_optimized_kprobe(struct optimized_kprobe *op)
 int arch_prepare_optimized_kprobe(struct optimized_kprobe *op,
 				  struct kprobe *__unused)
 {
-	u8 *buf;
-	int ret;
+	u8 *buf = NULL, *slot;
+	int ret, len;
 	long rel;
 
 	if (!can_optimize((unsigned long)op->kp.addr))
 		return -EILSEQ;
 
-	op->optinsn.insn = get_optinsn_slot();
-	if (!op->optinsn.insn)
+	buf = kzalloc(MAX_OPTINSN_SIZE, GFP_KERNEL);
+	if (!buf)
 		return -ENOMEM;
+
+	op->optinsn.insn = slot = get_optinsn_slot();
+	if (!slot) {
+		ret = -ENOMEM;
+		goto out;
+	}
 
 	/*
 	 * Verify if the address gap is in 2GB range, because this uses
 	 * a relative jump.
 	 */
-	rel = (long)op->optinsn.insn - (long)op->kp.addr + RELATIVEJUMP_SIZE;
+	rel = (long)slot - (long)op->kp.addr + RELATIVEJUMP_SIZE;
 	if (abs(rel) > 0x7fffffff) {
-		__arch_remove_optimized_kprobe(op, 0);
-		return -ERANGE;
+		ret = -ERANGE;
+		goto err;
 	}
 
+<<<<<<< HEAD
 	buf = (u8 *)op->optinsn.insn;
 	set_memory_rw((unsigned long)buf & PAGE_MASK, 1);
+=======
+	/* Copy arch-dep-instance from template */
+	memcpy(buf, optprobe_template_entry, TMPL_END_IDX);
+>>>>>>> temp
 
 	/* Copy instructions into the out-of-line buffer */
-	ret = copy_optimized_instructions(buf + TMPL_END_IDX, op->kp.addr);
-	if (ret < 0) {
-		__arch_remove_optimized_kprobe(op, 0);
-		return ret;
-	}
+	ret = copy_optimized_instructions(buf + TMPL_END_IDX, op->kp.addr,
+					  slot + TMPL_END_IDX);
+	if (ret < 0)
+		goto err;
 	op->optinsn.size = ret;
-
-	/* Copy arch-dep-instance from template */
-	memcpy(buf, &optprobe_template_entry, TMPL_END_IDX);
+	len = TMPL_END_IDX + op->optinsn.size;
 
 	/* Set probe information */
 	synthesize_set_arg1(buf + TMPL_MOVE_IDX, (unsigned long)op);
 
 	/* Set probe function call */
-	synthesize_relcall(buf + TMPL_CALL_IDX, optimized_callback);
+	synthesize_relcall(buf + TMPL_CALL_IDX,
+			   slot + TMPL_CALL_IDX, optimized_callback);
 
 	/* Set returning jmp instruction at the tail of out-of-line buffer */
-	synthesize_reljump(buf + TMPL_END_IDX + op->optinsn.size,
+	synthesize_reljump(buf + len, slot + len,
 			   (u8 *)op->kp.addr + op->optinsn.size);
+<<<<<<< HEAD
 
 	set_memory_ro((unsigned long)buf & PAGE_MASK, 1);
 
@@ -401,6 +433,20 @@ int arch_prepare_optimized_kprobe(struct optimized_kprobe *op,
 			   (unsigned long) buf + TMPL_END_IDX +
 			   op->optinsn.size + RELATIVEJUMP_SIZE);
 	return 0;
+=======
+	len += RELATIVEJUMP_SIZE;
+
+	/* We have to use text_poke for instuction buffer because it is RO */
+	text_poke(slot, buf, len);
+	ret = 0;
+out:
+	kfree(buf);
+	return ret;
+
+err:
+	__arch_remove_optimized_kprobe(op, 0);
+	goto out;
+>>>>>>> temp
 }
 
 /*

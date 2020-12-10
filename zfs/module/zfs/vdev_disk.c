@@ -23,13 +23,21 @@
  * Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
  * Rewritten for Linux by Brian Behlendorf <behlendorf1@llnl.gov>.
  * LLNL-CODE-403049.
+<<<<<<< HEAD
  * Copyright (c) 2012, 2014 by Delphix. All rights reserved.
+=======
+ * Copyright (c) 2012, 2015 by Delphix. All rights reserved.
+>>>>>>> temp
  */
 
 #include <sys/zfs_context.h>
 #include <sys/spa.h>
 #include <sys/vdev_disk.h>
 #include <sys/vdev_impl.h>
+<<<<<<< HEAD
+=======
+#include <sys/abd.h>
+>>>>>>> temp
 #include <sys/fs/zfs.h>
 #include <sys/zio.h>
 #include <sys/sunldi.h>
@@ -41,10 +49,15 @@ static void *zfs_vdev_holder = VDEV_HOLDER;
  * Virtual device vector for disks.
  */
 typedef struct dio_request {
+<<<<<<< HEAD
 	struct completion	dr_comp;	/* Completion for sync IO */
 	zio_t			*dr_zio;	/* Parent ZIO */
 	atomic_t		dr_ref;		/* References */
 	int			dr_wait;	/* Wait for IO */
+=======
+	zio_t			*dr_zio;	/* Parent ZIO */
+	atomic_t		dr_ref;		/* References */
+>>>>>>> temp
 	int			dr_error;	/* Bio error */
 	int			dr_bio_count;	/* Count of bio's */
 	struct bio		*dr_bio[0];	/* Attached bio's */
@@ -99,10 +112,17 @@ static void
 vdev_disk_error(zio_t *zio)
 {
 #ifdef ZFS_DEBUG
+<<<<<<< HEAD
 	printk("ZFS: zio error=%d type=%d offset=%llu size=%llu "
 	    "flags=%x delay=%llu\n", zio->io_error, zio->io_type,
 	    (u_longlong_t)zio->io_offset, (u_longlong_t)zio->io_size,
 	    zio->io_flags, (u_longlong_t)zio->io_delay);
+=======
+	printk(KERN_WARNING "ZFS: zio error=%d type=%d offset=%llu size=%llu "
+	    "flags=%x\n", zio->io_error, zio->io_type,
+	    (u_longlong_t)zio->io_offset, (u_longlong_t)zio->io_size,
+	    zio->io_flags);
+>>>>>>> temp
 #endif
 }
 
@@ -363,7 +383,10 @@ vdev_disk_dio_alloc(int bio_count)
 	dr = kmem_zalloc(sizeof (dio_request_t) +
 	    sizeof (struct bio *) * bio_count, KM_SLEEP);
 	if (dr) {
+<<<<<<< HEAD
 		init_completion(&dr->dr_comp);
+=======
+>>>>>>> temp
 		atomic_set(&dr->dr_ref, 0);
 		dr->dr_bio_count = bio_count;
 		dr->dr_error = 0;
@@ -410,12 +433,20 @@ vdev_disk_dio_put(dio_request_t *dr)
 		vdev_disk_dio_free(dr);
 
 		if (zio) {
+<<<<<<< HEAD
 			zio->io_delay = jiffies_64 - zio->io_delay;
+=======
+>>>>>>> temp
 			zio->io_error = error;
 			ASSERT3S(zio->io_error, >=, 0);
 			if (zio->io_error)
 				vdev_disk_error(zio);
+<<<<<<< HEAD
 			zio_interrupt(zio);
+=======
+
+			zio_delay_interrupt(zio);
+>>>>>>> temp
 		}
 	}
 
@@ -426,11 +457,18 @@ BIO_END_IO_PROTO(vdev_disk_physio_completion, bio, error)
 {
 	dio_request_t *dr = bio->bi_private;
 	int rc;
+<<<<<<< HEAD
 	int wait;
 
 	if (dr->dr_error == 0) {
 #ifdef HAVE_1ARG_BIO_END_IO_T
 		dr->dr_error = -(bio->bi_error);
+=======
+
+	if (dr->dr_error == 0) {
+#ifdef HAVE_1ARG_BIO_END_IO_T
+		dr->dr_error = BIO_END_IO_ERROR(bio);
+>>>>>>> temp
 #else
 		if (error)
 			dr->dr_error = -(error);
@@ -439,6 +477,7 @@ BIO_END_IO_PROTO(vdev_disk_physio_completion, bio, error)
 #endif
 	}
 
+<<<<<<< HEAD
 	wait = dr->dr_wait;
 	/* Drop reference aquired by __vdev_disk_physio */
 	rc = vdev_disk_dio_put(dr);
@@ -453,6 +492,10 @@ bio_nr_pages(void *bio_ptr, unsigned int bio_size)
 {
 	return ((((unsigned long)bio_ptr + bio_size + PAGE_SIZE - 1) >>
 	    PAGE_SHIFT) - ((unsigned long)bio_ptr >> PAGE_SHIFT));
+=======
+	/* Drop reference acquired by __vdev_disk_physio */
+	rc = vdev_disk_dio_put(dr);
+>>>>>>> temp
 }
 
 static unsigned int
@@ -494,23 +537,64 @@ bio_map(struct bio *bio, void *bio_ptr, unsigned int bio_size)
 	return (bio_size);
 }
 
+<<<<<<< HEAD
 static inline void
 vdev_submit_bio(int rw, struct bio *bio)
+=======
+static unsigned int
+bio_map_abd_off(struct bio *bio, abd_t *abd, unsigned int size, size_t off)
+{
+	if (abd_is_linear(abd))
+		return (bio_map(bio, ((char *)abd_to_buf(abd)) + off, size));
+
+	return (abd_scatter_bio_map_off(bio, abd, size, off));
+}
+
+static inline void
+vdev_submit_bio_impl(struct bio *bio)
+{
+#ifdef HAVE_1ARG_SUBMIT_BIO
+	submit_bio(bio);
+#else
+	submit_bio(0, bio);
+#endif
+}
+
+#ifndef HAVE_BIO_SET_DEV
+static inline void
+bio_set_dev(struct bio *bio, struct block_device *bdev)
+{
+	bio->bi_bdev = bdev;
+}
+#endif /* !HAVE_BIO_SET_DEV */
+
+static inline void
+vdev_submit_bio(struct bio *bio)
+>>>>>>> temp
 {
 #ifdef HAVE_CURRENT_BIO_TAIL
 	struct bio **bio_tail = current->bio_tail;
 	current->bio_tail = NULL;
+<<<<<<< HEAD
 	submit_bio(rw, bio);
+=======
+	vdev_submit_bio_impl(bio);
+>>>>>>> temp
 	current->bio_tail = bio_tail;
 #else
 	struct bio_list *bio_list = current->bio_list;
 	current->bio_list = NULL;
+<<<<<<< HEAD
 	submit_bio(rw, bio);
+=======
+	vdev_submit_bio_impl(bio);
+>>>>>>> temp
 	current->bio_list = bio_list;
 #endif
 }
 
 static int
+<<<<<<< HEAD
 __vdev_disk_physio(struct block_device *bdev, zio_t *zio, caddr_t kbuf_ptr,
     size_t kbuf_size, uint64_t kbuf_offset, int flags, int wait)
 {
@@ -521,6 +605,22 @@ __vdev_disk_physio(struct block_device *bdev, zio_t *zio, caddr_t kbuf_ptr,
 	int i = 0, error = 0;
 
 	ASSERT3U(kbuf_offset + kbuf_size, <=, bdev->bd_inode->i_size);
+=======
+__vdev_disk_physio(struct block_device *bdev, zio_t *zio,
+    size_t io_size, uint64_t io_offset, int rw, int flags)
+{
+	dio_request_t *dr;
+	uint64_t abd_offset;
+	uint64_t bio_offset;
+	int bio_size, bio_count = 16;
+	int i = 0, error = 0;
+#if defined(HAVE_BLK_QUEUE_HAVE_BLK_PLUG)
+	struct blk_plug plug;
+#endif
+
+	ASSERT(zio != NULL);
+	ASSERT3U(io_offset + io_size, <=, bdev->bd_inode->i_size);
+>>>>>>> temp
 
 retry:
 	dr = vdev_disk_dio_alloc(bio_count);
@@ -530,9 +630,13 @@ retry:
 	if (zio && !(zio->io_flags & (ZIO_FLAG_IO_RETRY | ZIO_FLAG_TRYHARD)))
 		bio_set_flags_failfast(bdev, &flags);
 
+<<<<<<< HEAD
 	rw = flags;
 	dr->dr_zio = zio;
 	dr->dr_wait = wait;
+=======
+	dr->dr_zio = zio;
+>>>>>>> temp
 
 	/*
 	 * When the IO size exceeds the maximum bio size for the request
@@ -541,9 +645,16 @@ retry:
 	 * their volume block size to match the maximum request size and
 	 * the common case will be one bio per vdev IO request.
 	 */
+<<<<<<< HEAD
 	bio_ptr    = kbuf_ptr;
 	bio_offset = kbuf_offset;
 	bio_size   = kbuf_size;
+=======
+
+	abd_offset = 0;
+	bio_offset = io_offset;
+	bio_size   = io_size;
+>>>>>>> temp
 	for (i = 0; i <= dr->dr_bio_count; i++) {
 
 		/* Finished constructing bio's for given buffer */
@@ -563,7 +674,12 @@ retry:
 
 		/* bio_alloc() with __GFP_WAIT never returns NULL */
 		dr->dr_bio[i] = bio_alloc(GFP_NOIO,
+<<<<<<< HEAD
 		    MIN(bio_nr_pages(bio_ptr, bio_size), BIO_MAX_PAGES));
+=======
+		    MIN(abd_nr_pages_off(zio->io_abd, bio_size, abd_offset),
+		    BIO_MAX_PAGES));
+>>>>>>> temp
 		if (unlikely(dr->dr_bio[i] == NULL)) {
 			vdev_disk_dio_free(dr);
 			return (ENOMEM);
@@ -572,6 +688,7 @@ retry:
 		/* Matching put called by vdev_disk_physio_completion */
 		vdev_disk_dio_get(dr);
 
+<<<<<<< HEAD
 		dr->dr_bio[i]->bi_bdev = bdev;
 		BIO_BI_SECTOR(dr->dr_bio[i]) = bio_offset >> 9;
 		dr->dr_bio[i]->bi_rw = rw;
@@ -583,17 +700,40 @@ retry:
 
 		/* Advance in buffer and construct another bio if needed */
 		bio_ptr    += BIO_BI_SIZE(dr->dr_bio[i]);
+=======
+		bio_set_dev(dr->dr_bio[i], bdev);
+		BIO_BI_SECTOR(dr->dr_bio[i]) = bio_offset >> 9;
+		dr->dr_bio[i]->bi_end_io = vdev_disk_physio_completion;
+		dr->dr_bio[i]->bi_private = dr;
+		bio_set_op_attrs(dr->dr_bio[i], rw, flags);
+
+		/* Remaining size is returned to become the new size */
+		bio_size = bio_map_abd_off(dr->dr_bio[i], zio->io_abd,
+		    bio_size, abd_offset);
+
+		/* Advance in buffer and construct another bio if needed */
+		abd_offset += BIO_BI_SIZE(dr->dr_bio[i]);
+>>>>>>> temp
 		bio_offset += BIO_BI_SIZE(dr->dr_bio[i]);
 	}
 
 	/* Extra reference to protect dio_request during vdev_submit_bio */
 	vdev_disk_dio_get(dr);
+<<<<<<< HEAD
 	if (zio)
 		zio->io_delay = jiffies_64;
+=======
+
+#if defined(HAVE_BLK_QUEUE_HAVE_BLK_PLUG)
+	if (dr->dr_bio_count > 1)
+		blk_start_plug(&plug);
+#endif
+>>>>>>> temp
 
 	/* Submit all bio's associated with this dio */
 	for (i = 0; i < dr->dr_bio_count; i++)
 		if (dr->dr_bio[i])
+<<<<<<< HEAD
 			vdev_submit_bio(rw, dr->dr_bio[i]);
 
 	/*
@@ -609,12 +749,21 @@ retry:
 		error = dr->dr_error;
 		ASSERT3S(atomic_read(&dr->dr_ref), ==, 1);
 	}
+=======
+			vdev_submit_bio(dr->dr_bio[i]);
+
+#if defined(HAVE_BLK_QUEUE_HAVE_BLK_PLUG)
+	if (dr->dr_bio_count > 1)
+		blk_finish_plug(&plug);
+#endif
+>>>>>>> temp
 
 	(void) vdev_disk_dio_put(dr);
 
 	return (error);
 }
 
+<<<<<<< HEAD
 int
 vdev_disk_physio(struct block_device *bdev, caddr_t kbuf,
     size_t size, uint64_t offset, int flags)
@@ -633,6 +782,18 @@ BIO_END_IO_PROTO(vdev_disk_io_flush_completion, bio, rc)
 	zio->io_delay = jiffies_64 - zio->io_delay;
 	zio->io_error = -rc;
 	if (rc && (rc == -EOPNOTSUPP))
+=======
+BIO_END_IO_PROTO(vdev_disk_io_flush_completion, bio, error)
+{
+	zio_t *zio = bio->bi_private;
+#ifdef HAVE_1ARG_BIO_END_IO_T
+	zio->io_error = BIO_END_IO_ERROR(bio);
+#else
+	zio->io_error = -error;
+#endif
+
+	if (zio->io_error && (zio->io_error == EOPNOTSUPP))
+>>>>>>> temp
 		zio->io_vd->vdev_nowritecache = B_TRUE;
 
 	bio_put(bio);
@@ -659,9 +820,15 @@ vdev_disk_io_flush(struct block_device *bdev, zio_t *zio)
 
 	bio->bi_end_io = vdev_disk_io_flush_completion;
 	bio->bi_private = zio;
+<<<<<<< HEAD
 	bio->bi_bdev = bdev;
 	zio->io_delay = jiffies_64;
 	vdev_submit_bio(VDEV_WRITE_FLUSH_FUA, bio);
+=======
+	bio_set_dev(bio, bdev);
+	bio_set_flush(bio);
+	vdev_submit_bio(bio);
+>>>>>>> temp
 	invalidate_bdev(bdev);
 
 	return (0);
@@ -672,8 +839,12 @@ vdev_disk_io_start(zio_t *zio)
 {
 	vdev_t *v = zio->io_vd;
 	vdev_disk_t *vd = v->vdev_tsd;
+<<<<<<< HEAD
 	zio_priority_t pri = zio->io_priority;
 	int flags, error;
+=======
+	int rw, flags, error;
+>>>>>>> temp
 
 	switch (zio->io_type) {
 	case ZIO_TYPE_IOCTL:
@@ -700,8 +871,11 @@ vdev_disk_io_start(zio_t *zio)
 				return;
 
 			zio->io_error = error;
+<<<<<<< HEAD
 			if (error == ENOTSUP)
 				v->vdev_nowritecache = B_TRUE;
+=======
+>>>>>>> temp
 
 			break;
 
@@ -712,6 +886,7 @@ vdev_disk_io_start(zio_t *zio)
 		zio_execute(zio);
 		return;
 	case ZIO_TYPE_WRITE:
+<<<<<<< HEAD
 		if ((pri == ZIO_PRIORITY_SYNC_WRITE) && (v->vdev_nonrot))
 			flags = WRITE_SYNC;
 		else
@@ -723,6 +898,27 @@ vdev_disk_io_start(zio_t *zio)
 			flags = READ_SYNC;
 		else
 			flags = READ;
+=======
+		rw = WRITE;
+#if defined(HAVE_BLK_QUEUE_HAVE_BIO_RW_UNPLUG)
+		flags = (1 << BIO_RW_UNPLUG);
+#elif defined(REQ_UNPLUG)
+		flags = REQ_UNPLUG;
+#else
+		flags = 0;
+#endif
+		break;
+
+	case ZIO_TYPE_READ:
+		rw = READ;
+#if defined(HAVE_BLK_QUEUE_HAVE_BIO_RW_UNPLUG)
+		flags = (1 << BIO_RW_UNPLUG);
+#elif defined(REQ_UNPLUG)
+		flags = REQ_UNPLUG;
+#else
+		flags = 0;
+#endif
+>>>>>>> temp
 		break;
 
 	default:
@@ -731,8 +927,14 @@ vdev_disk_io_start(zio_t *zio)
 		return;
 	}
 
+<<<<<<< HEAD
 	error = __vdev_disk_physio(vd->vd_bdev, zio, zio->io_data,
 	    zio->io_size, zio->io_offset, flags, 0);
+=======
+	zio->io_target_timestamp = zio_handle_io_delay(zio);
+	error = __vdev_disk_physio(vd->vd_bdev, zio,
+	    zio->io_size, zio->io_offset, rw, flags);
+>>>>>>> temp
 	if (error) {
 		zio->io_error = error;
 		zio_interrupt(zio);
@@ -796,12 +998,17 @@ vdev_ops_t vdev_disk_ops = {
 	vdev_disk_io_start,
 	vdev_disk_io_done,
 	NULL,
+<<<<<<< HEAD
+=======
+	NULL,
+>>>>>>> temp
 	vdev_disk_hold,
 	vdev_disk_rele,
 	VDEV_TYPE_DISK,		/* name of this vdev type */
 	B_TRUE			/* leaf vdev */
 };
 
+<<<<<<< HEAD
 /*
  * Given the root disk device devid or pathname, read the label from
  * the device, and construct a configuration nvlist.
@@ -865,5 +1072,7 @@ vdev_disk_read_rootlabel(char *devpath, char *devid, nvlist_t **config)
 	return (0);
 }
 
+=======
+>>>>>>> temp
 module_param(zfs_vdev_scheduler, charp, 0644);
 MODULE_PARM_DESC(zfs_vdev_scheduler, "I/O scheduler");

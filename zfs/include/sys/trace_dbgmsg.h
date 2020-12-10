@@ -37,6 +37,7 @@
  */
 
 /*
+<<<<<<< HEAD
  * Generic support for four argument tracepoints of the form:
  *
  * DTRACE_PROBE4(...,
@@ -109,3 +110,31 @@ DEFINE_EVENT(zfs_set_error_class, name, \
 	    uintptr_t error), \
 	TP_ARGS(file, function, line, error))
 DEFINE_SET_ERROR_EVENT(zfs_set__error);
+=======
+ * Generic support for one argument tracepoints of the form:
+ *
+ * DTRACE_PROBE1(...,
+ *     const char *, ...);
+ */
+/* BEGIN CSTYLED */
+DECLARE_EVENT_CLASS(zfs_dprintf_class,
+	TP_PROTO(const char *msg),
+	TP_ARGS(msg),
+	TP_STRUCT__entry(
+	    __string(msg, msg)
+	),
+	TP_fast_assign(
+	    __assign_str(msg, msg);
+	),
+	TP_printk("%s", __get_str(msg))
+);
+/* END CSTYLED */
+
+/* BEGIN CSTYLED */
+#define	DEFINE_DPRINTF_EVENT(name) \
+DEFINE_EVENT(zfs_dprintf_class, name, \
+	TP_PROTO(const char *msg), \
+	TP_ARGS(msg))
+/* END CSTYLED */
+DEFINE_DPRINTF_EVENT(zfs_zfs__dprintf);
+>>>>>>> temp

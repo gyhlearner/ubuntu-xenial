@@ -1,5 +1,11 @@
+<<<<<<< HEAD
 #include <asm/ftrace.h>
 #include <asm/uaccess.h>
+=======
+/* SPDX-License-Identifier: GPL-2.0 */
+#include <asm/ftrace.h>
+#include <linux/uaccess.h>
+>>>>>>> temp
 #include <asm/string.h>
 #include <asm/page.h>
 #include <asm/checksum.h>

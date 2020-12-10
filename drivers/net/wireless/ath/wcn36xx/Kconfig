@@ -1,6 +1,8 @@
 config WCN36XX
 	tristate "Qualcomm Atheros WCN3660/3680 support"
 	depends on MAC80211 && HAS_DMA
+	depends on QCOM_WCNSS_CTRL || QCOM_WCNSS_CTRL=n
+	depends on RPMSG || RPMSG=n
 	---help---
 	  This module adds support for wireless adapters based on
 	  Qualcomm Atheros WCN3660 and WCN3680 mobile chipsets.
@@ -14,3 +16,12 @@ config WCN36XX_DEBUGFS
 	  Enabled debugfs support
 
 	  If unsure, say Y to make it easier to debug problems.
+
+config WCN36XX_SNAPDRAGON_HACKS
+	bool "Dragonboard 410c WCN36XX MAC address generation hacks"
+	default n
+	depends on WCN36XX
+	---help---
+	  Upon probe, WCN36XX will try to read its MAC address from
+	  a file located at /lib/firmware/wlan/macaddr0. If the file
+	  is not present, it will randomly generate a new MAC address.

@@ -43,7 +43,7 @@
 #include <linux/kdebug.h>
 #include <linux/rwsem.h>
 #include <linux/errno.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 #include <linux/notifier.h>
 #include <linux/nmi.h>
 #include <linux/reboot.h>
@@ -53,6 +53,7 @@
 #include <linux/ctype.h>
 #include <linux/delay.h>
 #include <linux/atomic.h>
+#include <linux/sched/signal.h>
 
 #ifdef CONFIG_X86
 /*
@@ -820,7 +821,7 @@ static ssize_t ipmi_read(struct file *file,
 			 loff_t      *ppos)
 {
 	int          rv = 0;
-	wait_queue_t wait;
+	wait_queue_entry_t wait;
 
 	if (count <= 0)
 		return 0;
@@ -985,7 +986,7 @@ static void ipmi_wdog_pretimeout_handler(void *handler_data)
 	pretimeout_since_last_heartbeat = 1;
 }
 
-static struct ipmi_user_hndl ipmi_hndlrs = {
+static const struct ipmi_user_hndl ipmi_hndlrs = {
 	.ipmi_recv_hndl           = ipmi_wdog_msg_handler,
 	.ipmi_watchdog_pretimeout = ipmi_wdog_pretimeout_handler
 };
@@ -1008,9 +1009,14 @@ static void ipmi_register_watchdog(int ipmi_intf)
 		goto out;
 	}
 
-	ipmi_get_version(watchdog_user,
-			 &ipmi_version_major,
-			 &ipmi_version_minor);
+	rv = ipmi_get_version(watchdog_user,
+			      &ipmi_version_major,
+			      &ipmi_version_minor);
+	if (rv) {
+		pr_warn(PFX "Unable to get IPMI version, assuming 1.0\n");
+		ipmi_version_major = 1;
+		ipmi_version_minor = 0;
+	}
 
 	rv = misc_register(&ipmi_wdog_miscdev);
 	if (rv < 0) {
@@ -1140,7 +1146,7 @@ ipmi_nmi(unsigned int val, struct pt_regs *regs)
 		   the timer.   So do so. */
 		pretimeout_since_last_heartbeat = 1;
 		if (atomic_inc_and_test(&preop_panic_excl))
-			panic(PFX "pre-timeout");
+			nmi_panic(regs, PFX "pre-timeout");
 	}
 
 	return NMI_HANDLED;

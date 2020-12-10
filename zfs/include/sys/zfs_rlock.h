@@ -30,9 +30,20 @@
 extern "C" {
 #endif
 
+<<<<<<< HEAD
 #ifdef _KERNEL
 
 #include <sys/zfs_znode.h>
+=======
+#include <sys/list.h>
+#include <sys/avl.h>
+
+#ifdef _KERNEL
+#include <sys/condvar.h>
+#else
+#include <sys/zfs_context.h>
+#endif
+>>>>>>> temp
 
 typedef enum {
 	RL_READER,
@@ -40,8 +51,21 @@ typedef enum {
 	RL_APPEND
 } rl_type_t;
 
+<<<<<<< HEAD
 typedef struct rl {
 	znode_t *r_zp;		/* znode this lock applies to */
+=======
+typedef struct zfs_rlock {
+	kmutex_t zr_mutex;	/* protects changes to zr_avl */
+	avl_tree_t zr_avl;	/* avl tree of range locks */
+	uint64_t *zr_size;	/* points to znode->z_size */
+	uint_t *zr_blksz;	/* points to znode->z_blksz */
+	uint64_t *zr_max_blksz; /* points to zfsvfs->z_max_blksz */
+} zfs_rlock_t;
+
+typedef struct rl {
+	zfs_rlock_t *r_zrl;
+>>>>>>> temp
 	avl_node_t r_node;	/* avl node link */
 	uint64_t r_off;		/* file range offset */
 	uint64_t r_len;		/* file range length */
@@ -61,7 +85,12 @@ typedef struct rl {
  * is converted to RL_WRITER that specified to lock from the start of the
  * end of file.  Returns the range lock structure.
  */
+<<<<<<< HEAD
 rl_t *zfs_range_lock(znode_t *zp, uint64_t off, uint64_t len, rl_type_t type);
+=======
+rl_t *zfs_range_lock(zfs_rlock_t *zrl, uint64_t off, uint64_t len,
+    rl_type_t type);
+>>>>>>> temp
 
 /* Unlock range and destroy range lock structure. */
 void zfs_range_unlock(rl_t *rl);
@@ -78,7 +107,27 @@ void zfs_range_reduce(rl_t *rl, uint64_t off, uint64_t len);
  */
 int zfs_range_compare(const void *arg1, const void *arg2);
 
+<<<<<<< HEAD
 #endif /* _KERNEL */
+=======
+static inline void
+zfs_rlock_init(zfs_rlock_t *zrl)
+{
+	mutex_init(&zrl->zr_mutex, NULL, MUTEX_DEFAULT, NULL);
+	avl_create(&zrl->zr_avl, zfs_range_compare,
+	    sizeof (rl_t), offsetof(rl_t, r_node));
+	zrl->zr_size = NULL;
+	zrl->zr_blksz = NULL;
+	zrl->zr_max_blksz = NULL;
+}
+
+static inline void
+zfs_rlock_destroy(zfs_rlock_t *zrl)
+{
+	avl_destroy(&zrl->zr_avl);
+	mutex_destroy(&zrl->zr_mutex);
+}
+>>>>>>> temp
 
 #ifdef	__cplusplus
 }

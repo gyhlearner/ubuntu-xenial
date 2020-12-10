@@ -18,7 +18,7 @@
 #include <linux/kallsyms.h>
 #include <linux/nmi.h>
 
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 
 #include "tick-internal.h"
 
@@ -63,14 +63,12 @@ static void
 print_timer(struct seq_file *m, struct hrtimer *taddr, struct hrtimer *timer,
 	    int idx, u64 now)
 {
-#ifdef CONFIG_TIMER_STATS
-	char tmp[TASK_COMM_LEN + 1];
-#endif
 	SEQ_printf(m, " #%d: ", idx);
 	print_name_offset(m, taddr);
 	SEQ_printf(m, ", ");
 	print_name_offset(m, timer->function);
 	SEQ_printf(m, ", S:%02x", timer->state);
+<<<<<<< HEAD
 #ifdef CONFIG_TIMER_STATS
 	SEQ_printf(m, ", ");
 	print_name_offset(m, timer->start_site);
@@ -78,6 +76,8 @@ print_timer(struct seq_file *m, struct hrtimer *taddr, struct hrtimer *timer,
 	tmp[TASK_COMM_LEN] = 0;
 	SEQ_printf(m, ", %s/%d", tmp, timer->start_pid);
 #endif
+=======
+>>>>>>> temp
 	SEQ_printf(m, "\n");
 	SEQ_printf(m, " # expires at %Lu-%Lu nsecs [in %Ld to %Ld nsecs]\n",
 		(unsigned long long)ktime_to_ns(hrtimer_get_softexpires(timer)),
@@ -131,7 +131,7 @@ print_base(struct seq_file *m, struct hrtimer_clock_base *base, u64 now)
 	SEQ_printf(m, "  .base:       %pK\n", base);
 	SEQ_printf(m, "  .index:      %d\n", base->index);
 
-	SEQ_printf(m, "  .resolution: %u nsecs\n", (unsigned) hrtimer_resolution);
+	SEQ_printf(m, "  .resolution: %u nsecs\n", hrtimer_resolution);
 
 	SEQ_printf(m,   "  .get_time:   ");
 	print_name_offset(m, base->get_time);
@@ -399,7 +399,7 @@ static int __init init_timer_list_procfs(void)
 {
 	struct proc_dir_entry *pe;
 
-	pe = proc_create("timer_list", 0444, NULL, &timer_list_fops);
+	pe = proc_create("timer_list", 0400, NULL, &timer_list_fops);
 	if (!pe)
 		return -ENOMEM;
 	return 0;

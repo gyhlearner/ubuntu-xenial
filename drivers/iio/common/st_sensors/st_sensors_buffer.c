@@ -22,11 +22,12 @@
 #include <linux/iio/common/st_sensors.h>
 
 
-int st_sensors_get_buffer_element(struct iio_dev *indio_dev, u8 *buf)
+static int st_sensors_get_buffer_element(struct iio_dev *indio_dev, u8 *buf)
 {
 	int i;
 	struct st_sensor_data *sdata = iio_priv(indio_dev);
 	unsigned int num_data_channels = sdata->num_data_channels;
+<<<<<<< HEAD
 	unsigned int byte_for_channel =
 		DIV_ROUND_UP(indio_dev->channels[0].scan_type.realbits +
 				indio_dev->channels[0].scan_type.shift, 8);
@@ -34,6 +35,14 @@ int st_sensors_get_buffer_element(struct iio_dev *indio_dev, u8 *buf)
 	for_each_set_bit(i, indio_dev->active_scan_mask, num_data_channels) {
 		const struct iio_chan_spec *channel = &indio_dev->channels[i];
 		unsigned int bytes_to_read = channel->scan_type.realbits >> 3;
+=======
+
+	for_each_set_bit(i, indio_dev->active_scan_mask, num_data_channels) {
+		const struct iio_chan_spec *channel = &indio_dev->channels[i];
+		unsigned int bytes_to_read =
+			DIV_ROUND_UP(channel->scan_type.realbits +
+				     channel->scan_type.shift, 8);
+>>>>>>> temp
 		unsigned int storage_bytes =
 			channel->scan_type.storagebits >> 3;
 
@@ -51,7 +60,6 @@ int st_sensors_get_buffer_element(struct iio_dev *indio_dev, u8 *buf)
 
 	return 0;
 }
-EXPORT_SYMBOL(st_sensors_get_buffer_element);
 
 irqreturn_t st_sensors_trigger_handler(int irq, void *p)
 {
@@ -61,11 +69,24 @@ irqreturn_t st_sensors_trigger_handler(int irq, void *p)
 	struct st_sensor_data *sdata = iio_priv(indio_dev);
 	s64 timestamp;
 
+<<<<<<< HEAD
 	/* If we do timetamping here, do it before reading the values */
 	if (sdata->hw_irq_trigger)
 		timestamp = sdata->hw_timestamp;
 	else
 		timestamp = iio_get_time_ns();
+=======
+	/*
+	 * If we do timetamping here, do it before reading the values, because
+	 * once we've read the values, new interrupts can occur (when using
+	 * the hardware trigger) and the hw_timestamp may get updated.
+	 * By storing it in a local variable first, we are safe.
+	 */
+	if (iio_trigger_using_own(indio_dev))
+		timestamp = sdata->hw_timestamp;
+	else
+		timestamp = iio_get_time_ns(indio_dev);
+>>>>>>> temp
 
 	len = st_sensors_get_buffer_element(indio_dev, sdata->buffer_data);
 	if (len < 0)

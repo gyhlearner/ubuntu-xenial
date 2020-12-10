@@ -76,7 +76,11 @@ static unsigned int match_to_prot(struct aa_profile *profile,
 				  unsigned int state, int type, int protocol,
 				  const char **info)
 {
+<<<<<<< HEAD
 	u16 buffer[2];
+=======
+	__be16 buffer[2];
+>>>>>>> temp
 	buffer[0] = cpu_to_be16(type);
 	buffer[1] = cpu_to_be16(protocol);
 	state = aa_dfa_match_len(profile->policy.dfa, state, (char *) &buffer,
@@ -197,7 +201,12 @@ static int match_label(struct aa_profile *profile, struct aa_profile *peer,
 	aad(sa)->peer = &peer->label;
 
 	if (state) {
+<<<<<<< HEAD
 		state = aa_dfa_match(profile->policy.dfa, state, aa_peer_name(peer));
+=======
+		state = aa_dfa_match(profile->policy.dfa, state,
+				     peer->base.hname);
+>>>>>>> temp
 		if (!state)
 			aad(sa)->info = "failed peer label match";
 	}
@@ -285,9 +294,18 @@ static int unix_label_sock_perm(struct aa_label *label, const char *op, u32 requ
 /* revaliation, get/set attr */
 int aa_unix_sock_perm(const char *op, u32 request, struct socket *sock)
 {
+<<<<<<< HEAD
 	struct aa_label *label = aa_begin_current_label(DO_UPDATE);
 	int error = unix_label_sock_perm(label, op, request, sock);
 	aa_end_current_label(label);
+=======
+	struct aa_label *label;
+	int error;
+
+	label = begin_current_label_crit_section();
+	error = unix_label_sock_perm(label, op, request, sock);
+	end_current_label_crit_section(label);
+>>>>>>> temp
 
 	return error;
 }
@@ -324,15 +342,26 @@ int aa_unix_bind_perm(struct socket *sock, struct sockaddr *address,
 		      int addrlen)
 {
 	struct aa_profile *profile;
+<<<<<<< HEAD
 	struct aa_label *label = aa_begin_current_label(DO_UPDATE);
 	int error = 0;
 
+=======
+	struct aa_label *label;
+	int error = 0;
+
+	 label = begin_current_label_crit_section();
+>>>>>>> temp
 	 /* fs bind is handled by mknod */
 	if (!(unconfined(label) || unix_addr_fs(address, addrlen)))
 		error = fn_for_each_confined(label, profile,
 				profile_bind_perm(profile, sock->sk, address,
 						  addrlen));
+<<<<<<< HEAD
 	aa_end_current_label(label);
+=======
+	end_current_label_crit_section(label);
+>>>>>>> temp
 
 	return error;
 }
@@ -360,7 +389,11 @@ static int profile_listen_perm(struct aa_profile *profile, struct sock *sk,
 
 	state = PROFILE_MEDIATES_AF(profile, AF_UNIX);
 	if (state) {
+<<<<<<< HEAD
 		u16 b = cpu_to_be16(backlog);
+=======
+		__be16 b = cpu_to_be16(backlog);
+>>>>>>> temp
 
 		state = match_to_cmd(profile, state, unix_sk(sk), CMD_LISTEN,
 				     &aad(&sa)->info);
@@ -379,14 +412,25 @@ static int profile_listen_perm(struct aa_profile *profile, struct sock *sk,
 int aa_unix_listen_perm(struct socket *sock, int backlog)
 {
 	struct aa_profile *profile;
+<<<<<<< HEAD
 	struct aa_label *label = aa_begin_current_label(DO_UPDATE);
 	int error = 0;
 
+=======
+	struct aa_label *label;
+	int error = 0;
+
+	label = begin_current_label_crit_section();
+>>>>>>> temp
 	if (!(unconfined(label) || UNIX_FS(sock->sk)))
 		error = fn_for_each_confined(label, profile,
 				profile_listen_perm(profile, sock->sk,
 						    backlog));
+<<<<<<< HEAD
 	aa_end_current_label(label);
+=======
+	end_current_label_crit_section(label);
+>>>>>>> temp
 
 	return error;
 }
@@ -418,14 +462,25 @@ static inline int profile_accept_perm(struct aa_profile *profile,
 int aa_unix_accept_perm(struct socket *sock, struct socket *newsock)
 {
 	struct aa_profile *profile;
+<<<<<<< HEAD
 	struct aa_label *label = aa_begin_current_label(DO_UPDATE);
 	int error = 0;
 
+=======
+	struct aa_label *label;
+	int error = 0;
+
+	label = begin_current_label_crit_section();
+>>>>>>> temp
 	if (!(unconfined(label) || UNIX_FS(sock->sk)))
 		error = fn_for_each_confined(label, profile,
 				profile_accept_perm(profile, sock->sk,
 						    newsock->sk));
+<<<<<<< HEAD
 	aa_end_current_label(label);
+=======
+	end_current_label_crit_section(label);
+>>>>>>> temp
 
 	return error;
 }
@@ -455,7 +510,11 @@ static int profile_opt_perm(struct aa_profile *profile, const char *op, u32 requ
 
 	state = PROFILE_MEDIATES_AF(profile, AF_UNIX);
 	if (state) {
+<<<<<<< HEAD
 		u16 b = cpu_to_be16(optname);
+=======
+		__be16 b = cpu_to_be16(optname);
+>>>>>>> temp
 
 		state = match_to_cmd(profile, state, unix_sk(sk), CMD_OPT,
 				     &aad(&sa)->info);
@@ -475,14 +534,25 @@ int aa_unix_opt_perm(const char *op, u32 request, struct socket *sock, int level
 		     int optname)
 {
 	struct aa_profile *profile;
+<<<<<<< HEAD
 	struct aa_label *label = aa_begin_current_label(DO_UPDATE);
 	int error = 0;
 
+=======
+	struct aa_label *label;
+	int error = 0;
+
+	label = begin_current_label_crit_section();
+>>>>>>> temp
 	if (!(unconfined(label) || UNIX_FS(sock->sk)))
 		error = fn_for_each_confined(label, profile,
 				profile_opt_perm(profile, op, request,
 						 sock->sk, level, optname));
+<<<<<<< HEAD
 	aa_end_current_label(label);
+=======
+	end_current_label_crit_section(label);
+>>>>>>> temp
 
 	return error;
 }

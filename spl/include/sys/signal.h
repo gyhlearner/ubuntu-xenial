@@ -27,6 +27,13 @@
 
 #include <linux/sched.h>
 
+<<<<<<< HEAD
+=======
+#ifdef HAVE_SCHED_SIGNAL_HEADER
+#include <linux/sched/signal.h>
+#endif
+
+>>>>>>> temp
 #define	FORREAL		0	/* Usual side-effects */
 #define	JUSTLOOKING	1	/* Don't stop the process */
 

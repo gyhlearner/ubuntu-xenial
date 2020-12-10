@@ -29,6 +29,7 @@
 #include "include/context.h"
 #include "include/policy.h"
 
+<<<<<<< HEAD
 /**
  * aa_alloc_task_context - allocate a new task_ctx
  * @flags: gfp flags for allocation
@@ -39,6 +40,8 @@ struct aa_task_ctx *aa_alloc_task_context(gfp_t flags)
 {
 	return kzalloc(sizeof(struct aa_task_ctx), flags);
 }
+=======
+>>>>>>> temp
 
 /**
  * aa_free_task_context - free a task_ctx
@@ -50,8 +53,11 @@ void aa_free_task_context(struct aa_task_ctx *ctx)
 		aa_put_label(ctx->label);
 		aa_put_label(ctx->previous);
 		aa_put_label(ctx->onexec);
+<<<<<<< HEAD
 
 		kzfree(ctx);
+=======
+>>>>>>> temp
 	}
 }
 
@@ -95,7 +101,11 @@ int aa_replace_current_label(struct aa_label *label)
 {
 	struct aa_task_ctx *ctx = current_ctx();
 	struct cred *new;
+<<<<<<< HEAD
 	BUG_ON(!label);
+=======
+	AA_BUG(!label);
+>>>>>>> temp
 
 	if (ctx->label == label)
 		return 0;
@@ -114,6 +124,15 @@ int aa_replace_current_label(struct aa_label *label)
 		 */
 		aa_clear_task_ctx_trans(ctx);
 
+<<<<<<< HEAD
+=======
+	/*
+	 * be careful switching ctx->profile, when racing replacement it
+	 * is possible that ctx->profile->proxy->profile is the reference
+	 * keeping @profile valid, so make sure to get its reference before
+	 * dropping the reference on ctx->profile
+	 */
+>>>>>>> temp
 	aa_get_label(label);
 	aa_put_label(ctx->label);
 	ctx->label = label;
@@ -161,7 +180,11 @@ int aa_set_current_hat(struct aa_label *label, u64 token)
 	struct cred *new = prepare_creds();
 	if (!new)
 		return -ENOMEM;
+<<<<<<< HEAD
 	BUG_ON(!label);
+=======
+	AA_BUG(!label);
+>>>>>>> temp
 
 	ctx = cred_ctx(new);
 	if (!ctx->previous) {
@@ -213,7 +236,11 @@ int aa_restore_previous_label(u64 token)
 
 	aa_put_label(ctx->label);
 	ctx->label = aa_get_newest_label(ctx->previous);
+<<<<<<< HEAD
 	BUG_ON(!ctx->label);
+=======
+	AA_BUG(!ctx->label);
+>>>>>>> temp
 	/* clear exec && prev information when restoring to previous context */
 	aa_clear_task_ctx_trans(ctx);
 

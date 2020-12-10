@@ -43,77 +43,62 @@
 static int
 smb2_crypto_shash_allocate(struct TCP_Server_Info *server)
 {
-	int rc;
-	unsigned int size;
-
-	if (server->secmech.sdeschmacsha256 != NULL)
-		return 0; /* already allocated */
-
-	server->secmech.hmacsha256 = crypto_alloc_shash("hmac(sha256)", 0, 0);
-	if (IS_ERR(server->secmech.hmacsha256)) {
-		cifs_dbg(VFS, "could not allocate crypto hmacsha256\n");
-		rc = PTR_ERR(server->secmech.hmacsha256);
-		server->secmech.hmacsha256 = NULL;
-		return rc;
-	}
-
-	size = sizeof(struct shash_desc) +
-			crypto_shash_descsize(server->secmech.hmacsha256);
-	server->secmech.sdeschmacsha256 = kmalloc(size, GFP_KERNEL);
-	if (!server->secmech.sdeschmacsha256) {
-		crypto_free_shash(server->secmech.hmacsha256);
-		server->secmech.hmacsha256 = NULL;
-		return -ENOMEM;
-	}
-	server->secmech.sdeschmacsha256->shash.tfm = server->secmech.hmacsha256;
-	server->secmech.sdeschmacsha256->shash.flags = 0x0;
-
-	return 0;
+	return cifs_alloc_hash("hmac(sha256)",
+			       &server->secmech.hmacsha256,
+			       &server->secmech.sdeschmacsha256);
 }
 
 static int
 smb3_crypto_shash_allocate(struct TCP_Server_Info *server)
 {
-	unsigned int size;
+	struct cifs_secmech *p = &server->secmech;
 	int rc;
 
-	if (server->secmech.sdesccmacaes != NULL)
-		return 0;  /* already allocated */
+	rc = cifs_alloc_hash("hmac(sha256)",
+			     &p->hmacsha256,
+			     &p->sdeschmacsha256);
+	if (rc)
+		goto err;
 
-	rc = smb2_crypto_shash_allocate(server);
+	rc = cifs_alloc_hash("cmac(aes)", &p->cmacaes, &p->sdesccmacaes);
+	if (rc)
+		goto err;
+
+	return 0;
+err:
+	cifs_free_hash(&p->hmacsha256, &p->sdeschmacsha256);
+	return rc;
+}
+
+#ifdef CONFIG_CIFS_SMB311
+int
+smb311_crypto_shash_allocate(struct TCP_Server_Info *server)
+{
+	struct cifs_secmech *p = &server->secmech;
+	int rc = 0;
+
+	rc = cifs_alloc_hash("hmac(sha256)",
+			     &p->hmacsha256,
+			     &p->sdeschmacsha256);
 	if (rc)
 		return rc;
 
-	server->secmech.cmacaes = crypto_alloc_shash("cmac(aes)", 0, 0);
-	if (IS_ERR(server->secmech.cmacaes)) {
-		cifs_dbg(VFS, "could not allocate crypto cmac-aes");
-		kfree(server->secmech.sdeschmacsha256);
-		server->secmech.sdeschmacsha256 = NULL;
-		crypto_free_shash(server->secmech.hmacsha256);
-		server->secmech.hmacsha256 = NULL;
-		rc = PTR_ERR(server->secmech.cmacaes);
-		server->secmech.cmacaes = NULL;
-		return rc;
-	}
+	rc = cifs_alloc_hash("cmac(aes)", &p->cmacaes, &p->sdesccmacaes);
+	if (rc)
+		goto err;
 
-	size = sizeof(struct shash_desc) +
-			crypto_shash_descsize(server->secmech.cmacaes);
-	server->secmech.sdesccmacaes = kmalloc(size, GFP_KERNEL);
-	if (!server->secmech.sdesccmacaes) {
-		cifs_dbg(VFS, "%s: Can't alloc cmacaes\n", __func__);
-		kfree(server->secmech.sdeschmacsha256);
-		server->secmech.sdeschmacsha256 = NULL;
-		crypto_free_shash(server->secmech.hmacsha256);
-		crypto_free_shash(server->secmech.cmacaes);
-		server->secmech.hmacsha256 = NULL;
-		server->secmech.cmacaes = NULL;
-		return -ENOMEM;
-	}
-	server->secmech.sdesccmacaes->shash.tfm = server->secmech.cmacaes;
-	server->secmech.sdesccmacaes->shash.flags = 0x0;
+	rc = cifs_alloc_hash("sha512", &p->sha512, &p->sdescsha512);
+	if (rc)
+		goto err;
 
 	return 0;
+
+err:
+	cifs_free_hash(&p->cmacaes, &p->sdesccmacaes);
+	cifs_free_hash(&p->hmacsha256, &p->sdeschmacsha256);
+	return rc;
 }
+#endif
 
 static struct cifs_ses *
 smb2_find_smb_ses_unlocked(struct TCP_Server_Info *server, __u64 ses_id)
@@ -335,9 +320,37 @@ generate_smb3signingkey(struct cifs_ses *ses,
 	if (rc)
 		return rc;
 
+<<<<<<< HEAD
 	return generate_key(ses, ptriplet->decryption.label,
 			    ptriplet->decryption.context,
 			    ses->smb3decryptionkey, SMB3_SIGN_KEY_SIZE);
+=======
+	rc = generate_key(ses, ptriplet->decryption.label,
+			  ptriplet->decryption.context,
+			  ses->smb3decryptionkey, SMB3_SIGN_KEY_SIZE);
+
+	if (rc)
+		return rc;
+
+#ifdef CONFIG_CIFS_DEBUG_DUMP_KEYS
+	cifs_dbg(VFS, "%s: dumping generated AES session keys\n", __func__);
+	/*
+	 * The session id is opaque in terms of endianness, so we can't
+	 * print it as a long long. we dump it as we got it on the wire
+	 */
+	cifs_dbg(VFS, "Session Id    %*ph\n", (int)sizeof(ses->Suid),
+			&ses->Suid);
+	cifs_dbg(VFS, "Session Key   %*ph\n",
+		 SMB2_NTLMV2_SESSKEY_SIZE, ses->auth_key.response);
+	cifs_dbg(VFS, "Signing Key   %*ph\n",
+		 SMB3_SIGN_KEY_SIZE, ses->smb3signingkey);
+	cifs_dbg(VFS, "ServerIn Key  %*ph\n",
+		 SMB3_SIGN_KEY_SIZE, ses->smb3encryptionkey);
+	cifs_dbg(VFS, "ServerOut Key %*ph\n",
+		 SMB3_SIGN_KEY_SIZE, ses->smb3decryptionkey);
+#endif
+	return rc;
+>>>>>>> temp
 }
 
 int
@@ -368,6 +381,10 @@ generate_smb30signingkey(struct cifs_ses *ses)
 	return generate_smb3signingkey(ses, &triplet);
 }
 
+<<<<<<< HEAD
+=======
+#ifdef CONFIG_CIFS_SMB311
+>>>>>>> temp
 int
 generate_smb311signingkey(struct cifs_ses *ses)
 
@@ -376,6 +393,7 @@ generate_smb311signingkey(struct cifs_ses *ses)
 	struct derivation *d;
 
 	d = &triplet.signing;
+<<<<<<< HEAD
 	d->label.iov_base = "SMB2AESCMAC";
 	d->label.iov_len = 12;
 	d->context.iov_base = "SmbSign";
@@ -395,6 +413,28 @@ generate_smb311signingkey(struct cifs_ses *ses)
 
 	return generate_smb3signingkey(ses, &triplet);
 }
+=======
+	d->label.iov_base = "SMBSigningKey";
+	d->label.iov_len = 14;
+	d->context.iov_base = ses->preauth_sha_hash;
+	d->context.iov_len = 64;
+
+	d = &triplet.encryption;
+	d->label.iov_base = "SMBC2SCipherKey";
+	d->label.iov_len = 16;
+	d->context.iov_base = ses->preauth_sha_hash;
+	d->context.iov_len = 64;
+
+	d = &triplet.decryption;
+	d->label.iov_base = "SMBS2CCipherKey";
+	d->label.iov_len = 16;
+	d->context.iov_base = ses->preauth_sha_hash;
+	d->context.iov_len = 64;
+
+	return generate_smb3signingkey(ses, &triplet);
+}
+#endif /* 311 */
+>>>>>>> temp
 
 int
 smb3_calc_signature(struct smb_rqst *rqst, struct TCP_Server_Info *server)
@@ -437,6 +477,12 @@ smb3_calc_signature(struct smb_rqst *rqst, struct TCP_Server_Info *server)
 	rc = __cifs_calc_signature(rqst, server, sigptr,
 				   &server->secmech.sdesccmacaes->shash);
 
+<<<<<<< HEAD
+=======
+	rc = __cifs_calc_signature(rqst, server, sigptr,
+				   &server->secmech.sdesccmacaes->shash);
+
+>>>>>>> temp
 	if (!rc)
 		memcpy(shdr->Signature, sigptr, SMB2_SIGNATURE_SIZE);
 
@@ -538,6 +584,7 @@ smb2_mid_entry_alloc(const struct smb2_sync_hdr *shdr,
 	}
 
 	temp = mempool_alloc(cifs_mid_poolp, GFP_NOFS);
+<<<<<<< HEAD
 	if (temp == NULL)
 		return temp;
 	else {
@@ -555,6 +602,22 @@ smb2_mid_entry_alloc(const struct smb2_sync_hdr *shdr,
 		temp->callback = cifs_wake_up_task;
 		temp->callback_data = current;
 	}
+=======
+	memset(temp, 0, sizeof(struct mid_q_entry));
+	kref_init(&temp->refcount);
+	temp->mid = le64_to_cpu(shdr->MessageId);
+	temp->pid = current->pid;
+	temp->command = shdr->Command; /* Always LE */
+	temp->when_alloc = jiffies;
+	temp->server = server;
+
+	/*
+	 * The default is for the mid to be synchronous, so the
+	 * default callback just wakes up the current task.
+	 */
+	temp->callback = cifs_wake_up_task;
+	temp->callback_data = current;
+>>>>>>> temp
 
 	atomic_inc(&midCount);
 	temp->mid_state = MID_REQUEST_ALLOCATED;

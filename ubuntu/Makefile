@@ -12,30 +12,45 @@
 ##
 ##
 ##
+<<<<<<< HEAD
 obj-$(CONFIG_DM_RAID45)		+= dm-raid4-5/
 ##
 ##
 ##
 ifneq ($(filter $(ARCH), i386 x86_64),)
+=======
+##
+##
+##
+ifeq ($(ARCH),x86)
+>>>>>>> temp
 obj-y                         += vbox/
 endif
 ##
 ##
 ##
+<<<<<<< HEAD
 obj-$(CONFIG_DRM_I915_BPO)	+= i915/
 ##
 ##
 ##
+=======
+>>>>>>> temp
 obj-$(CONFIG_HIO)             += hio/
 ##
 ##
 ##
+<<<<<<< HEAD
 ifeq ($(filter $(ARCH), s390),)
+=======
+ifeq ($(ARCH),x86)
+>>>>>>> temp
 obj-y				+= xr-usb-serial/
 endif
 ##
 ##
 ##
+<<<<<<< HEAD
 obj-$(CONFIG_WLAN_VENDOR_RSI) += rsi/
 ##
 ##
@@ -53,6 +68,8 @@ obj-$(CONFIG_CAN_HMS_USB) += ixxat/
 ##
 ##
 ##
+=======
+>>>>>>> temp
 ##
 ##
 ##

@@ -10,7 +10,11 @@
  */
 
 /*
+<<<<<<< HEAD
  * Copyright (C) 2006-2012 Oracle Corporation
+=======
+ * Copyright (C) 2006-2017 Oracle Corporation
+>>>>>>> temp
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,12 +33,27 @@
  */
 
 #include "vfsmod.h"
+<<<<<<< HEAD
+=======
+#include "version-generated.h"
+#include "revision-generated.h"
+#include "product-generated.h"
+#include "VBoxGuestR0LibInternal.h"
+>>>>>>> temp
 
 MODULE_DESCRIPTION(VBOX_PRODUCT " VFS Module for Host File System Access");
 MODULE_AUTHOR(VBOX_VENDOR);
 MODULE_LICENSE("GPL");
+<<<<<<< HEAD
 #ifdef MODULE_VERSION
 MODULE_VERSION(VBOX_VERSION_STRING " (interface " RT_XSTR(VMMDEV_VERSION) ")");
+=======
+#ifdef MODULE_ALIAS_FS
+MODULE_ALIAS_FS("vboxsf");
+#endif
+#ifdef MODULE_VERSION
+MODULE_VERSION(VBOX_VERSION_STRING " r" RT_XSTR(VBOX_SVN_REV));
+>>>>>>> temp
 #endif
 
 /* globals */
@@ -67,6 +86,7 @@ static int sf_glob_alloc(struct vbsf_mount_info_new *info, struct sf_glob_info *
         || info->signature[1] != VBSF_MOUNT_SIGNATURE_BYTE_1
         || info->signature[2] != VBSF_MOUNT_SIGNATURE_BYTE_2)
     {
+<<<<<<< HEAD
         /* An old version of mount.vboxsf made the syscall. Translate the
          * old parameters to the new structure. */
         struct vbsf_mount_info_old *info_old = (struct vbsf_mount_info_old *)info;
@@ -80,12 +100,17 @@ static int sf_glob_alloc(struct vbsf_mount_info_new *info, struct sf_glob_info *
         info->uid    = info_old->uid;
         info->gid    = info_old->gid;
         info->ttl    = info_old->ttl;
+=======
+        err = -EINVAL;
+        goto fail1;
+>>>>>>> temp
     }
 
     info->name[sizeof(info->name) - 1] = 0;
     info->nls_name[sizeof(info->nls_name) - 1] = 0;
 
     name_len = strlen(info->name);
+<<<<<<< HEAD
     if (name_len > 0xfffe)
     {
         err = -ENAMETOOLONG;
@@ -93,6 +118,8 @@ static int sf_glob_alloc(struct vbsf_mount_info_new *info, struct sf_glob_info *
         goto fail1;
     }
 
+=======
+>>>>>>> temp
     str_len = offsetof(SHFLSTRING, String.utf8) + name_len + 1;
     str_name = kmalloc(str_len, GFP_KERNEL);
     if (!str_name)
@@ -123,6 +150,10 @@ static int sf_glob_alloc(struct vbsf_mount_info_new *info, struct sf_glob_info *
             {
                 err = -EINVAL;
                 LogFunc(("failed to load nls %s\n", info->nls_name));
+<<<<<<< HEAD
+=======
+                kfree(str_name);
+>>>>>>> temp
                 goto fail1;
             }
         }
@@ -594,10 +625,17 @@ static int __init init(void)
         return err;
     }
 
+<<<<<<< HEAD
     rcVBox = VbglR0SfInit();
     if (RT_FAILURE(rcVBox))
     {
         LogRelFunc(("VbglR0SfInit failed, rc=%d\n", rcVBox));
+=======
+    rcVBox = VbglR0HGCMInit();
+    if (RT_FAILURE(rcVBox))
+    {
+        LogRelFunc(("VbglR0HGCMInit failed, rc=%d\n", rcVBox));
+>>>>>>> temp
         rcRet = -EPROTO;
         goto fail0;
     }
@@ -641,7 +679,11 @@ fail2:
     VbglR0SfDisconnect(&client_handle);
 
 fail1:
+<<<<<<< HEAD
     VbglR0SfTerm();
+=======
+    VbglR0HGCMTerminate();
+>>>>>>> temp
 
 fail0:
     unregister_filesystem(&vboxsf_fs_type);
@@ -653,7 +695,11 @@ static void __exit fini(void)
     TRACE();
 
     VbglR0SfDisconnect(&client_handle);
+<<<<<<< HEAD
     VbglR0SfTerm();
+=======
+    VbglR0HGCMTerminate();
+>>>>>>> temp
     unregister_filesystem(&vboxsf_fs_type);
 }
 

@@ -41,7 +41,11 @@
  *     int64_t, ...,
  *     uint32_t, ...);
  */
+<<<<<<< HEAD
 
+=======
+/* BEGIN CSTYLED */
+>>>>>>> temp
 DECLARE_EVENT_CLASS(zfs_dnode_move_class,
 	TP_PROTO(dnode_t *dn, int64_t refcount, uint32_t dbufs),
 	TP_ARGS(dn, refcount, dbufs),
@@ -102,11 +106,21 @@ DECLARE_EVENT_CLASS(zfs_dnode_move_class,
 	    __entry->dn_maxblkid, __entry->dn_tx_holds, __entry->dn_holds,
 	    __entry->dn_have_spill, __entry->refcount, __entry->dbufs)
 );
+<<<<<<< HEAD
 
+=======
+/* END CSTYLED */
+
+/* BEGIN CSTYLED */
+>>>>>>> temp
 #define	DEFINE_DNODE_MOVE_EVENT(name) \
 DEFINE_EVENT(zfs_dnode_move_class, name, \
 	TP_PROTO(dnode_t *dn, int64_t refcount, uint32_t dbufs), \
 	TP_ARGS(dn, refcount, dbufs))
+<<<<<<< HEAD
+=======
+/* END CSTYLED */
+>>>>>>> temp
 DEFINE_DNODE_MOVE_EVENT(zfs_dnode__move);
 
 #endif /* _TRACE_DNODE_H */

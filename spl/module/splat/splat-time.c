@@ -93,9 +93,15 @@ splat_time_init(void)
         spin_lock_init(&sub->test_lock);
         sub->desc.id = SPLAT_SUBSYSTEM_TIME;
 
+<<<<<<< HEAD
         SPLAT_TEST_INIT(sub, SPLAT_TIME_TEST1_NAME, SPLAT_TIME_TEST1_DESC,
 	              SPLAT_TIME_TEST1_ID, splat_time_test1);
         SPLAT_TEST_INIT(sub, SPLAT_TIME_TEST2_NAME, SPLAT_TIME_TEST2_DESC,
+=======
+        splat_test_init(sub, SPLAT_TIME_TEST1_NAME, SPLAT_TIME_TEST1_DESC,
+	              SPLAT_TIME_TEST1_ID, splat_time_test1);
+        splat_test_init(sub, SPLAT_TIME_TEST2_NAME, SPLAT_TIME_TEST2_DESC,
+>>>>>>> temp
 	              SPLAT_TIME_TEST2_ID, splat_time_test2);
 
         return sub;
@@ -106,8 +112,13 @@ splat_time_fini(splat_subsystem_t *sub)
 {
         ASSERT(sub);
 
+<<<<<<< HEAD
         SPLAT_TEST_FINI(sub, SPLAT_TIME_TEST2_ID);
         SPLAT_TEST_FINI(sub, SPLAT_TIME_TEST1_ID);
+=======
+        splat_test_fini(sub, SPLAT_TIME_TEST2_ID);
+        splat_test_fini(sub, SPLAT_TIME_TEST1_ID);
+>>>>>>> temp
 
         kfree(sub);
 }

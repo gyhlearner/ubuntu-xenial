@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright (C) 2005-2015 Junjiro R. Okajima
+=======
+ * Copyright (C) 2005-2017 Junjiro R. Okajima
+>>>>>>> temp
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -180,6 +184,11 @@ static struct hlist_head *au_name_hash(struct au_nhash *nhash,
 	AuDebugOn(!nhash->nh_num || !nhash->nh_head);
 
 	v = 0;
+<<<<<<< HEAD
+=======
+	if (len > 8)
+		len = 8;
+>>>>>>> temp
 	while (len--)
 		v += *name++;
 	/* v = hash_long(v, magic_bit); */
@@ -277,8 +286,13 @@ static int append_deblk(struct au_vdir *vdir)
 	unsigned char **o;
 
 	err = -ENOMEM;
+<<<<<<< HEAD
 	o = krealloc(vdir->vd_deblk, sizeof(*o) * (vdir->vd_nblk + 1),
 		     GFP_NOFS);
+=======
+	o = au_krealloc(vdir->vd_deblk, sizeof(*o) * (vdir->vd_nblk + 1),
+			GFP_NOFS, /*may_shrink*/0);
+>>>>>>> temp
 	if (unlikely(!o))
 		goto out;
 
@@ -551,7 +565,11 @@ static int au_do_read_vdir(struct fillvdir_arg *arg)
 	int err;
 	unsigned int rdhash;
 	loff_t offset;
+<<<<<<< HEAD
 	aufs_bindex_t bend, bindex, bstart;
+=======
+	aufs_bindex_t bbot, bindex, btop;
+>>>>>>> temp
 	unsigned char shwh;
 	struct file *hf, *file;
 	struct super_block *sb;
@@ -577,9 +595,15 @@ static int au_do_read_vdir(struct fillvdir_arg *arg)
 		shwh = 1;
 		au_fset_fillvdir(arg->flags, SHWH);
 	}
+<<<<<<< HEAD
 	bstart = au_fbstart(file);
 	bend = au_fbend_dir(file);
 	for (bindex = bstart; !err && bindex <= bend; bindex++) {
+=======
+	btop = au_fbtop(file);
+	bbot = au_fbbot_dir(file);
+	for (bindex = btop; !err && bindex <= bbot; bindex++) {
+>>>>>>> temp
 		hf = au_hf_dir(file, bindex);
 		if (!hf)
 			continue;
@@ -592,7 +616,11 @@ static int au_do_read_vdir(struct fillvdir_arg *arg)
 		arg->bindex = bindex;
 		au_fclr_fillvdir(arg->flags, WHABLE);
 		if (shwh
+<<<<<<< HEAD
 		    || (bindex != bend
+=======
+		    || (bindex != bbot
+>>>>>>> temp
 			&& au_br_whable(au_sbr_perm(sb, bindex))))
 			au_fset_fillvdir(arg->flags, WHABLE);
 		do {
@@ -637,6 +665,10 @@ static int read_vdir(struct file *file, int may_read)
 	err = 0;
 	inode = file_inode(file);
 	IMustLock(inode);
+<<<<<<< HEAD
+=======
+	IiMustWriteLock(inode);
+>>>>>>> temp
 	SiMustAnyLock(inode->i_sb);
 
 	allocated = NULL;
@@ -692,8 +724,13 @@ static int copy_vdir(struct au_vdir *tgt, struct au_vdir *src)
 	if (tgt->vd_nblk < src->vd_nblk) {
 		unsigned char **p;
 
+<<<<<<< HEAD
 		p = krealloc(tgt->vd_deblk, sizeof(*p) * src->vd_nblk,
 			     GFP_NOFS);
+=======
+		p = au_krealloc(tgt->vd_deblk, sizeof(*p) * src->vd_nblk,
+				GFP_NOFS, /*may_shrink*/0);
+>>>>>>> temp
 		if (unlikely(!p))
 			goto out;
 		tgt->vd_deblk = p;
@@ -703,7 +740,12 @@ static int copy_vdir(struct au_vdir *tgt, struct au_vdir *src)
 		unsigned char *p;
 
 		tgt->vd_deblk_sz = deblk_sz;
+<<<<<<< HEAD
 		p = krealloc(tgt->vd_deblk[0], deblk_sz, GFP_NOFS);
+=======
+		p = au_krealloc(tgt->vd_deblk[0], deblk_sz, GFP_NOFS,
+				/*may_shrink*/1);
+>>>>>>> temp
 		if (unlikely(!p))
 			goto out;
 		tgt->vd_deblk[0] = p;

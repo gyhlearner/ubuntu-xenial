@@ -1,10 +1,21 @@
 KBUILD_EXTMOD=${srctree}/ubuntu/vbox
+<<<<<<< HEAD
 #
+=======
+# $Id: Makefile.module $
+## @file
+>>>>>>> temp
 # VirtualBox Guest Additions Module Makefile.
 #
 # (For 2.6.x this file must be 'Makefile'!)
 #
+<<<<<<< HEAD
 # Copyright (C) 2006-2011 Oracle Corporation
+=======
+
+#
+# Copyright (C) 2006-2017 Oracle Corporation
+>>>>>>> temp
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -26,6 +37,7 @@ MOD_OBJS   = \
 	lnkops.o \
 	regops.o \
 	utils.o \
+<<<<<<< HEAD
 	GenericRequest.o \
 	SysHlp.o \
 	PhysHeap.o \
@@ -34,11 +46,21 @@ MOD_OBJS   = \
 	HGCM.o \
 	VBoxGuestR0LibSharedFolders.o \
 	VbglR0CanUsePhysPageList.o
+=======
+	VBoxGuestR0LibHGCM.o \
+	VBoxGuestR0LibIdc.o \
+	VBoxGuestR0LibIdc-unix.o \
+	VBoxGuestR0LibSharedFolders.o
+>>>>>>> temp
 ifeq ($(BUILD_TARGET_ARCH),x86)
 MOD_OBJS  += \
 	divdi3.o \
 	moddi3.o \
 	udivdi3.o \
+<<<<<<< HEAD
+=======
+	udivmoddi4.o \
+>>>>>>> temp
 	umoddi3.o \
 	qdivrem.o
 endif
@@ -66,7 +88,11 @@ endif
 ifeq ($(KERN_VERSION), 24)
  MOD_CFLAGS =
 else
+<<<<<<< HEAD
  MOD_CFLAGS = -Wno-declaration-after-statement -fshort-wchar -include $(MANGLING)
+=======
+ MOD_CFLAGS = -Wno-declaration-after-statement -fshort-wchar -include $(MANGLING) -fno-pie
+>>>>>>> temp
 
 # special hack for Fedora Core 6 2.6.18 (fc6), rhel5 2.6.18 (el5),
 # ClarkConnect 4.3 (cc4) and ClarkConnect 5 (v5)

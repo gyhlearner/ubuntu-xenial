@@ -1,26 +1,20 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 #ifndef _ASM_X86_UACCESS_32_H
 #define _ASM_X86_UACCESS_32_H
 
 /*
  * User space memory access functions
  */
-#include <linux/errno.h>
-#include <linux/thread_info.h>
 #include <linux/string.h>
 #include <asm/asm.h>
 #include <asm/page.h>
 
-unsigned long __must_check __copy_to_user_ll
-		(void __user *to, const void *from, unsigned long n);
-unsigned long __must_check __copy_from_user_ll
-		(void *to, const void __user *from, unsigned long n);
-unsigned long __must_check __copy_from_user_ll_nozero
-		(void *to, const void __user *from, unsigned long n);
-unsigned long __must_check __copy_from_user_ll_nocache
-		(void *to, const void __user *from, unsigned long n);
+unsigned long __must_check __copy_user_ll
+		(void *to, const void *from, unsigned long n);
 unsigned long __must_check __copy_from_user_ll_nocache_nozero
 		(void *to, const void __user *from, unsigned long n);
 
+<<<<<<< HEAD
 /**
  * __copy_to_user_inatomic: - Copy a block of data into user space, with less checking.
  * @to:   Destination address, in user space.
@@ -91,14 +85,16 @@ __copy_to_user_inatomic(void __user *to, const void *from, unsigned long n)
  * Returns number of bytes that could not be copied.
  * On success, this will be zero.
  */
+=======
+>>>>>>> temp
 static __always_inline unsigned long __must_check
-__copy_to_user(void __user *to, const void *from, unsigned long n)
+raw_copy_to_user(void __user *to, const void *from, unsigned long n)
 {
-	might_fault();
-	return __copy_to_user_inatomic(to, from, n);
+	return __copy_user_ll((__force void *)to, from, n);
 }
 
 static __always_inline unsigned long
+<<<<<<< HEAD
 __copy_from_user_inatomic(void *to, const void __user *from, unsigned long n)
 {
 	/* Avoid zeroing the tail if the copy fails..
@@ -183,13 +179,16 @@ __copy_from_user(void *to, const void __user *from, unsigned long n)
 
 static __always_inline unsigned long __copy_from_user_nocache(void *to,
 				const void __user *from, unsigned long n)
+=======
+raw_copy_from_user(void *to, const void __user *from, unsigned long n)
+>>>>>>> temp
 {
-	might_fault();
 	if (__builtin_constant_p(n)) {
 		unsigned long ret;
 
 		switch (n) {
 		case 1:
+<<<<<<< HEAD
 			__uaccess_begin_nospec();
 			__get_user_size(*(u8 *)to, from, 1, ret, 1);
 			__uaccess_end();
@@ -202,11 +201,31 @@ static __always_inline unsigned long __copy_from_user_nocache(void *to,
 		case 4:
 			__uaccess_begin_nospec();
 			__get_user_size(*(u32 *)to, from, 4, ret, 4);
+=======
+			ret = 0;
+			__uaccess_begin_nospec();
+			__get_user_asm_nozero(*(u8 *)to, from, ret,
+					      "b", "b", "=q", 1);
+			__uaccess_end();
+			return ret;
+		case 2:
+			ret = 0;
+			__uaccess_begin_nospec();
+			__get_user_asm_nozero(*(u16 *)to, from, ret,
+					      "w", "w", "=r", 2);
+			__uaccess_end();
+			return ret;
+		case 4:
+			ret = 0;
+			__uaccess_begin_nospec();
+			__get_user_asm_nozero(*(u32 *)to, from, ret,
+					      "l", "k", "=r", 4);
+>>>>>>> temp
 			__uaccess_end();
 			return ret;
 		}
 	}
-	return __copy_from_user_ll_nocache(to, from, n);
+	return __copy_user_ll(to, (__force const void *)from, n);
 }
 
 static __always_inline unsigned long

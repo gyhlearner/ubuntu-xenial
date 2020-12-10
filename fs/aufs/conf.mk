@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+# SPDX-License-Identifier: GPL-2.0
+>>>>>>> temp
 
 AuConfStr = CONFIG_AUFS_FS=${CONFIG_AUFS_FS}
 
@@ -14,6 +18,10 @@ AuConfAll = BRANCH_MAX_127 BRANCH_MAX_511 BRANCH_MAX_1023 BRANCH_MAX_32767 \
 	XATTR \
 	FHSM \
 	RDU \
+<<<<<<< HEAD
+=======
+	DIRREN \
+>>>>>>> temp
 	SHWH \
 	BR_RAMFS \
 	BR_FUSE POLL \

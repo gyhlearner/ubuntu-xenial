@@ -4,7 +4,11 @@
  */
 
 /*
+<<<<<<< HEAD
  * Copyright (C) 2006-2015 Oracle Corporation
+=======
+ * Copyright (C) 2006-2017 Oracle Corporation
+>>>>>>> temp
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,14 +28,21 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+<<<<<<< HEAD
 /* Entire file is ifdef'ed with !VBGL_VBOXGUEST */
 #ifndef VBGL_VBOXGUEST
 
+=======
+>>>>>>> temp
 
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_SHARED_FOLDERS
+<<<<<<< HEAD
+=======
+#include "VBoxGuestR0LibInternal.h"
+>>>>>>> temp
 #include <VBox/VBoxGuestLibSharedFolders.h>
 #include <VBox/log.h>
 #include <iprt/time.h>
@@ -39,6 +50,13 @@
 #include <iprt/path.h>
 #include <iprt/string.h>
 
+<<<<<<< HEAD
+=======
+#ifdef VBGL_VBOXGUEST
+# error "This file shouldn't be part of the VBoxGuestR0LibBase library that is linked into VBoxGuest.  It's client code."
+#endif
+
+>>>>>>> temp
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
@@ -48,6 +66,7 @@
 
 #define VBOX_INIT_CALL(a, b, c) \
     LogFunc(("%s, idClient=%d\n", "SHFL_FN_" # b, (c)->idClient)); \
+<<<<<<< HEAD
     (a)->result      = VINF_SUCCESS; \
     (a)->u32ClientID = (c)->idClient; \
     (a)->u32Function = SHFL_FN_##b; \
@@ -58,10 +77,30 @@
 DECLVBGL(int) VbglR0SfInit(void)
 {
     return VbglInitClient();
+=======
+    VBGL_HGCM_HDR_INIT(a, (c)->idClient, SHFL_FN_##b, SHFL_CPARMS_##b); \
+    (a)->fInterruptible = false /* Currently we do like nfs with -o hard (default). */
+
+#define VBOX_INIT_CALL_EX(a, b, c, a_cbReq) \
+    LogFunc(("%s, idClient=%d\n", "SHFL_FN_" # b, (c)->idClient)); \
+    VBGL_HGCM_HDR_INIT_EX(a, (c)->idClient, SHFL_FN_##b, SHFL_CPARMS_##b, a_cbReq); \
+    (a)->fInterruptible = false /* Currently we do like nfs with -o hard (default). */
+
+
+
+/** @todo We only need HGCM, not physical memory, so other guests should also
+ *        switch to calling vbglR0HGCMInit() and vbglR0HGCMTerminate() instead
+ *        of VbglR0SfInit() and VbglR0SfTerm(). */
+#ifndef RT_OS_LINUX
+DECLVBGL(int) VbglR0SfInit(void)
+{
+    return VbglR0InitClient();
+>>>>>>> temp
 }
 
 DECLVBGL(void) VbglR0SfTerm(void)
 {
+<<<<<<< HEAD
     VbglTerminate();
 }
 
@@ -86,18 +125,35 @@ DECLVBGL(int) VbglR0SfConnect(PVBGLSFCLIENT pClient)
         pClient->idClient = data.u32ClientID;
         LogFunc(("idClient=%d\n", pClient->idClient));
     }
+=======
+    VbglR0TerminateClient();
+}
+#endif
+
+DECLVBGL(int) VbglR0SfConnect(PVBGLSFCLIENT pClient)
+{
+    int rc = VbglR0HGCMConnect(&pClient->handle, "VBoxSharedFolders", &pClient->idClient);
+    if (RT_SUCCESS(rc))
+        LogFunc(("idClient=%d\n", pClient->idClient));
+    else
+        LogFunc(("VbglR0HGCMConnect failed -> rc=%Rrc\n", rc));
+>>>>>>> temp
     return rc;
 }
 
 DECLVBGL(void) VbglR0SfDisconnect(PVBGLSFCLIENT pClient)
 {
     int rc;
+<<<<<<< HEAD
     VBoxGuestHGCMDisconnectInfo data;
 
+=======
+>>>>>>> temp
     LogFunc(("u32ClientID=%d\n", pClient->idClient));
     if (pClient->handle == NULL)
         return;                 /* not connected */
 
+<<<<<<< HEAD
     RT_ZERO(data);
     data.result      = VINF_SUCCESS;
     data.u32ClientID = pClient->idClient;
@@ -105,6 +161,13 @@ DECLVBGL(void) VbglR0SfDisconnect(PVBGLSFCLIENT pClient)
     rc = VbglHGCMDisconnect(pClient->handle, &data);
     NOREF(rc);
 /*    Log(("VBOXSF: VbglR0SfDisconnect: VbglHGCMDisconnect rc = %#x, result = %#x\n", rc, data.result)); */
+=======
+    rc = VbglR0HGCMDisconnect(pClient->handle, pClient->idClient);
+    NOREF(rc);
+/*    Log(("VBOXSF: VbglR0SfDisconnect: VbglR0HGCMDisconnect -> %#x\n", rc)); */
+    pClient->idClient = 0;
+    pClient->handle   = NULL;
+>>>>>>> temp
     return;
 }
 
@@ -126,10 +189,15 @@ DECLVBGL(int) VbglR0SfQueryMappings(PVBGLSFCLIENT pClient, SHFLMAPPING paMapping
     data.mappings.u.Pointer.u.linearAddr = (uintptr_t)&paMappings[0];
 
 /*    Log(("VBOXSF: in ifs difference %d\n", (char *)&data.flags.type - (char *)&data.callInfo.cParms)); */
+<<<<<<< HEAD
     rc = VbglHGCMCall(pClient->handle, &data.callInfo, sizeof(data));
 /*    Log(("VBOXSF: VbglR0SfQueryMappings: VbglHGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.result)); */
     if (RT_SUCCESS(rc))
         rc = data.callInfo.result;
+=======
+    rc = VbglR0HGCMCall(pClient->handle, &data.callInfo, sizeof(data));
+/*    Log(("VBOXSF: VbglR0SfQueryMappings: VbglR0HGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.result)); */
+>>>>>>> temp
     if (RT_SUCCESS(rc))
         *pcMappings = data.numberOfMappings.u.value32;
 
@@ -150,11 +218,16 @@ DECLVBGL(int) VbglR0SfQueryMapName(PVBGLSFCLIENT pClient, SHFLROOT root, SHFLSTR
     data.name.u.Pointer.size         = size;
     data.name.u.Pointer.u.linearAddr = (uintptr_t)pString;
 
+<<<<<<< HEAD
     rc = VbglHGCMCall(pClient->handle, &data.callInfo, sizeof(data));
 /*    Log(("VBOXSF: VbglR0SfQueryMapName: VbglHGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.result)); */
     if (RT_SUCCESS(rc))
         rc = data.callInfo.result;
 
+=======
+    rc = VbglR0HGCMCall(pClient->handle, &data.callInfo, sizeof(data));
+/*    Log(("VBOXSF: VbglR0SfQueryMapName: VbglR0HGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.Hdr.rc)); */
+>>>>>>> temp
     return rc;
 }
 
@@ -182,6 +255,7 @@ DECLVBGL(int) VbglR0SfMapFolder(PVBGLSFCLIENT pClient, PSHFLSTRING szFolderName,
     data.fCaseSensitive.u.value32     = 1;
 #endif
 
+<<<<<<< HEAD
     rc = VbglHGCMCall(pClient->handle, &data.callInfo, sizeof(data));
 /*    Log(("VBOXSF: VbglR0SfMapFolder: VbglHGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.result)); */
     if (RT_SUCCESS(rc))
@@ -212,6 +286,14 @@ DECLVBGL(int) VbglR0SfMapFolder(PVBGLSFCLIENT pClient, PSHFLSTRING szFolderName,
             pMap->root = OldData.root.u.value32;
             rc         = OldData.callInfo.result;
         }
+=======
+    rc = VbglR0HGCMCallRaw(pClient->handle, &data.callInfo, sizeof(data));
+/*    Log(("VBOXSF: VbglR0SfMapFolder: VbglR0HGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.Hdr.rc)); */
+    if (RT_SUCCESS(rc))
+    {
+        pMap->root = data.root.u.value32;
+        rc         = data.callInfo.Hdr.rc;
+>>>>>>> temp
     }
     return rc;
 }
@@ -226,10 +308,15 @@ DECLVBGL(int) VbglR0SfUnmapFolder(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap)
     data.root.type                      = VMMDevHGCMParmType_32bit;
     data.root.u.value32                 = pMap->root;
 
+<<<<<<< HEAD
     rc = VbglHGCMCall(pClient->handle, &data.callInfo, sizeof(data));
 /*    Log(("VBOXSF: VbglR0SfUnmapFolder: VbglHGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.result)); */
     if (RT_SUCCESS(rc))
         rc = data.callInfo.result;
+=======
+    rc = VbglR0HGCMCall(pClient->handle, &data.callInfo, sizeof(data));
+/*    Log(("VBOXSF: VbglR0SfUnmapFolder: VbglR0HGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.Hdr.rc)); */
+>>>>>>> temp
     return rc;
 }
 
@@ -252,10 +339,15 @@ DECLVBGL(int) VbglR0SfCreate(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, PSHFLSTRING
     data.parms.u.Pointer.size         = sizeof(SHFLCREATEPARMS);
     data.parms.u.Pointer.u.linearAddr = (uintptr_t)pCreateParms;
 
+<<<<<<< HEAD
     rc = VbglHGCMCall(pClient->handle, &data.callInfo, sizeof(data));
 /*    Log(("VBOXSF: VbglR0SfCreate: VbglHGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.result)); */
     if (RT_SUCCESS(rc))
         rc = data.callInfo.result;
+=======
+    rc = VbglR0HGCMCall(pClient->handle, &data.callInfo, sizeof(data));
+/*    Log(("VBOXSF: VbglR0SfCreate: VbglR0HGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.Hdr.rc)); */
+>>>>>>> temp
     return rc;
 }
 
@@ -272,10 +364,15 @@ DECLVBGL(int) VbglR0SfClose(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE H
     data.handle.type                    = VMMDevHGCMParmType_64bit;
     data.handle.u.value64               = Handle;
 
+<<<<<<< HEAD
     rc = VbglHGCMCall(pClient->handle, &data.callInfo, sizeof(data));
 /*    Log(("VBOXSF: VbglR0SfClose: VbglHGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.result)); */
     if (RT_SUCCESS(rc))
         rc = data.callInfo.result;
+=======
+    rc = VbglR0HGCMCall(pClient->handle, &data.callInfo, sizeof(data));
+/*    Log(("VBOXSF: VbglR0SfClose: VbglR0HGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.Hdr.rc)); */
+>>>>>>> temp
     return rc;
 }
 
@@ -297,10 +394,15 @@ DECLVBGL(int) VbglR0SfRemove(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, PSHFLSTRING
     data.flags.type                     = VMMDevHGCMParmType_32bit;
     data.flags.u.value32                = flags;
 
+<<<<<<< HEAD
     rc = VbglHGCMCall(pClient->handle, &data.callInfo, sizeof(data));
 /*    Log(("VBOXSF: VbglR0SfRemove: VbglHGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.result)); */
     if (RT_SUCCESS (rc))
         rc = data.callInfo.result;
+=======
+    rc = VbglR0HGCMCall(pClient->handle, &data.callInfo, sizeof(data));
+/*    Log(("VBOXSF: VbglR0SfRemove: VbglR0HGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.Hdr.rc)); */
+>>>>>>> temp
     return rc;
 }
 
@@ -325,10 +427,15 @@ DECLVBGL(int) VbglR0SfRename(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, PSHFLSTRING
     data.flags.type                     = VMMDevHGCMParmType_32bit;
     data.flags.u.value32                = flags;
 
+<<<<<<< HEAD
     rc = VbglHGCMCall(pClient->handle, &data.callInfo, sizeof(data));
 /*    Log(("VBOXSF: VbglR0SfRename: VbglHGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.result)); */
     if (RT_SUCCESS (rc))
         rc = data.callInfo.result;
+=======
+    rc = VbglR0HGCMCall(pClient->handle, &data.callInfo, sizeof(data));
+/*    Log(("VBOXSF: VbglR0SfRename: VbglR0HGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.Hdr.rc)); */
+>>>>>>> temp
     return rc;
 }
 
@@ -353,11 +460,19 @@ DECLVBGL(int) VbglR0SfRead(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hF
     data.buffer.u.Pointer.size          = *pcbBuffer;
     data.buffer.u.Pointer.u.linearAddr  = (uintptr_t)pBuffer;
 
+<<<<<<< HEAD
     rc = VbglHGCMCall(pClient->handle, &data.callInfo, sizeof(data));
 /*    Log(("VBOXSF: VbglR0SfRead: VbglHGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.result)); */
     if (RT_SUCCESS(rc))
     {
         rc = data.callInfo.result;
+=======
+    rc = VbglR0HGCMCallRaw(pClient->handle, &data.callInfo, sizeof(data));
+/*    Log(("VBOXSF: VbglR0SfRead: VbglR0HGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.Hdr.rc)); */
+    if (RT_SUCCESS(rc))
+    {
+        rc = data.callInfo.Hdr.rc;
+>>>>>>> temp
         *pcbBuffer = data.cb.u.value32;
     }
     return rc;
@@ -376,7 +491,11 @@ DECLVBGL(int) VbglR0SfReadPageList(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLH
     if (RT_UNLIKELY(!pData))
         return VERR_NO_TMP_MEMORY;
 
+<<<<<<< HEAD
     VBOX_INIT_CALL(&pData->callInfo, READ, pClient);
+=======
+    VBOX_INIT_CALL_EX(&pData->callInfo, READ, pClient, cbData);
+>>>>>>> temp
 
     pData->root.type                      = VMMDevHGCMParmType_32bit;
     pData->root.u.value32                 = pMap->root;
@@ -397,11 +516,19 @@ DECLVBGL(int) VbglR0SfReadPageList(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLH
     for (iPage = 0; iPage < cPages; iPage++)
         pPgLst->aPages[iPage] = paPages[iPage];
 
+<<<<<<< HEAD
     rc = VbglHGCMCall(pClient->handle, &pData->callInfo, cbData);
 /*    Log(("VBOXSF: VbglR0SfReadPageList: VbglHGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.result)); */
     if (RT_SUCCESS(rc))
     {
         rc = pData->callInfo.result;
+=======
+    rc = VbglR0HGCMCallRaw(pClient->handle, &pData->callInfo, cbData);
+/*    Log(("VBOXSF: VbglR0SfReadPageList: VbglR0HGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.Hdr.rc)); */
+    if (RT_SUCCESS(rc))
+    {
+        rc = pData->callInfo.Hdr.rc;
+>>>>>>> temp
         *pcbBuffer = pData->cb.u.value32;
     }
 
@@ -430,11 +557,19 @@ DECLVBGL(int) VbglR0SfWrite(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE h
     data.buffer.u.Pointer.size          = *pcbBuffer;
     data.buffer.u.Pointer.u.linearAddr  = (uintptr_t)pBuffer;
 
+<<<<<<< HEAD
     rc = VbglHGCMCall(pClient->handle, &data.callInfo, sizeof(data));
 /*    Log(("VBOXSF: VbglR0SfWrite: VbglHGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.result)); */
     if (RT_SUCCESS(rc))
     {
         rc = data.callInfo.result;
+=======
+    rc = VbglR0HGCMCallRaw(pClient->handle, &data.callInfo, sizeof(data));
+/*    Log(("VBOXSF: VbglR0SfWrite: VbglR0HGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.Hdr.rc)); */
+    if (RT_SUCCESS(rc))
+    {
+        rc = data.callInfo.Hdr.rc;
+>>>>>>> temp
         *pcbBuffer = data.cb.u.value32;
     }
     return rc;
@@ -454,7 +589,11 @@ DECLVBGL(int) VbglR0SfWritePhysCont(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFL
     if (RT_UNLIKELY(!pData))
         return VERR_NO_TMP_MEMORY;
 
+<<<<<<< HEAD
     VBOX_INIT_CALL(&pData->callInfo, WRITE, pClient);
+=======
+    VBOX_INIT_CALL_EX(&pData->callInfo, WRITE, pClient, cbData);
+>>>>>>> temp
 
     pData->root.type                      = VMMDevHGCMParmType_32bit;
     pData->root.u.value32                 = pMap->root;
@@ -476,11 +615,19 @@ DECLVBGL(int) VbglR0SfWritePhysCont(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFL
     for (iPage = 0; iPage < cPages; iPage++, PhysBuffer += PAGE_SIZE)
         pPgLst->aPages[iPage] = PhysBuffer;
 
+<<<<<<< HEAD
     rc = VbglHGCMCall(pClient->handle, &pData->callInfo, cbData);
 /*    Log(("VBOXSF: VbglR0SfWritePhysCont: VbglHGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.result)); */
     if (RT_SUCCESS(rc))
     {
         rc = pData->callInfo.result;
+=======
+    rc = VbglR0HGCMCallRaw(pClient->handle, &pData->callInfo, cbData);
+/*    Log(("VBOXSF: VbglR0SfWritePhysCont: VbglR0HGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.Hdr.rc)); */
+    if (RT_SUCCESS(rc))
+    {
+        rc = pData->callInfo.Hdr.rc;
+>>>>>>> temp
         *pcbBuffer = pData->cb.u.value32;
     }
 
@@ -502,7 +649,11 @@ DECLVBGL(int) VbglR0SfWritePageList(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFL
     if (RT_UNLIKELY(!pData))
         return VERR_NO_TMP_MEMORY;
 
+<<<<<<< HEAD
     VBOX_INIT_CALL(&pData->callInfo, WRITE, pClient);
+=======
+    VBOX_INIT_CALL_EX(&pData->callInfo, WRITE, pClient, cbData);
+>>>>>>> temp
 
     pData->root.type                      = VMMDevHGCMParmType_32bit;
     pData->root.u.value32                 = pMap->root;
@@ -523,11 +674,19 @@ DECLVBGL(int) VbglR0SfWritePageList(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFL
     for (iPage = 0; iPage < cPages; iPage++)
         pPgLst->aPages[iPage] = paPages[iPage];
 
+<<<<<<< HEAD
     rc = VbglHGCMCall(pClient->handle, &pData->callInfo, cbData);
 /*    Log(("VBOXSF: VbglR0SfWritePageList: VbglHGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.result)); */
     if (RT_SUCCESS(rc))
     {
         rc = pData->callInfo.result;
+=======
+    rc = VbglR0HGCMCallRaw(pClient->handle, &pData->callInfo, cbData);
+/*    Log(("VBOXSF: VbglR0SfWritePageList: VbglR0HGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.Hdr.rc)); */
+    if (RT_SUCCESS(rc))
+    {
+        rc = pData->callInfo.Hdr.rc;
+>>>>>>> temp
         *pcbBuffer = pData->cb.u.value32;
     }
 
@@ -548,10 +707,15 @@ DECLVBGL(int) VbglR0SfFlush(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE h
     data.handle.type                    = VMMDevHGCMParmType_64bit;
     data.handle.u.value64               = hFile;
 
+<<<<<<< HEAD
     rc = VbglHGCMCall(pClient->handle, &data.callInfo, sizeof(data));
 /*    Log(("VBOXSF: VbglR0SfFlush: VbglHGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.result)); */
     if (RT_SUCCESS(rc))
         rc = data.callInfo.result;
+=======
+    rc = VbglR0HGCMCall(pClient->handle, &data.callInfo, sizeof(data));
+/*    Log(("VBOXSF: VbglR0SfFlush: VbglR0HGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.Hdr.rc)); */
+>>>>>>> temp
     return rc;
 }
 
@@ -593,10 +757,15 @@ DECLVBGL(int) VbglR0SfDirInfo(
     data.cFiles.type                    = VMMDevHGCMParmType_32bit;
     data.cFiles.u.value32               = 0; /* out parameters only */
 
+<<<<<<< HEAD
     rc = VbglHGCMCall(pClient->handle, &data.callInfo, sizeof(data));
 /*    Log(("VBOXSF: VbglR0SfDirInfo: rc = %#x, result = %#x\n", rc, data.callInfo.result)); */
     if (RT_SUCCESS(rc))
         rc = data.callInfo.result;
+=======
+    rc = VbglR0HGCMCall(pClient->handle, &data.callInfo, sizeof(data));
+/*    Log(("VBOXSF: VbglR0SfDirInfo: rc = %#x, result = %#x\n", rc, data.callInfo.Hdr.rc)); */
+>>>>>>> temp
     *pcbBuffer = data.cb.u.value32;
     *pcFiles   = data.cFiles.u.value32;
     return rc;
@@ -623,11 +792,19 @@ DECLVBGL(int) VbglR0SfFsInfo(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE 
     data.info.u.Pointer.size            = *pcbBuffer;
     data.info.u.Pointer.u.linearAddr    = (uintptr_t)pBuffer;
 
+<<<<<<< HEAD
     rc = VbglHGCMCall(pClient->handle, &data.callInfo, sizeof(data));
 /*    Log(("VBOXSF: VbglR0SfFsInfo: VbglHGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.result)); */
     if (RT_SUCCESS(rc))
     {
         rc = data.callInfo.result;
+=======
+    rc = VbglR0HGCMCallRaw(pClient->handle, &data.callInfo, sizeof(data));
+/*    Log(("VBOXSF: VbglR0SfFsInfo: VbglR0HGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.Hdr.rc)); */
+    if (RT_SUCCESS(rc))
+    {
+        rc = data.callInfo.Hdr.rc;
+>>>>>>> temp
         *pcbBuffer = data.cb.u.value32;
     }
     return rc;
@@ -654,16 +831,22 @@ DECLVBGL(int) VbglR0SfLock(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hF
     data.flags.type                     = VMMDevHGCMParmType_32bit;
     data.flags.u.value32                = fLock;
 
+<<<<<<< HEAD
     rc = VbglHGCMCall(pClient->handle, &data.callInfo, sizeof(data));
 /*    Log(("VBOXSF: VbglR0SfLock: VbglHGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.result)); */
     if (RT_SUCCESS (rc))
         rc = data.callInfo.result;
+=======
+    rc = VbglR0HGCMCall(pClient->handle, &data.callInfo, sizeof(data));
+/*    Log(("VBOXSF: VbglR0SfLock: VbglR0HGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.Hdr.rc)); */
+>>>>>>> temp
     return rc;
 }
 
 DECLVBGL(int) VbglR0SfSetUtf8(PVBGLSFCLIENT pClient)
 {
     int rc;
+<<<<<<< HEAD
     VBoxGuestHGCMCallInfo callInfo;
 
     VBOX_INIT_CALL(&callInfo, SET_UTF8, pClient);
@@ -671,6 +854,13 @@ DECLVBGL(int) VbglR0SfSetUtf8(PVBGLSFCLIENT pClient)
 /*    Log(("VBOXSF: VbglR0SfSetUtf8: VbglHGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.result)); */
     if (RT_SUCCESS(rc))
         rc = callInfo.result;
+=======
+    VBGLIOCHGCMCALL callInfo;
+
+    VBOX_INIT_CALL(&callInfo, SET_UTF8, pClient);
+    rc = VbglR0HGCMCall(pClient->handle, &callInfo, sizeof(callInfo));
+/*    Log(("VBOXSF: VbglR0SfSetUtf8: VbglR0HGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.Hdr.rc)); */
+>>>>>>> temp
     return rc;
 }
 
@@ -692,10 +882,15 @@ DECLVBGL(int) VbglR0SfReadLink(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, PSHFLSTRI
     data.buffer.u.Pointer.size          = cbBuffer;
     data.buffer.u.Pointer.u.linearAddr  = (uintptr_t)pBuffer;
 
+<<<<<<< HEAD
     rc = VbglHGCMCall(pClient->handle, &data.callInfo, sizeof(data));
 /*    Log(("VBOXSF: VbglR0SfReadLink: VbglHGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.result)); */
     if (RT_SUCCESS (rc))
         rc = data.callInfo.result;
+=======
+    rc = VbglR0HGCMCall(pClient->handle, &data.callInfo, sizeof(data));
+/*    Log(("VBOXSF: VbglR0SfReadLink: VbglR0HGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.Hdr.rc)); */
+>>>>>>> temp
     return rc;
 }
 
@@ -722,16 +917,22 @@ DECLVBGL(int) VbglR0SfSymlink(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, PSHFLSTRIN
     data.info.u.Pointer.size            = sizeof(SHFLFSOBJINFO);
     data.info.u.Pointer.u.linearAddr    = (uintptr_t)pBuffer;
 
+<<<<<<< HEAD
     rc = VbglHGCMCall(pClient->handle, &data.callInfo, sizeof(data));
 /*    Log(("VBOXSF: VbglR0SfSymlink: VbglHGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.result)); */
     if (RT_SUCCESS (rc))
         rc = data.callInfo.result;
+=======
+    rc = VbglR0HGCMCall(pClient->handle, &data.callInfo, sizeof(data));
+/*    Log(("VBOXSF: VbglR0SfSymlink: VbglR0HGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.Hdr.rc)); */
+>>>>>>> temp
     return rc;
 }
 
 DECLVBGL(int) VbglR0SfSetSymlinks(PVBGLSFCLIENT pClient)
 {
     int rc;
+<<<<<<< HEAD
     VBoxGuestHGCMCallInfo callInfo;
 
     VBOX_INIT_CALL(&callInfo, SET_SYMLINKS, pClient);
@@ -744,3 +945,13 @@ DECLVBGL(int) VbglR0SfSetSymlinks(PVBGLSFCLIENT pClient)
 
 
 #endif /* !VBGL_VBOXGUEST */
+=======
+    VBGLIOCHGCMCALL callInfo;
+
+    VBOX_INIT_CALL(&callInfo, SET_SYMLINKS, pClient);
+    rc = VbglR0HGCMCall(pClient->handle, &callInfo, sizeof(callInfo));
+/*    Log(("VBOXSF: VbglR0SfSetSymlinks: VbglR0HGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.Hdr.rc)); */
+    return rc;
+}
+
+>>>>>>> temp

@@ -27,6 +27,10 @@
 #include <linux/seq_file.h>
 #include <sys/kstat.h>
 #include <sys/vmem.h>
+<<<<<<< HEAD
+=======
+#include <sys/cmn_err.h>
+>>>>>>> temp
 
 #ifndef HAVE_PDE_DATA
 #define PDE_DATA(x) (PDE(x)->data)
@@ -263,7 +267,11 @@ kstat_seq_show_io(struct seq_file *f, kstat_io_t *kip)
                    kip->nread, kip->nwritten,
                    kip->reads, kip->writes,
                    kip->wtime, kip->wlentime, kip->wlastupdate,
+<<<<<<< HEAD
                    kip->rtime, kip->wlentime, kip->rlastupdate,
+=======
+                   kip->rtime, kip->rlentime, kip->rlastupdate,
+>>>>>>> temp
                    kip->wcnt,  kip->rcnt);
 
         return 0;
@@ -608,6 +616,32 @@ __kstat_create(const char *ks_module, int ks_instance, const char *ks_name,
 }
 EXPORT_SYMBOL(__kstat_create);
 
+<<<<<<< HEAD
+=======
+static int
+kstat_detect_collision(kstat_t *ksp)
+{
+	kstat_module_t *module;
+	kstat_t *tmp;
+	char parent[KSTAT_STRLEN+1];
+	char *cp;
+
+	(void) strlcpy(parent, ksp->ks_module, sizeof(parent));
+
+	if ((cp = strrchr(parent, '/')) == NULL)
+		return (0);
+
+	cp[0] = '\0';
+	if ((module = kstat_find_module(parent)) != NULL) {
+		list_for_each_entry(tmp, &module->ksm_kstat_list, ks_list)
+			if (strncmp(tmp->ks_name, cp+1, KSTAT_STRLEN) == 0)
+				return (EEXIST);
+	}
+
+	return (0);
+}
+
+>>>>>>> temp
 void
 __kstat_install(kstat_t *ksp)
 {
@@ -620,6 +654,14 @@ __kstat_install(kstat_t *ksp)
 
 	module = kstat_find_module(ksp->ks_module);
 	if (module == NULL) {
+<<<<<<< HEAD
+=======
+		if (kstat_detect_collision(ksp) != 0) {
+			cmn_err(CE_WARN, "kstat_create('%s', '%s'): namespace" \
+			    " collision", ksp->ks_module, ksp->ks_name);
+			goto out;
+		}
+>>>>>>> temp
 		module = kstat_create_module(ksp->ks_module);
 		if (module == NULL)
 			goto out;

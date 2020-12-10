@@ -26,6 +26,10 @@
 #define _SPL_FILE_COMPAT_H
 
 #include <linux/fs.h>
+<<<<<<< HEAD
+=======
+#include <linux/uaccess.h>
+>>>>>>> temp
 #ifdef HAVE_FDTABLE_HEADER
 #include <linux/fdtable.h>
 #endif
@@ -70,14 +74,79 @@ spl_filp_fallocate(struct file *fp, int mode, loff_t offset, loff_t len)
 	return (error);
 }
 
+<<<<<<< HEAD
+=======
+static inline ssize_t
+spl_kernel_write(struct file *file, const void *buf, size_t count, loff_t *pos)
+{
+#if defined(HAVE_KERNEL_WRITE_PPOS)
+	return (kernel_write(file, buf, count, pos));
+#else
+	mm_segment_t saved_fs;
+	ssize_t ret;
+
+	saved_fs = get_fs();
+	set_fs(get_ds());
+
+	ret = vfs_write(file, (__force const char __user *)buf, count, pos);
+
+	set_fs(saved_fs);
+
+	return (ret);
+#endif
+}
+
+static inline ssize_t
+spl_kernel_read(struct file *file, void *buf, size_t count, loff_t *pos)
+{
+#if defined(HAVE_KERNEL_READ_PPOS)
+	return (kernel_read(file, buf, count, pos));
+#else
+	mm_segment_t saved_fs;
+	ssize_t ret;
+
+	saved_fs = get_fs();
+	set_fs(get_ds());
+
+	ret = vfs_read(file, (void __user *)buf, count, pos);
+
+	set_fs(saved_fs);
+
+	return (ret);
+#endif
+}
+
+>>>>>>> temp
 #ifdef HAVE_2ARGS_VFS_FSYNC
 #define	spl_filp_fsync(fp, sync)	vfs_fsync(fp, sync)
 #else
 #define	spl_filp_fsync(fp, sync)	vfs_fsync(fp, (fp)->f_dentry, sync)
 #endif /* HAVE_2ARGS_VFS_FSYNC */
 
+<<<<<<< HEAD
 #define	spl_inode_lock(ip)		mutex_lock(&(ip)->i_mutex)
 #define	spl_inode_unlock(ip)		mutex_unlock(&(ip)->i_mutex)
+=======
+#ifdef HAVE_INODE_LOCK_SHARED
+#define	spl_inode_lock(ip)		inode_lock(ip)
+#define	spl_inode_unlock(ip)		inode_unlock(ip)
+#define	spl_inode_lock_shared(ip)	inode_lock_shared(ip)
+#define	spl_inode_unlock_shared(ip)	inode_unlock_shared(ip)
+#define	spl_inode_trylock(ip)		inode_trylock(ip)
+#define	spl_inode_trylock_shared(ip)	inode_trylock_shared(ip)
+#define	spl_inode_is_locked(ip)		inode_is_locked(ip)
+#define	spl_inode_lock_nested(ip, s)	inode_lock_nested(ip, s)
+#else
+#define	spl_inode_lock(ip)		mutex_lock(&(ip)->i_mutex)
+#define	spl_inode_unlock(ip)		mutex_unlock(&(ip)->i_mutex)
+#define	spl_inode_lock_shared(ip)	mutex_lock(&(ip)->i_mutex)
+#define	spl_inode_unlock_shared(ip)	mutex_unlock(&(ip)->i_mutex)
+#define	spl_inode_trylock(ip)		mutex_trylock(&(ip)->i_mutex)
+#define	spl_inode_trylock_shared(ip)	mutex_trylock(&(ip)->i_mutex)
+#define	spl_inode_is_locked(ip)		mutex_is_locked(&(ip)->i_mutex)
+#define	spl_inode_lock_nested(ip, s)	mutex_lock_nested(&(ip)->i_mutex, s)
+#endif
+>>>>>>> temp
 
 #endif /* SPL_FILE_COMPAT_H */
 

@@ -126,7 +126,11 @@ static const struct i2c_algorithm octeon_i2c_algo = {
 	.functionality = octeon_i2c_functionality,
 };
 
+<<<<<<< HEAD
 static struct i2c_adapter octeon_i2c_ops = {
+=======
+static const struct i2c_adapter octeon_i2c_ops = {
+>>>>>>> temp
 	.owner = THIS_MODULE,
 	.name = "OCTEON adapter",
 	.algo = &octeon_i2c_algo,
@@ -246,10 +250,15 @@ static int octeon_i2c_probe(struct platform_device *pdev)
 	platform_set_drvdata(pdev, i2c);
 
 	result = i2c_add_adapter(&i2c->adap);
+<<<<<<< HEAD
 	if (result < 0) {
 		dev_err(i2c->dev, "failed to add adapter\n");
 		goto out;
 	}
+=======
+	if (result < 0)
+		goto out;
+>>>>>>> temp
 	dev_info(i2c->dev, "probed\n");
 	return 0;
 

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 #ifndef _LINUX_PROJID_H
 #define _LINUX_PROJID_H
 
@@ -45,6 +46,11 @@ static inline bool projid_lt(kprojid_t left, kprojid_t right)
 static inline bool projid_valid(kprojid_t projid)
 {
 	return !projid_eq(projid, INVALID_PROJID);
+}
+
+static inline bool projid_valid_eq(kprojid_t left, kprojid_t right)
+{
+	return projid_eq(left, right) && projid_valid(left);
 }
 
 #ifdef CONFIG_USER_NS

@@ -25,8 +25,7 @@
 #include <linux/usb.h>
 #include <linux/slab.h>
 
-#include "../w1_int.h"
-#include "../w1.h"
+#include <linux/w1.h>
 
 /* USB Standard */
 /* USB Control request vendor type */
@@ -177,29 +176,18 @@ struct ds_status
 	u8			data_in_buffer_status;
 	u8			reserved1;
 	u8			reserved2;
+<<<<<<< HEAD
 };
 
 static struct usb_device_id ds_id_table [] = {
 	{ USB_DEVICE(0x04fa, 0x2490) },
 	{ },
+=======
+>>>>>>> temp
 };
-MODULE_DEVICE_TABLE(usb, ds_id_table);
-
-static int ds_probe(struct usb_interface *, const struct usb_device_id *);
-static void ds_disconnect(struct usb_interface *);
-
-static int ds_send_control(struct ds_device *, u16, u16);
-static int ds_send_control_cmd(struct ds_device *, u16, u16);
 
 static LIST_HEAD(ds_devices);
 static DEFINE_MUTEX(ds_mutex);
-
-static struct usb_driver ds_driver = {
-	.name =		"DS9490R",
-	.probe =	ds_probe,
-	.disconnect =	ds_disconnect,
-	.id_table =	ds_id_table,
-};
 
 static int ds_send_control_cmd(struct ds_device *dev, u16 value, u16 index)
 {
@@ -909,11 +897,18 @@ static void ds9490r_write_block(void *data, const u8 *buf, int len)
 	if (len <= 0)
 		return;
 
+<<<<<<< HEAD
 	tbuf = kmalloc(len, GFP_KERNEL);
 	if (!tbuf)
 		return;
 
 	memcpy(tbuf, buf, len);
+=======
+	tbuf = kmemdup(buf, len, GFP_KERNEL);
+	if (!tbuf)
+		return;
+
+>>>>>>> temp
 	ds_write_block(dev, tbuf, len);
 
 	kfree(tbuf);
@@ -926,12 +921,21 @@ static u8 ds9490r_read_block(void *data, u8 *buf, int len)
 	u8 *tbuf;
 
 	if (len <= 0)
+<<<<<<< HEAD
 		return 0;
 
 	tbuf = kmalloc(len, GFP_KERNEL);
 	if (!tbuf)
 		return 0;
 
+=======
+		return 0;
+
+	tbuf = kmalloc(len, GFP_KERNEL);
+	if (!tbuf)
+		return 0;
+
+>>>>>>> temp
 	err = ds_read_block(dev, tbuf, len);
 	if (err >= 0)
 		memcpy(buf, tbuf, len);
@@ -1109,8 +1113,20 @@ static void ds_disconnect(struct usb_interface *intf)
 	kfree(dev);
 }
 
+static const struct usb_device_id ds_id_table[] = {
+	{ USB_DEVICE(0x04fa, 0x2490) },
+	{ },
+};
+MODULE_DEVICE_TABLE(usb, ds_id_table);
+
+static struct usb_driver ds_driver = {
+	.name =		"DS9490R",
+	.probe =	ds_probe,
+	.disconnect =	ds_disconnect,
+	.id_table =	ds_id_table,
+};
 module_usb_driver(ds_driver);
 
-MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Evgeniy Polyakov <zbr@ioremap.net>");
 MODULE_DESCRIPTION("DS2490 USB <-> W1 bus master driver (DS9490*)");
+MODULE_LICENSE("GPL");

@@ -26,6 +26,10 @@
 #define _SPL_BYTEORDER_H
 
 #include <asm/byteorder.h>
+<<<<<<< HEAD
+=======
+#include <sys/isa_defs.h>
+>>>>>>> temp
 
 #define LE_16(x)	cpu_to_le16(x)
 #define LE_32(x)	cpu_to_le32(x)
@@ -43,4 +47,29 @@
 #define BE_IN32(xa) \
 	(((uint32_t)BE_IN16(xa) << 16) | BE_IN16((uint8_t *)(xa)+2))
 
+<<<<<<< HEAD
+=======
+#ifdef _BIG_ENDIAN
+static __inline__ uint64_t
+htonll(uint64_t n) {
+	return (n);
+}
+
+static __inline__ uint64_t
+ntohll(uint64_t n) {
+	return (n);
+}
+#else
+static __inline__ uint64_t
+htonll(uint64_t n) {
+	return ((((uint64_t)htonl(n)) << 32) + htonl(n >> 32));
+}
+
+static __inline__ uint64_t
+ntohll(uint64_t n) {
+	return ((((uint64_t)ntohl(n)) << 32) + ntohl(n >> 32));
+}
+#endif
+
+>>>>>>> temp
 #endif /* SPL_BYTEORDER_H */

@@ -11,12 +11,10 @@
 #define _IIO_BUFFER_GENERIC_H_
 #include <linux/sysfs.h>
 #include <linux/iio/iio.h>
-#include <linux/kref.h>
-
-#ifdef CONFIG_IIO_BUFFER
 
 struct iio_buffer;
 
+<<<<<<< HEAD
 /**
  * struct iio_buffer_access_funcs - access functions for buffers.
  * @store_to:		actually store stuff to the buffer
@@ -117,15 +115,14 @@ void iio_buffer_init(struct iio_buffer *buffer);
 
 int iio_scan_mask_query(struct iio_dev *indio_dev,
 			struct iio_buffer *buffer, int bit);
+=======
+void iio_buffer_set_attrs(struct iio_buffer *buffer,
+			 const struct attribute **attrs);
+>>>>>>> temp
 
-/**
- * iio_push_to_buffers() - push to a registered buffer.
- * @indio_dev:		iio_dev structure for device.
- * @data:		Full scan.
- */
 int iio_push_to_buffers(struct iio_dev *indio_dev, const void *data);
 
-/*
+/**
  * iio_push_to_buffers_with_timestamp() - push data and timestamp to buffers
  * @indio_dev:		iio_dev structure for device.
  * @data:		sample data
@@ -150,34 +147,10 @@ static inline int iio_push_to_buffers_with_timestamp(struct iio_dev *indio_dev,
 	return iio_push_to_buffers(indio_dev, data);
 }
 
-int iio_update_demux(struct iio_dev *indio_dev);
-
 bool iio_validate_scan_mask_onehot(struct iio_dev *indio_dev,
-	const unsigned long *mask);
+				   const unsigned long *mask);
 
-struct iio_buffer *iio_buffer_get(struct iio_buffer *buffer);
-void iio_buffer_put(struct iio_buffer *buffer);
-
-/**
- * iio_device_attach_buffer - Attach a buffer to a IIO device
- * @indio_dev: The device the buffer should be attached to
- * @buffer: The buffer to attach to the device
- *
- * This function attaches a buffer to a IIO device. The buffer stays attached to
- * the device until the device is freed. The function should only be called at
- * most once per device.
- */
-static inline void iio_device_attach_buffer(struct iio_dev *indio_dev,
-	struct iio_buffer *buffer)
-{
-	indio_dev->buffer = iio_buffer_get(buffer);
-}
-
-#else /* CONFIG_IIO_BUFFER */
-
-static inline void iio_buffer_get(struct iio_buffer *buffer) {}
-static inline void iio_buffer_put(struct iio_buffer *buffer) {}
-
-#endif /* CONFIG_IIO_BUFFER */
+void iio_device_attach_buffer(struct iio_dev *indio_dev,
+			      struct iio_buffer *buffer);
 
 #endif /* _IIO_BUFFER_GENERIC_H_ */

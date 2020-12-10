@@ -30,6 +30,7 @@
 #include <linux/file_compat.h>
 #include <linux/version.h>
 
+<<<<<<< HEAD
 #define SPLAT_SUBSYSTEM_INIT(type)                                      \
 ({      splat_subsystem_t *_sub_;                                       \
                                                                         \
@@ -103,6 +104,8 @@
                 printk(KERN_ERR "splat: Error finalizing: " #tid "\n");	\
 })
 
+=======
+>>>>>>> temp
 typedef int (*splat_test_func_t)(struct file *, void *);
 
 typedef struct splat_test {
@@ -118,6 +121,13 @@ typedef struct splat_subsystem {
 	struct list_head test_list;
 } splat_subsystem_t;
 
+<<<<<<< HEAD
+=======
+void splat_test_init(splat_subsystem_t *sub, const char *name,
+    const char *desc, unsigned int tid, splat_test_func_t func);
+void splat_test_fini(splat_subsystem_t *sub, unsigned int tid);
+
+>>>>>>> temp
 #define SPLAT_INFO_BUFFER_SIZE		65536
 #define SPLAT_INFO_BUFFER_REDZONE	256
 

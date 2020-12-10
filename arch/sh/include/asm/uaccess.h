@@ -1,12 +1,9 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 #ifndef __ASM_SH_UACCESS_H
 #define __ASM_SH_UACCESS_H
 
-#include <linux/errno.h>
-#include <linux/sched.h>
 #include <asm/segment.h>
-
-#define VERIFY_READ    0
-#define VERIFY_WRITE   1
+#include <asm/extable.h>
 
 #define __addr_ok(addr) \
 	((unsigned long __force)(addr) < current_thread_info()->addr_limit.seg)
@@ -104,7 +101,6 @@ struct __large_struct { unsigned long buf[100]; };
 
 extern long strncpy_from_user(char *dest, const char __user *src, long count);
 
-extern __must_check long strlen_user(const char __user *str);
 extern __must_check long strnlen_user(const char __user *str, long n);
 
 /* Generic arbitrary sized copy.  */
@@ -112,19 +108,18 @@ extern __must_check long strnlen_user(const char __user *str, long n);
 __kernel_size_t __copy_user(void *to, const void *from, __kernel_size_t n);
 
 static __always_inline unsigned long
-__copy_from_user(void *to, const void __user *from, unsigned long n)
+raw_copy_from_user(void *to, const void __user *from, unsigned long n)
 {
 	return __copy_user(to, (__force void *)from, n);
 }
 
 static __always_inline unsigned long __must_check
-__copy_to_user(void __user *to, const void *from, unsigned long n)
+raw_copy_to_user(void __user *to, const void *from, unsigned long n)
 {
 	return __copy_user((__force void *)to, from, n);
 }
-
-#define __copy_to_user_inatomic __copy_to_user
-#define __copy_from_user_inatomic __copy_from_user
+#define INLINE_COPY_FROM_USER
+#define INLINE_COPY_TO_USER
 
 /*
  * Clear the area and return remaining number of bytes
@@ -144,6 +139,7 @@ __kernel_size_t __clear_user(void *addr, __kernel_size_t size);
 	__cl_size;							\
 })
 
+<<<<<<< HEAD
 static inline unsigned long
 copy_from_user(void *to, const void __user *from, unsigned long n)
 {
@@ -196,6 +192,8 @@ int fixup_exception(struct pt_regs *regs);
 unsigned long search_exception_table(unsigned long addr);
 const struct exception_table_entry *search_exception_tables(unsigned long addr);
 
+=======
+>>>>>>> temp
 extern void *set_exception_table_vec(unsigned int vec, void *handler);
 
 static inline void *set_exception_table_evt(unsigned int evt, void *handler)

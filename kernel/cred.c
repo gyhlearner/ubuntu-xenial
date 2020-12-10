@@ -1,4 +1,4 @@
-/* Task credentials management - see Documentation/security/credentials.txt
+/* Task credentials management - see Documentation/security/credentials.rst
  *
  * Copyright (C) 2008 Red Hat, Inc. All Rights Reserved.
  * Written by David Howells (dhowells@redhat.com)
@@ -12,6 +12,7 @@
 #include <linux/cred.h>
 #include <linux/slab.h>
 #include <linux/sched.h>
+#include <linux/sched/coredump.h>
 #include <linux/key.h>
 #include <linux/keyctl.h>
 #include <linux/init_task.h>
@@ -569,43 +570,35 @@ EXPORT_SYMBOL(revert_creds);
 void __init cred_init(void)
 {
 	/* allocate a slab in which we can store credentials */
-	cred_jar = kmem_cache_create("cred_jar", sizeof(struct cred),
-				     0, SLAB_HWCACHE_ALIGN|SLAB_PANIC, NULL);
+	cred_jar = kmem_cache_create("cred_jar", sizeof(struct cred), 0,
+			SLAB_HWCACHE_ALIGN|SLAB_PANIC|SLAB_ACCOUNT, NULL);
 }
 
 /**
- * prepare_kernel_cred - Prepare a set of credentials for a kernel service
- * @daemon: A userspace daemon to be used as a reference
+ * clone_cred - Create a new copy of a set of credentials
+ * @old: Credentials to be copied
  *
- * Prepare a set of credentials for a kernel service.  This can then be used to
- * override a task's own credentials so that work can be done on behalf of that
- * task that requires a different subjective context.
+ * Prepare a new set of credentials that is an exact copy of @old. This can
+ * optionally be modified and used to override a task's own credentials so
+ * that work can be done on behalf of that task that requires a different
+ * subjective context.
  *
- * @daemon is used to provide a base for the security record, but can be NULL.
- * If @daemon is supplied, then the security data will be derived from that;
- * otherwise they'll be set to 0 and no groups, full capabilities and no keys.
- *
- * The caller may change these controls afterwards if desired.
- *
- * Returns the new credentials or NULL if out of memory.
+ * Returns the new credentials or NULL if @old is NULL or if out of memory.
  *
  * Does not take, and does not return holding current->cred_replace_mutex.
  */
-struct cred *prepare_kernel_cred(struct task_struct *daemon)
+struct cred *clone_cred(const struct cred *old)
 {
-	const struct cred *old;
 	struct cred *new;
+
+	if (!old)
+		return NULL;
 
 	new = kmem_cache_alloc(cred_jar, GFP_KERNEL);
 	if (!new)
 		return NULL;
 
-	kdebug("prepare_kernel_cred() alloc %p", new);
-
-	if (daemon)
-		old = get_task_cred(daemon);
-	else
-		old = get_cred(&init_cred);
+	kdebug("clone_cred() alloc %p", new);
 
 	validate_creds(old);
 
@@ -630,14 +623,46 @@ struct cred *prepare_kernel_cred(struct task_struct *daemon)
 	if (security_prepare_creds(new, old, GFP_KERNEL) < 0)
 		goto error;
 
-	put_cred(old);
 	validate_creds(new);
 	return new;
 
 error:
 	put_cred(new);
-	put_cred(old);
 	return NULL;
+}
+EXPORT_SYMBOL(clone_cred);
+
+/**
+ * prepare_kernel_cred - Prepare a set of credentials for a kernel service
+ * @daemon: A userspace daemon to be used as a reference
+ *
+ * Prepare a set of credentials for a kernel service.  This can then be used to
+ * override a task's own credentials so that work can be done on behalf of that
+ * task that requires a different subjective context.
+ *
+ * @daemon is used to provide a base for the security record, but can be NULL.
+ * If @daemon is supplied, then the security data will be derived from that;
+ * otherwise they'll be set to 0 and no groups, full capabilities and no keys.
+ *
+ * The caller may change these controls afterwards if desired.
+ *
+ * Returns the new credentials or NULL if out of memory.
+ *
+ * Does not take, and does not return holding current->cred_replace_mutex.
+ */
+struct cred *prepare_kernel_cred(struct task_struct *daemon)
+{
+	const struct cred *old;
+	struct cred *new;
+
+	if (daemon)
+		old = get_task_cred(daemon);
+	else
+		old = get_cred(&init_cred);
+
+	new = clone_cred(old);
+	put_cred(old);
+	return new;
 }
 EXPORT_SYMBOL(prepare_kernel_cred);
 
@@ -703,19 +728,6 @@ bool creds_are_invalid(const struct cred *cred)
 {
 	if (cred->magic != CRED_MAGIC)
 		return true;
-#ifdef CONFIG_SECURITY_SELINUX
-	/*
-	 * cred->security == NULL if security_cred_alloc_blank() or
-	 * security_prepare_creds() returned an error.
-	 */
-	if (selinux_is_enabled() && cred->security) {
-		if ((unsigned long) cred->security < PAGE_SIZE)
-			return true;
-		if ((*(u32 *)cred->security & 0xffffff00) ==
-		    (POISON_FREE << 24 | POISON_FREE << 16 | POISON_FREE << 8))
-			return true;
-	}
-#endif
 	return false;
 }
 EXPORT_SYMBOL(creds_are_invalid);

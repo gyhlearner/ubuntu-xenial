@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 /* $Rev: 103598 $ */
+=======
+/* $Rev: 120349 $ */
+>>>>>>> temp
 /** @file
  * VBoxGuest - Linux specifics.
  *
@@ -7,7 +11,11 @@
  */
 
 /*
+<<<<<<< HEAD
  * Copyright (C) 2006-2015 Oracle Corporation
+=======
+ * Copyright (C) 2006-2017 Oracle Corporation
+>>>>>>> temp
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -16,7 +24,20 @@
  * Foundation, in version 2 as it comes in the "COPYING" file of the
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+<<<<<<< HEAD
   */
+=======
+ *
+ * The contents of this file may alternatively be used under the terms
+ * of the Common Development and Distribution License Version 1.0
+ * (CDDL) only, as it comes in the "COPYING.CDDL" file of the
+ * VirtualBox OSE distribution, in which case the provisions of the
+ * CDDL are applicable instead of those of the GPL.
+ *
+ * You may elect to license modified versions of this file under the
+ * terms and conditions of either the GPL or the CDDL or both.
+ */
+>>>>>>> temp
 
 
 /*********************************************************************************************************************************
@@ -30,6 +51,15 @@
 # define VBOXGUEST_WITH_INPUT_DRIVER
 #endif
 
+<<<<<<< HEAD
+=======
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
+# define CONST_4_15 const
+#else
+# define CONST_4_15
+#endif
+
+>>>>>>> temp
 #include "VBoxGuestInternal.h"
 #ifdef VBOXGUEST_WITH_INPUT_DRIVER
 # include <linux/input.h>
@@ -37,6 +67,10 @@
 #include <linux/miscdevice.h>
 #include <linux/poll.h>
 #include <VBox/version.h>
+<<<<<<< HEAD
+=======
+#include "revision-generated.h"
+>>>>>>> temp
 
 #include <iprt/assert.h>
 #include <iprt/asm.h>
@@ -47,6 +81,10 @@
 #include <iprt/process.h>
 #include <iprt/spinlock.h>
 #include <iprt/semaphore.h>
+<<<<<<< HEAD
+=======
+#include <iprt/string.h>
+>>>>>>> temp
 #include <VBox/log.h>
 
 
@@ -82,6 +120,10 @@ static long vgdrvLinuxIOCtl(struct file *pFilp, unsigned int uCmd, unsigned long
 #else
 static int  vgdrvLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigned int uCmd, unsigned long ulArg);
 #endif
+<<<<<<< HEAD
+=======
+static int  vgdrvLinuxIOCtlSlow(struct file *pFilp, unsigned int uCmd, unsigned long ulArg, PVBOXGUESTSESSION pSession);
+>>>>>>> temp
 static int  vgdrvLinuxFAsync(int fd, struct file *pFile, int fOn);
 static unsigned int vgdrvLinuxPoll(struct file *pFile, poll_table *pPt);
 static ssize_t vgdrvLinuxRead(struct file *pFile, char *pbBuf, size_t cbRead, loff_t *poff);
@@ -394,7 +436,18 @@ static void vgdrvLinuxTermISR(void)
  */
 static int vgdrvLinuxSetMouseStatus(uint32_t fStatus)
 {
+<<<<<<< HEAD
     return VGDrvCommonIoCtl(VBOXGUEST_IOCTL_SET_MOUSE_STATUS, &g_DevExt, g_pKernelSession, &fStatus, sizeof(fStatus), NULL);
+=======
+    int rc;
+    VBGLIOCSETMOUSESTATUS Req;
+    VBGLREQHDR_INIT(&Req.Hdr, SET_MOUSE_STATUS);
+    Req.u.In.fStatus = fStatus;
+    rc = VGDrvCommonIoCtl(VBGL_IOCTL_SET_MOUSE_STATUS, &g_DevExt, g_pKernelSession, &Req.Hdr, sizeof(Req));
+    if (RT_SUCCESS(rc))
+        rc = Req.Hdr.rc;
+    return rc;
+>>>>>>> temp
 }
 
 
@@ -430,7 +483,11 @@ static void vboxguestCloseInputDevice(struct input_dev *pDev)
  */
 static int __init vgdrvLinuxCreateInputDevice(void)
 {
+<<<<<<< HEAD
     int rc = VbglGRAlloc((VMMDevRequestHeader **)&g_pMouseStatusReq, sizeof(*g_pMouseStatusReq), VMMDevReq_GetMouseStatus);
+=======
+    int rc = VbglR0GRAlloc((VMMDevRequestHeader **)&g_pMouseStatusReq, sizeof(*g_pMouseStatusReq), VMMDevReq_GetMouseStatus);
+>>>>>>> temp
     if (RT_SUCCESS(rc))
     {
         g_pInputDevice = input_allocate_device();
@@ -468,7 +525,11 @@ static int __init vgdrvLinuxCreateInputDevice(void)
         }
         else
             rc = -ENOMEM;
+<<<<<<< HEAD
         VbglGRFree(&g_pMouseStatusReq->header);
+=======
+        VbglR0GRFree(&g_pMouseStatusReq->header);
+>>>>>>> temp
         g_pMouseStatusReq = NULL;
     }
     else
@@ -482,7 +543,11 @@ static int __init vgdrvLinuxCreateInputDevice(void)
  */
 static void vgdrvLinuxTermInputDevice(void)
 {
+<<<<<<< HEAD
     VbglGRFree(&g_pMouseStatusReq->header);
+=======
+    VbglR0GRFree(&g_pMouseStatusReq->header);
+>>>>>>> temp
     g_pMouseStatusReq = NULL;
 
     /* See documentation of input_register_device(): input_free_device()
@@ -748,17 +813,25 @@ static int vgdrvLinuxRelease(struct inode *pInode, struct file *pFilp)
 /**
  * Device I/O Control entry point.
  *
+<<<<<<< HEAD
  * @param   pInode      Associated inode pointer.
+=======
+>>>>>>> temp
  * @param   pFilp       Associated file pointer.
  * @param   uCmd        The function specified to ioctl().
  * @param   ulArg       The argument specified to ioctl().
  */
+<<<<<<< HEAD
 #ifdef HAVE_UNLOCKED_IOCTL
+=======
+#if defined(HAVE_UNLOCKED_IOCTL) || defined(DOXYGEN_RUNNING)
+>>>>>>> temp
 static long vgdrvLinuxIOCtl(struct file *pFilp, unsigned int uCmd, unsigned long ulArg)
 #else
 static int vgdrvLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigned int uCmd, unsigned long ulArg)
 #endif
 {
+<<<<<<< HEAD
     PVBOXGUESTSESSION   pSession = (PVBOXGUESTSESSION)pFilp->private_data;
     uint32_t            cbData   = _IOC_SIZE(uCmd);
     void               *pvBufFree;
@@ -831,6 +904,171 @@ static int vgdrvLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsigned in
     Log6(("vgdrvLinuxIOCtl: returns %d (pid=%d/%d)\n", rc, RTProcSelf(), current->pid));
     return rc;
 }
+=======
+    PVBOXGUESTSESSION pSession = (PVBOXGUESTSESSION)pFilp->private_data;
+    int rc;
+#ifndef HAVE_UNLOCKED_IOCTL
+    unlock_kernel();
+#endif
+
+#if 0 /* no fast I/O controls defined atm. */
+    if (RT_LIKELY(   (   uCmd == SUP_IOCTL_FAST_DO_RAW_RUN
+                      || uCmd == SUP_IOCTL_FAST_DO_HM_RUN
+                      || uCmd == SUP_IOCTL_FAST_DO_NOP)
+                  && pSession->fUnrestricted == true))
+        rc = VGDrvCommonIoCtlFast(uCmd, ulArg, &g_DevExt, pSession);
+    else
+#endif
+        rc = vgdrvLinuxIOCtlSlow(pFilp, uCmd, ulArg, pSession);
+
+#ifndef HAVE_UNLOCKED_IOCTL
+    lock_kernel();
+#endif
+    return rc;
+}
+
+
+/**
+ * Device I/O Control entry point, slow variant.
+ *
+ * @param   pFilp       Associated file pointer.
+ * @param   uCmd        The function specified to ioctl().
+ * @param   ulArg       The argument specified to ioctl().
+ * @param   pSession    The session instance.
+ */
+static int vgdrvLinuxIOCtlSlow(struct file *pFilp, unsigned int uCmd, unsigned long ulArg, PVBOXGUESTSESSION pSession)
+{
+    int                 rc;
+    VBGLREQHDR          Hdr;
+    PVBGLREQHDR         pHdr;
+    uint32_t            cbBuf;
+
+    Log6(("vgdrvLinuxIOCtlSlow: pFilp=%p uCmd=%#x ulArg=%p pid=%d/%d\n", pFilp, uCmd, (void *)ulArg, RTProcSelf(), current->pid));
+
+    /*
+     * Read the header.
+     */
+    if (RT_FAILURE(RTR0MemUserCopyFrom(&Hdr, ulArg, sizeof(Hdr))))
+    {
+        Log(("vgdrvLinuxIOCtlSlow: copy_from_user(,%#lx,) failed; uCmd=%#x\n", ulArg, uCmd));
+        return -EFAULT;
+    }
+    if (RT_UNLIKELY(Hdr.uVersion != VBGLREQHDR_VERSION))
+    {
+        Log(("vgdrvLinuxIOCtlSlow: bad header version %#x; uCmd=%#x\n", Hdr.uVersion, uCmd));
+        return -EINVAL;
+    }
+
+    /*
+     * Buffer the request.
+     * Note! The header is revalidated by the common code.
+     */
+    cbBuf = RT_MAX(Hdr.cbIn, Hdr.cbOut);
+    if (RT_UNLIKELY(cbBuf > _1M*16))
+    {
+        Log(("vgdrvLinuxIOCtlSlow: too big cbBuf=%#x; uCmd=%#x\n", cbBuf, uCmd));
+        return -E2BIG;
+    }
+    if (RT_UNLIKELY(   Hdr.cbIn < sizeof(Hdr)
+                    || (cbBuf != _IOC_SIZE(uCmd) && _IOC_SIZE(uCmd) != 0)))
+    {
+        Log(("vgdrvLinuxIOCtlSlow: bad ioctl cbBuf=%#x _IOC_SIZE=%#x; uCmd=%#x\n", cbBuf, _IOC_SIZE(uCmd), uCmd));
+        return -EINVAL;
+    }
+    pHdr = RTMemAlloc(cbBuf);
+    if (RT_UNLIKELY(!pHdr))
+    {
+        LogRel(("vgdrvLinuxIOCtlSlow: failed to allocate buffer of %d bytes for uCmd=%#x\n", cbBuf, uCmd));
+        return -ENOMEM;
+    }
+    if (RT_FAILURE(RTR0MemUserCopyFrom(pHdr, ulArg, Hdr.cbIn)))
+    {
+        Log(("vgdrvLinuxIOCtlSlow: copy_from_user(,%#lx, %#x) failed; uCmd=%#x\n", ulArg, Hdr.cbIn, uCmd));
+        RTMemFree(pHdr);
+        return -EFAULT;
+    }
+    if (Hdr.cbIn < cbBuf)
+        RT_BZERO((uint8_t *)pHdr + Hdr.cbIn, cbBuf - Hdr.cbIn);
+
+    /*
+     * Process the IOCtl.
+     */
+    rc = VGDrvCommonIoCtl(uCmd, &g_DevExt, pSession, pHdr, cbBuf);
+
+    /*
+     * Copy ioctl data and output buffer back to user space.
+     */
+    if (RT_SUCCESS(rc))
+    {
+        uint32_t cbOut = pHdr->cbOut;
+        if (RT_UNLIKELY(cbOut > cbBuf))
+        {
+            LogRel(("vgdrvLinuxIOCtlSlow: too much output! %#x > %#x; uCmd=%#x!\n", cbOut, cbBuf, uCmd));
+            cbOut = cbBuf;
+        }
+        if (RT_FAILURE(RTR0MemUserCopyTo(ulArg, pHdr, cbOut)))
+        {
+            /* this is really bad! */
+            LogRel(("vgdrvLinuxIOCtlSlow: copy_to_user(%#lx,,%#x); uCmd=%#x!\n", ulArg, cbOut, uCmd));
+            rc = -EFAULT;
+        }
+    }
+    else
+    {
+        Log(("vgdrvLinuxIOCtlSlow: pFilp=%p uCmd=%#x ulArg=%p failed, rc=%d\n", pFilp, uCmd, (void *)ulArg, rc));
+        rc = -EINVAL;
+    }
+    RTMemFree(pHdr);
+
+    Log6(("vgdrvLinuxIOCtlSlow: returns %d (pid=%d/%d)\n", rc, RTProcSelf(), current->pid));
+    return rc;
+}
+
+
+/**
+ * @note This code is duplicated on other platforms with variations, so please
+ *       keep them all up to date when making changes!
+ */
+int VBOXCALL VBoxGuestIDC(void *pvSession, uintptr_t uReq, PVBGLREQHDR pReqHdr, size_t cbReq)
+{
+    /*
+     * Simple request validation (common code does the rest).
+     */
+    int rc;
+    if (   RT_VALID_PTR(pReqHdr)
+        && cbReq >= sizeof(*pReqHdr))
+    {
+        /*
+         * All requests except the connect one requires a valid session.
+         */
+        PVBOXGUESTSESSION pSession = (PVBOXGUESTSESSION)pvSession;
+        if (pSession)
+        {
+            if (   RT_VALID_PTR(pSession)
+                && pSession->pDevExt == &g_DevExt)
+                rc = VGDrvCommonIoCtl(uReq, &g_DevExt, pSession, pReqHdr, cbReq);
+            else
+                rc = VERR_INVALID_HANDLE;
+        }
+        else if (uReq == VBGL_IOCTL_IDC_CONNECT)
+        {
+            rc = VGDrvCommonCreateKernelSession(&g_DevExt, &pSession);
+            if (RT_SUCCESS(rc))
+            {
+                rc = VGDrvCommonIoCtl(uReq, &g_DevExt, pSession, pReqHdr, cbReq);
+                if (RT_FAILURE(rc))
+                    VGDrvCommonCloseSession(&g_DevExt, pSession);
+            }
+        }
+        else
+            rc = VERR_INVALID_HANDLE;
+    }
+    else
+        rc = VERR_INVALID_POINTER;
+    return rc;
+}
+EXPORT_SYMBOL(VBoxGuestIDC);
+>>>>>>> temp
 
 
 /**
@@ -930,7 +1168,11 @@ void VGDrvNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
     g_pMouseStatusReq->mouseFeatures = 0;
     g_pMouseStatusReq->pointerXPos = 0;
     g_pMouseStatusReq->pointerYPos = 0;
+<<<<<<< HEAD
     rc = VbglGRPerform(&g_pMouseStatusReq->header);
+=======
+    rc = VbglR0GRPerform(&g_pMouseStatusReq->header);
+>>>>>>> temp
     if (RT_SUCCESS(rc))
     {
         input_report_abs(g_pInputDevice, ABS_X,
@@ -946,6 +1188,7 @@ void VGDrvNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
 }
 
 
+<<<<<<< HEAD
 /* Common code that depend on g_DevExt. */
 #include "VBoxGuestIDC-unix.c.h"
 
@@ -958,6 +1201,12 @@ EXPORT_SYMBOL(VBoxGuestIDCCall);
 
 /** log and dbg_log parameter setter. */
 static int vgdrvLinuxParamLogGrpSet(const char *pszValue, struct kernel_param *pParam)
+=======
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+
+/** log and dbg_log parameter setter. */
+static int vgdrvLinuxParamLogGrpSet(const char *pszValue, CONST_4_15 struct kernel_param *pParam)
+>>>>>>> temp
 {
     if (g_fLoggerCreated)
     {
@@ -972,7 +1221,11 @@ static int vgdrvLinuxParamLogGrpSet(const char *pszValue, struct kernel_param *p
 }
 
 /** log and dbg_log parameter getter. */
+<<<<<<< HEAD
 static int vgdrvLinuxParamLogGrpGet(char *pszBuf, struct kernel_param *pParam)
+=======
+static int vgdrvLinuxParamLogGrpGet(char *pszBuf, CONST_4_15 struct kernel_param *pParam)
+>>>>>>> temp
 {
     PRTLOGGER pLogger = pParam->name[0] == 'd' ? RTLogDefaultInstance() : RTLogRelGetDefaultInstance();
     *pszBuf = '\0';
@@ -983,7 +1236,11 @@ static int vgdrvLinuxParamLogGrpGet(char *pszBuf, struct kernel_param *pParam)
 
 
 /** log and dbg_log_flags parameter setter. */
+<<<<<<< HEAD
 static int vgdrvLinuxParamLogFlagsSet(const char *pszValue, struct kernel_param *pParam)
+=======
+static int vgdrvLinuxParamLogFlagsSet(const char *pszValue, CONST_4_15 struct kernel_param *pParam)
+>>>>>>> temp
 {
     if (g_fLoggerCreated)
     {
@@ -997,7 +1254,11 @@ static int vgdrvLinuxParamLogFlagsSet(const char *pszValue, struct kernel_param 
 }
 
 /** log and dbg_log_flags parameter getter. */
+<<<<<<< HEAD
 static int vgdrvLinuxParamLogFlagsGet(char *pszBuf, struct kernel_param *pParam)
+=======
+static int vgdrvLinuxParamLogFlagsGet(char *pszBuf, CONST_4_15 struct kernel_param *pParam)
+>>>>>>> temp
 {
     PRTLOGGER pLogger = pParam->name[0] == 'd' ? RTLogDefaultInstance() : RTLogRelGetDefaultInstance();
     *pszBuf = '\0';
@@ -1008,7 +1269,11 @@ static int vgdrvLinuxParamLogFlagsGet(char *pszBuf, struct kernel_param *pParam)
 
 
 /** log and dbg_log_dest parameter setter. */
+<<<<<<< HEAD
 static int vgdrvLinuxParamLogDstSet(const char *pszValue, struct kernel_param *pParam)
+=======
+static int vgdrvLinuxParamLogDstSet(const char *pszValue, CONST_4_15 struct kernel_param *pParam)
+>>>>>>> temp
 {
     if (g_fLoggerCreated)
     {
@@ -1022,7 +1287,11 @@ static int vgdrvLinuxParamLogDstSet(const char *pszValue, struct kernel_param *p
 }
 
 /** log and dbg_log_dest parameter getter. */
+<<<<<<< HEAD
 static int vgdrvLinuxParamLogDstGet(char *pszBuf, struct kernel_param *pParam)
+=======
+static int vgdrvLinuxParamLogDstGet(char *pszBuf, CONST_4_15 struct kernel_param *pParam)
+>>>>>>> temp
 {
     PRTLOGGER pLogger = pParam->name[0] == 'd' ? RTLogDefaultInstance() : RTLogRelGetDefaultInstance();
     *pszBuf = '\0';
@@ -1033,7 +1302,11 @@ static int vgdrvLinuxParamLogDstGet(char *pszBuf, struct kernel_param *pParam)
 
 
 /** r3_log_to_host parameter setter. */
+<<<<<<< HEAD
 static int vgdrvLinuxParamR3LogToHostSet(const char *pszValue, struct kernel_param *pParam)
+=======
+static int vgdrvLinuxParamR3LogToHostSet(const char *pszValue, CONST_4_15 struct kernel_param *pParam)
+>>>>>>> temp
 {
     if (    pszValue == NULL
         || *pszValue == '\0'
@@ -1051,7 +1324,11 @@ static int vgdrvLinuxParamR3LogToHostSet(const char *pszValue, struct kernel_par
 }
 
 /** r3_log_to_host parameter getter. */
+<<<<<<< HEAD
 static int vgdrvLinuxParamR3LogToHostGet(char *pszBuf, struct kernel_param *pParam)
+=======
+static int vgdrvLinuxParamR3LogToHostGet(char *pszBuf, CONST_4_15 struct kernel_param *pParam)
+>>>>>>> temp
 {
     strcpy(pszBuf, g_DevExt.fLoggingEnabled ? "enabled" : "disabled");
     return strlen(pszBuf);
@@ -1081,6 +1358,10 @@ MODULE_AUTHOR(VBOX_VENDOR);
 MODULE_DESCRIPTION(VBOX_PRODUCT " Guest Additions for Linux Module");
 MODULE_LICENSE("GPL");
 #ifdef MODULE_VERSION
+<<<<<<< HEAD
 MODULE_VERSION(VBOX_VERSION_STRING);
+=======
+MODULE_VERSION(VBOX_VERSION_STRING " r" RT_XSTR(VBOX_SVN_REV));
+>>>>>>> temp
 #endif
 

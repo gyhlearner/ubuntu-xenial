@@ -4,7 +4,11 @@
  */
 
 /*
+<<<<<<< HEAD
  * Copyright (C) 2006-2012 Oracle Corporation
+=======
+ * Copyright (C) 2006-2017 Oracle Corporation
+>>>>>>> temp
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -232,6 +236,7 @@ static ssize_t sf_reg_write(struct file *file, const char *buf, size_t size, lof
             goto fail;
         }
 
+<<<<<<< HEAD
 #if 1
         if (VbglR0CanUsePhysPageList())
         {
@@ -242,6 +247,11 @@ static ssize_t sf_reg_write(struct file *file, const char *buf, size_t size, lof
         else
 #endif
             err = sf_reg_write_aux(__func__, sf_g, sf_r, tmp, &nwritten, pos);
+=======
+        err = VbglR0SfWritePhysCont(&client_handle, &sf_g->map, sf_r->handle,
+                                    pos, &nwritten, tmp_phys);
+        err = RT_FAILURE(err) ? -EPROTO : 0;
+>>>>>>> temp
         if (err)
             goto fail;
 
@@ -328,8 +338,12 @@ static int sf_reg_open(struct inode *inode, struct file *file)
         if (file->f_flags & O_TRUNC)
         {
             LogFunc(("O_TRUNC set\n"));
+<<<<<<< HEAD
             params.CreateFlags |= (  SHFL_CF_ACT_OVERWRITE_IF_EXISTS
                                    | SHFL_CF_ACCESS_WRITE);
+=======
+            params.CreateFlags |= SHFL_CF_ACT_OVERWRITE_IF_EXISTS;
+>>>>>>> temp
         }
         else
             params.CreateFlags |= SHFL_CF_ACT_OPEN_IF_EXISTS;
@@ -340,6 +354,7 @@ static int sf_reg_open(struct inode *inode, struct file *file)
         if (file->f_flags & O_TRUNC)
         {
             LogFunc(("O_TRUNC set\n"));
+<<<<<<< HEAD
             params.CreateFlags |= (  SHFL_CF_ACT_OVERWRITE_IF_EXISTS
                     | SHFL_CF_ACCESS_WRITE);
         }
@@ -364,6 +379,28 @@ static int sf_reg_open(struct inode *inode, struct file *file)
             default:
                 BUG ();
         }
+=======
+            params.CreateFlags |= SHFL_CF_ACT_OVERWRITE_IF_EXISTS;
+        }
+    }
+
+    switch (file->f_flags & O_ACCMODE)
+    {
+        case O_RDONLY:
+            params.CreateFlags |= SHFL_CF_ACCESS_READ;
+            break;
+
+        case O_WRONLY:
+            params.CreateFlags |= SHFL_CF_ACCESS_WRITE;
+            break;
+
+        case O_RDWR:
+            params.CreateFlags |= SHFL_CF_ACCESS_READWRITE;
+            break;
+
+        default:
+            BUG ();
+>>>>>>> temp
     }
 
     if (file->f_flags & O_APPEND)
@@ -449,7 +486,13 @@ static int sf_reg_release(struct inode *inode, struct file *file)
     return 0;
 }
 
+<<<<<<< HEAD
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 25)
+=======
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+static int sf_reg_fault(struct vm_fault *vmf)
+#elif LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 25)
+>>>>>>> temp
 static int sf_reg_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 static struct page *sf_reg_nopage(struct vm_area_struct *vma, unsigned long vaddr, int *type)
@@ -464,6 +507,12 @@ static struct page *sf_reg_nopage(struct vm_area_struct *vma, unsigned long vadd
     loff_t off;
     uint32_t nread = PAGE_SIZE;
     int err;
+<<<<<<< HEAD
+=======
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+    struct vm_area_struct *vma = vmf->vma;
+#endif
+>>>>>>> temp
     struct file *file = vma->vm_file;
     struct inode *inode = GET_F_DENTRY(file)->d_inode;
     struct sf_glob_info *sf_g = GET_GLOB_INFO(inode->i_sb);
@@ -544,7 +593,11 @@ static struct vm_operations_struct sf_vma_ops =
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 25)
     .fault = sf_reg_fault
 #else
+<<<<<<< HEAD
      .nopage = sf_reg_nopage
+=======
+    .nopage = sf_reg_nopage
+>>>>>>> temp
 #endif
 };
 
@@ -569,6 +622,7 @@ struct file_operations sf_reg_fops =
     .release     = sf_reg_release,
     .mmap        = sf_reg_mmap,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+<<<<<<< HEAD
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
     .splice_read = generic_file_splice_read,
 # else
@@ -578,6 +632,16 @@ struct file_operations sf_reg_fops =
     .read_iter   = generic_file_read_iter,
     .write_iter  = generic_file_write_iter,
 # else
+=======
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
+/** @todo This code is known to cause caching of data which should not be
+ * cached.  Investigate. */
+#  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
+    .splice_read = generic_file_splice_read,
+#  else
+    .sendfile    = generic_file_sendfile,
+#  endif
+>>>>>>> temp
     .aio_read    = generic_file_aio_read,
     .aio_write   = generic_file_aio_write,
 # endif

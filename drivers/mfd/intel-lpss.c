@@ -338,8 +338,8 @@ static int intel_lpss_register_clock(struct intel_lpss *lpss)
 		return 0;
 
 	/* Root clock */
-	clk = clk_register_fixed_rate(NULL, dev_name(lpss->dev), NULL,
-				      CLK_IS_ROOT, lpss->info->clk_rate);
+	clk = clk_register_fixed_rate(NULL, dev_name(lpss->dev), NULL, 0,
+				      lpss->info->clk_rate);
 	if (IS_ERR(clk))
 		return PTR_ERR(clk);
 
@@ -409,7 +409,11 @@ int intel_lpss_probe(struct device *dev,
 	if (ret)
 		return ret;
 
+<<<<<<< HEAD
 	lpss->cell->pset = info->pset;
+=======
+	lpss->cell->properties = info->properties;
+>>>>>>> temp
 
 	intel_lpss_init_dev(lpss);
 
@@ -502,6 +506,17 @@ int intel_lpss_suspend(struct device *dev)
 	for (i = 0; i < LPSS_PRIV_REG_COUNT; i++)
 		lpss->priv_ctx[i] = readl(lpss->priv + i * 4);
 
+<<<<<<< HEAD
+=======
+	/*
+	 * If the device type is not UART, then put the controller into
+	 * reset. UART cannot be put into reset since S3/S0ix fail when
+	 * no_console_suspend flag is enabled.
+	 */
+	if (lpss->type != LPSS_DEV_UART)
+		writel(0, lpss->priv + LPSS_PRIV_RESETS);
+
+>>>>>>> temp
 	return 0;
 }
 EXPORT_SYMBOL_GPL(intel_lpss_suspend);

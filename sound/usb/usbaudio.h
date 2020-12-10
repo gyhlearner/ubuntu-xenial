@@ -47,6 +47,7 @@ struct snd_usb_audio {
 	
 	int num_interfaces;
 	int num_suspended_intf;
+	int sample_rate_read_error;
 
 	struct list_head pcm_list;	/* list of pcm streams */
 	struct list_head ep_list;	/* list of audio-related endpoints */
@@ -108,6 +109,7 @@ enum quirk_type {
 struct snd_usb_audio_quirk {
 	const char *vendor_name;
 	const char *product_name;
+	const char *profile_name;	/* override the card->longname */
 	int16_t ifnum;
 	uint16_t type;
 	const void *data;
